@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=57", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eosimutils"
+version = "0.1.0"
+description = "Common utilities for packages and scripts within the EarthObservationSimulator organization."
+authors = [
+    { name = "Vinay Ravindra", email = "vravindra@baeri.org" },
+    { name = "Ryan Ketzner", email = "ketzner@ucf.edu" }
+]
+dependencies = [
+    "sphinx",
+    "sphinx-rtd-theme",
+
+]
+
+[project.optional-dependencies]
+dev = [
+    "pylint",
+    "black",
+    "coverage"
+]
+
+[tool.black]
+line-length = 80 # Match with pylintrc

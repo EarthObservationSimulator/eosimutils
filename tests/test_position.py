@@ -35,6 +35,18 @@ class TestCartesian3DPosition(unittest.TestCase):
         np.testing.assert_array_equal(pos.coords, [self.x, self.y, self.z])
         self.assertEqual(pos.frame, ReferenceFrame.ITRF)
 
+        pos = Cartesian3DPosition.from_list(
+            [self.x, self.y, self.z], "ITRF"
+        )
+        np.testing.assert_array_equal(pos.coords, [self.x, self.y, self.z])
+        self.assertEqual(pos.frame, ReferenceFrame.ITRF)
+
+        pos = Cartesian3DPosition.from_list(
+            [self.x, self.y, self.z]
+        )
+        np.testing.assert_array_equal(pos.coords, [self.x, self.y, self.z])
+        self.assertIsNone(pos.frame)
+
     def test_to_list(self):
         pos = Cartesian3DPosition(self.x, self.y, self.z, ReferenceFrame.GCRF)
         self.assertEqual(pos.to_list(), [self.x, self.y, self.z])
@@ -44,6 +56,12 @@ class TestCartesian3DPosition(unittest.TestCase):
         pos = Cartesian3DPosition.from_dict(dict_in)
         np.testing.assert_array_equal(pos.coords, [self.x, self.y, self.z])
         self.assertEqual(pos.frame, ReferenceFrame.GCRF)
+    
+    def test_from_dict_no_frame(self):
+        dict_in = {"x": self.x, "y": self.y, "z": self.z}
+        pos = Cartesian3DPosition.from_dict(dict_in)
+        np.testing.assert_array_equal(pos.coords, [self.x, self.y, self.z])
+        self.assertIsNone(pos.frame)
 
     def test_to_dict(self):
         pos = Cartesian3DPosition(self.x, self.y, self.z, ReferenceFrame.ITRF)
@@ -76,6 +94,18 @@ class TestCartesian3DVelocity(unittest.TestCase):
         np.testing.assert_array_equal(vel.coords, [self.vx, self.vy, self.vz])
         self.assertEqual(vel.frame, ReferenceFrame.ITRF)
 
+        vel = Cartesian3DVelocity.from_list(
+            [self.vx, self.vy, self.vz], "ITRF"
+        )
+        np.testing.assert_array_equal(vel.coords, [self.vx, self.vy, self.vz])
+        self.assertEqual(vel.frame, ReferenceFrame.ITRF)
+
+        vel = Cartesian3DVelocity.from_list(
+            [self.vx, self.vy, self.vz]
+        )
+        np.testing.assert_array_equal(vel.coords, [self.vx, self.vy, self.vz])
+        self.assertIsNone(vel.frame)
+
     def test_to_list(self):
         vel = Cartesian3DVelocity(
             self.vx, self.vy, self.vz, ReferenceFrame.GCRF
@@ -87,6 +117,12 @@ class TestCartesian3DVelocity(unittest.TestCase):
         vel = Cartesian3DVelocity.from_dict(dict_in)
         np.testing.assert_array_equal(vel.coords, [self.vx, self.vy, self.vz])
         self.assertEqual(vel.frame, ReferenceFrame.GCRF)
+    
+    def from_dict_no_frame(self):
+        dict_in = {"vx": self.vx, "vy": self.vy, "vz": self.vz}
+        vel = Cartesian3DVelocity.from_dict(dict_in)
+        np.testing.assert_array_equal(vel.coords, [self.vx, self.vy, self.vz])
+        self.assertIsNone(vel.frame)
 
     def test_to_dict(self):
         vel = Cartesian3DVelocity(

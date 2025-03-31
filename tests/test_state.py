@@ -100,6 +100,25 @@ class TestCartesianState(unittest.TestCase):
             state.velocity.coords, self.velocity.coords
         )
         self.assertEqual(state.frame, self.frame)
+    
+    def from_dict_no_frame(self):
+        """Test from_dict method without frame."""
+        dict_in = {
+            "time": self.time_dict,
+            "position": self.position.to_list(),
+            "velocity": self.velocity.to_list(),
+        }
+        state = CartesianState.from_dict(dict_in)
+        self.assertEqual(
+            state.time.astropy_time.iso, self.time.astropy_time.iso
+        )
+        np.testing.assert_array_equal(
+            state.position.coords, self.position.coords
+        )
+        np.testing.assert_array_equal(
+            state.velocity.coords, self.velocity.coords
+        )
+        self.assertIsNone(state.frame)
 
     def test_to_dict(self):
         state = CartesianState(

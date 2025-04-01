@@ -51,8 +51,8 @@ class CartesianState:
                 The dictionary should contain the following key-value pairs:
                 - "time" (dict): Dictionary with the date-time information.
                         See  :class:`orbitpy.util.AbsoluteDate.from_dict()`.
-                - "frame" (str): The reference-frame
-                                 See :class:`orbitpy.util.ReferenceFrame`.
+                - "frame" (str, optional): The reference-frame
+                                           See :class:`eosimutil.base.ReferenceFrame`.
                 - "position" (List[float]): Position vector in kilometers.
                 - "velocity" (List[float]): Velocity vector in km-per-s.
 
@@ -60,7 +60,9 @@ class CartesianState:
             CartesianState: CartesianState object.
         """
         time = AbsoluteDate.from_dict(dict_in["time"])
-        frame = ReferenceFrame.get(dict_in["frame"])
+        frame = (
+            ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
+        )
         position = Cartesian3DPosition.from_list(dict_in["position"], frame)
         velocity = Cartesian3DVelocity.from_list(dict_in["velocity"], frame)
         return CartesianState(time, position, velocity, frame)

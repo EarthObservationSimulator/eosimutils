@@ -5,8 +5,11 @@
 Collection of classes and functions for handling time information.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Union
 
+import spiceypy as spice
+
+from eosimutils.spicekernels import load_spice_kernels
 from astropy.time import Time as Astropy_Time
 from skyfield.api import load as Skyfield_Load
 from skyfield.timelib import Time as Skyfield_Time
@@ -28,25 +31,23 @@ class TimeScale(EnumBase):
     Enumeration of recognized time scales.
     """
 
-    UT1 = "UT1"
     UTC = "UTC"
 
 
 class AbsoluteDate:
     """Handles date-time information with support to Julian and Gregorian
-    date-time formats and UT1 and UTC time scales. Date-time is managed
-    internally using the Astropy Time object.
+    date-time formats and UTC time scale. Date-time is stored
+    internally as Ephemeris Time (ET) (Barycentric Dynamical Time (TDB))
+    as defined in SPICE."""
 
-    .. note:: Skyfield Time was not used since it appears not to
-    support handling of JD-UTC."""
-
-    def __init__(self, astropy_time: Astropy_Time) -> None:
+    def __init__(self, ephemeris_time: float) -> None:
         """Constructor for the AbsoluteDate class.
 
         Args:
-            astropy_time (astropy.time.Time): Astropy Time object.
+            ephemeris_time (float): Ephemeris Time (ET) /
+                            Barycentric Dynamical Time (TDB)
         """
-        self.astropy_time = astropy_time
+        self.ephemeris_time = ephemeris_time
 
     @classmethod
     def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDate":
@@ -58,16 +59,13 @@ class AbsoluteDate:
                 - "time_format" (str): The date-time format, either
                                        "Gregorian_Date" or "Julian_Date"
                                        (case-insensitive).
-                - "time_scale" (str): The time scale, e.g., "UTC" or "UT1"
+                - "time_scale" (str): The time scale, e.g., "UTC"
                                       (case-insensitive).
+                                      See :class:`eosimutils.time.TimeScale` for options.
 
                 For "Gregorian_Date" format:
-                - "year" (int): The year component of the date.
-                - "month" (int): The month component of the date.
-                - "day" (int): The day component of the date.
-                - "hour" (int): The hour component of the time.
-                - "minute" (int): The minute component of the time.
-                - "second" (float): The second component of the time.
+                - "calendar_date" (str): The date-time in YYYY-MM-DDTHH:MM:SS.SSS format. 
+                                         (e.g., "2025-03-31T12:34:56.789").
 
                 For "Julian_Date" format:
                 - "jd" (float): The Julian Date.
@@ -77,74 +75,85 @@ class AbsoluteDate:
         """
         time_scale: TimeScale = TimeScale.get(dict_in["time_scale"])
         time_format: TimeFormat = TimeFormat.get(dict_in["time_format"])
-        if time_format == TimeFormat.GREGORIAN_DATE:
-            year: int = dict_in["year"]
-            month: int = dict_in["month"]
-            day: int = dict_in["day"]
-            hour: int = dict_in["hour"]
-            minute: int = dict_in["minute"]
-            second: float = dict_in["second"]
-            astropy_time = Astropy_Time(
-                f"{year}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:06.3f}",  # pylint: disable=line-too-long
-                format="isot",
-                scale=time_scale.value.lower(),
-            )
-        elif time_format == TimeFormat.JULIAN_DATE:
-            jd: float = dict_in["jd"]
-            astropy_time = Astropy_Time(
-                jd, format="jd", scale=time_scale.value.lower()
-            )
+
+        # Load SPICE kernel files
+        load_spice_kernels()
+
+        if time_scale == TimeScale.UTC:
+
+            if time_format == TimeFormat.GREGORIAN_DATE:
+                # Parse the calendar date string and convert to Ephemeris Time (ET)
+                calendar_date_str: str = dict_in["calendar_date"]
+                spice_ephemeris_time = spice.str2et(calendar_date_str)
+
+            elif time_format == TimeFormat.JULIAN_DATE:
+                # Convert Julian Date UTC to ET
+                jd: float = dict_in["jd"]
+                time_string = f"jd {jd}"  # Format as Julian Date string
+                spice_ephemeris_time = spice.str2et(time_string)
+
+            else:
+                raise ValueError(f"Unsupported date-time format: {time_format}")
         else:
-            raise ValueError(f"Unsupported date-time format: {time_format}")
-        return cls(astropy_time=astropy_time)
+            raise ValueError(f"Unsupported time scale: {time_scale}.")
+
+        return cls(ephemeris_time=spice_ephemeris_time)
 
     def to_dict(
-        self, time_format_str: str = "GREGORIAN_DATE"
+        self,
+        time_format: Union[TimeFormat, str] = "GREGORIAN_DATE",
+        time_scale: Union[TimeScale, str] = "UTC",
     ) -> Dict[str, Any]:
         """Convert the AbsoluteDate object to a dictionary.
 
         Args:
             time_format (str): The type of date-time format to use
                                 ("GREGORIAN_DATE" or "JULIAN_DATE").
+                                Default is "GREGORIAN_DATE".
+
+            time_scale (str): The time scale to use (e.g., "UTC").
+                                Default is "UTC".
+
 
         Returns:
             dict: Dictionary with the date-time information.
         """
-        time_format = TimeFormat.get(time_format_str)
-        if time_format == TimeFormat.GREGORIAN_DATE:
-            return {
-                "time_format": "GREGORIAN_DATE",
-                "year": self.astropy_time.datetime.year,
-                "month": self.astropy_time.datetime.month,
-                "day": self.astropy_time.datetime.day,
-                "hour": self.astropy_time.datetime.hour,
-                "minute": self.astropy_time.datetime.minute,
-                "second": self.astropy_time.datetime.second,
-                "time_scale": self.astropy_time.scale,
-            }
-        elif time_format == TimeFormat.JULIAN_DATE:
-            return {
-                "time_format": "JULIAN_DATE",
-                "jd": self.astropy_time.jd,
-                "time_scale": self.astropy_time.scale,
-            }
+
+        # Load SPICE kernel files
+        load_spice_kernels()
+
+        time_format = TimeFormat.get(time_format)
+        time_scale = TimeScale.get(time_scale)
+
+        if time_scale == TimeScale.UTC:
+
+            if time_format == TimeFormat.GREGORIAN_DATE:
+
+                # Convert Ephemeris Time (ET) to Gregorian Date UTC
+                time_string = spice.et2utc(self.ephemeris_time, "ISOC", 3)
+                return {
+                    "time_format": "GREGORIAN_DATE",
+                    "calendar_date": time_string,
+                    "time_scale": time_scale.to_string(),
+                }
+            elif time_format == TimeFormat.JULIAN_DATE:
+
+                # Convert Ephemeris Time (ET) to Julian Date UTC
+                time_string = spice.et2utc(self.ephemeris_time, "J", 7)
+                # Parse the Julian Date value
+                jd_value = float(
+                    time_string.split()[1]
+                )  # Extract and convert the value to float
+
+                return {
+                    "time_format": "JULIAN_DATE",
+                    "jd": jd_value,
+                    "time_scale": time_scale.to_string(),
+                }
+            else:
+                raise ValueError(f"Unsupported date-time format: {time_format}")
         else:
-            raise ValueError(f"Unsupported date-time format: {time_format}")
-
-    def __eq__(self, other: object) -> bool:
-        """
-        Check if two AbsoluteDate objects are equal.
-
-        Args:
-            other (object): The object to compare with.
-
-        Returns:
-            bool: True if the two AbsoluteDate objects represent the
-                  same date and time, False otherwise.
-        """
-        if not isinstance(other, AbsoluteDate):
-            return False
-        return self.astropy_time == other.astropy_time
+            raise ValueError(f"Unsupported time scale: {time_scale}.")
 
     def to_astropy_time(self) -> Astropy_Time:
         """Convert the AbsoluteDate object to an Astropy Time object.
@@ -152,7 +161,8 @@ class AbsoluteDate:
         Returns:
             astropy.time.Time: Astropy Time object.
         """
-        return self.astropy_time
+        gregorian_utc_time_string = spice.et2utc(self.ephemeris_time, "ISOC", 3)
+        return Astropy_Time(gregorian_utc_time_string, scale="utc")
 
     def to_skyfield_time(self) -> Skyfield_Time:
         """Convert the AbsoluteDate object to a Skyfield Time object.
@@ -161,5 +171,27 @@ class AbsoluteDate:
             skyfield.time.Time: Skyfield Time object.
         """
         ts = Skyfield_Load.timescale()
-        skyfield_time = ts.from_astropy(self.astropy_time)
+        gregorian_utc_time_string = spice.et2utc(self.ephemeris_time, "ISOC", 3)
+        date_part, time_part = gregorian_utc_time_string.split("T")
+        year, month, day = map(int, date_part.split("-"))
+        hour, minute = map(int, time_part.split(":")[:2])
+        second = int(
+            float(time_part.split(":")[2])
+        )  # Handle fractional seconds
+        skyfield_time = ts.utc(
+            year, month=month, day=day, hour=hour, minute=minute, second=second
+        )
         return skyfield_time
+
+    def __eq__(self, value):
+        """Check equality of two AbsoluteDate objects.
+
+        Args:
+            value (AbsoluteDate): The AbsoluteDate object to compare with.
+
+        Returns:
+            bool: True if the objects are equal, False otherwise.
+        """
+        if not isinstance(value, AbsoluteDate):
+            return False
+        return self.ephemeris_time == value.ephemeris_time

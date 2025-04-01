@@ -8,3 +8,6 @@ __pycache__/
 docs/build/
 htmlcov/
 .coverage
+
+# ignore the SPICE kernels folder
+eosimutils/spice_kernels/*

@@ -16,12 +16,7 @@ class TestCartesianState(unittest.TestCase):
     def setUp(self):
         self.time_dict = {
             "time_format": "Gregorian_Date",
-            "year": 2025,
-            "month": 3,
-            "day": 10,
-            "hour": 14,
-            "minute": 30,
-            "second": 0.0,
+            "calendar_date": "2025-03-10T14:30:00.0",
             "time_scale": "utc",
         }
         self.time = AbsoluteDate.from_dict(self.time_dict)
@@ -90,6 +85,23 @@ class TestCartesianState(unittest.TestCase):
             "frame": "GCRF",
         }
         state = CartesianState.from_dict(dict_in)
+        self.assertEqual(state.time, self.time)
+        np.testing.assert_array_equal(
+            state.position.coords, self.position.coords
+        )
+        np.testing.assert_array_equal(
+            state.velocity.coords, self.velocity.coords
+        )
+        self.assertEqual(state.frame, self.frame)
+
+    def from_dict_no_frame(self):
+        """Test from_dict method without frame."""
+        dict_in = {
+            "time": self.time_dict,
+            "position": self.position.to_list(),
+            "velocity": self.velocity.to_list(),
+        }
+        state = CartesianState.from_dict(dict_in)
         self.assertEqual(
             state.time.astropy_time.iso, self.time.astropy_time.iso
         )
@@ -99,7 +111,7 @@ class TestCartesianState(unittest.TestCase):
         np.testing.assert_array_equal(
             state.velocity.coords, self.velocity.coords
         )
-        self.assertEqual(state.frame, self.frame)
+        self.assertIsNone(state.frame)
 
     def test_to_dict(self):
         state = CartesianState(

@@ -16,12 +16,7 @@ class TestCartesianState(unittest.TestCase):
     def setUp(self):
         self.time_dict = {
             "time_format": "Gregorian_Date",
-            "year": 2025,
-            "month": 3,
-            "day": 10,
-            "hour": 14,
-            "minute": 30,
-            "second": 0.0,
+            "calendar_date": "2025-03-10T14:30:00.0",
             "time_scale": "utc",
         }
         self.time = AbsoluteDate.from_dict(self.time_dict)
@@ -91,7 +86,7 @@ class TestCartesianState(unittest.TestCase):
         }
         state = CartesianState.from_dict(dict_in)
         self.assertEqual(
-            state.time.astropy_time.iso, self.time.astropy_time.iso
+            state.time, self.time
         )
         np.testing.assert_array_equal(
             state.position.coords, self.position.coords

@@ -29,7 +29,7 @@ class TestAbsoluteDate(unittest.TestCase):
         # https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/str2et_c.html
         dict_in = {
             "time_format": "Julian_Date",
-            "jd": 2457949.323611111, # 2017 July 14 19:46:0.0
+            "jd": 2457949.323611111,  # 2017 July 14 19:46:0.0
             "time_scale": "utc",
         }
         absolute_date = AbsoluteDate.from_dict(dict_in)
@@ -39,12 +39,12 @@ class TestAbsoluteDate(unittest.TestCase):
 
     def test_to_dict_gregorian(self):
         absolute_date = AbsoluteDate.from_dict(
-                        {
-                            "time_format": "Gregorian_Date",
-                            "calendar_date": "2025-03-10T14:30:0",
-                            "time_scale": "utc",
-                        }
-                    )
+            {
+                "time_format": "Gregorian_Date",
+                "calendar_date": "2025-03-10T14:30:0",
+                "time_scale": "utc",
+            }
+        )
         dict_out = absolute_date.to_dict("Gregorian_Date", "UTC")
         expected_dict = {
             "time_format": "GREGORIAN_DATE",
@@ -55,12 +55,12 @@ class TestAbsoluteDate(unittest.TestCase):
 
     def test_to_dict_julian(self):
         absolute_date = AbsoluteDate.from_dict(
-                        {
-                            "time_format": "Julian_Date",
-                            "jd": 2457081.10417,
-                            "time_scale": "utc",
-                        }
-                    )
+            {
+                "time_format": "Julian_Date",
+                "jd": 2457081.10417,
+                "time_scale": "utc",
+            }
+        )
         dict_out = absolute_date.to_dict("Julian_Date")
         expected_dict = {
             "time_format": "JULIAN_DATE",
@@ -79,11 +79,9 @@ class TestAbsoluteDate(unittest.TestCase):
         absolute_date = AbsoluteDate.from_dict(dict_in)
         absolute_date_jd = absolute_date.to_dict("Julian_Date")
         # Validation data from: https://aa.usno.navy.mil/data/JulianDate
-        # Since both dates are in UTC, it may not matter that the USNO 
-        # website specifies the time scale as UT1. 
-        self.assertAlmostEqual(
-            absolute_date_jd["jd"], 2460745.558067, places=5
-        )
+        # Since both dates are in UTC, it may not matter that the USNO
+        # website specifies the time scale as UT1.
+        self.assertAlmostEqual(absolute_date_jd["jd"], 2460745.558067, places=5)
 
     def test_julian_to_gregorian(self):
         # Initialize with Julian Date
@@ -95,14 +93,14 @@ class TestAbsoluteDate(unittest.TestCase):
         absolute_date = AbsoluteDate.from_dict(dict_in)
         absolute_date_gregorian = absolute_date.to_dict("Gregorian_Date", "UTC")
         # Validation data from: https://aa.usno.navy.mil/data/JulianDate
-        # Since both dates are in UTC, it may not matter that the USNO 
-        # website specifies the time scale as UT1. 
+        # Since both dates are in UTC, it may not matter that the USNO
+        # website specifies the time scale as UT1.
         self.assertEqual(
             absolute_date_gregorian["calendar_date"], "2024-01-15T15:29:09.600"
         )
-    
+
     def test_to_astropy_time(self):
-        
+
         # initialize AstroPy and AbsoluteDate objects
         astropy_time = Astropy_Time(
             "2025-03-17T12:00:00", format="isot", scale="utc"
@@ -120,7 +118,7 @@ class TestAbsoluteDate(unittest.TestCase):
 
         # Assert that the converted time matches the original Astropy Time
         self.assertEqual(converted_time, astropy_time)
-    
+
     def test_to_skyfield_time(self):
         absolute_date = AbsoluteDate.from_dict(
             {

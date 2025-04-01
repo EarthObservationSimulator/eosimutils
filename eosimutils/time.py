@@ -21,6 +21,7 @@ class TimeFormat(EnumBase):
     """
     Enumeration of recognized time formats.
     """
+
     GREGORIAN_DATE = "GREGORIAN_DATE"
     JULIAN_DATE = "JULIAN_DATE"
 
@@ -29,24 +30,25 @@ class TimeScale(EnumBase):
     """
     Enumeration of recognized time scales.
     """
+
     UTC = "UTC"
 
 
 class AbsoluteDate:
     """Handles date-time information with support to Julian and Gregorian
-    date-time formats and UTC time scale. Date-time is stored 
-    internally as Ephemeris Time (ET) (Barycentric Dynamical Time (TDB)) 
+    date-time formats and UTC time scale. Date-time is stored
+    internally as Ephemeris Time (ET) (Barycentric Dynamical Time (TDB))
     as defined in SPICE."""
 
     def __init__(self, ephemeris_time: float) -> None:
         """Constructor for the AbsoluteDate class.
 
         Args:
-            ephemeris_time (float): Ephemeris Time (ET) / 
+            ephemeris_time (float): Ephemeris Time (ET) /
                             Barycentric Dynamical Time (TDB)
         """
         self.ephemeris_time = ephemeris_time
-    
+
     @classmethod
     def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDate":
         """Construct an AbsoluteDate object from a dictionary.
@@ -62,7 +64,8 @@ class AbsoluteDate:
                                       See :class:`eosimutils.time.TimeScale` for options.
 
                 For "Gregorian_Date" format:
-                - "calendar_date" (str): The date-time in YYYY-MM-DDTHH:MM:SS.SSS format (e.g., "2025-03-31T12:34:56.789").
+                - "calendar_date" (str): The date-time in YYYY-MM-DDTHH:MM:SS.SSS format. 
+                                         (e.g., "2025-03-31T12:34:56.789").
 
                 For "Julian_Date" format:
                 - "jd" (float): The Julian Date.
@@ -96,11 +99,10 @@ class AbsoluteDate:
 
         return cls(ephemeris_time=spice_ephemeris_time)
 
-
     def to_dict(
-        self, 
+        self,
         time_format: Union[TimeFormat, str] = "GREGORIAN_DATE",
-        time_scale: Union[TimeScale, str] = "UTC"
+        time_scale: Union[TimeScale, str] = "UTC",
     ) -> Dict[str, Any]:
         """Convert the AbsoluteDate object to a dictionary.
 
@@ -108,8 +110,8 @@ class AbsoluteDate:
             time_format (str): The type of date-time format to use
                                 ("GREGORIAN_DATE" or "JULIAN_DATE").
                                 Default is "GREGORIAN_DATE".
-            
-            time_scale (str): The time scale to use (e.g., "UTC"). 
+
+            time_scale (str): The time scale to use (e.g., "UTC").
                                 Default is "UTC".
 
 
@@ -135,24 +137,24 @@ class AbsoluteDate:
                     "time_scale": time_scale.to_string(),
                 }
             elif time_format == TimeFormat.JULIAN_DATE:
-                
-                    # Convert Ephemeris Time (ET) to Julian Date UTC
-                    time_string = spice.et2utc(self.ephemeris_time, "J", 7)
-                    # Parse the Julian Date value
-                    jd_value = float(time_string.split()[1])  # Extract and convert the value to float
 
-                    return {
-                        "time_format": "JULIAN_DATE",
-                        "jd": jd_value,
-                        "time_scale": time_scale.to_string(),
-                    }
+                # Convert Ephemeris Time (ET) to Julian Date UTC
+                time_string = spice.et2utc(self.ephemeris_time, "J", 7)
+                # Parse the Julian Date value
+                jd_value = float(
+                    time_string.split()[1]
+                )  # Extract and convert the value to float
+
+                return {
+                    "time_format": "JULIAN_DATE",
+                    "jd": jd_value,
+                    "time_scale": time_scale.to_string(),
+                }
             else:
                 raise ValueError(f"Unsupported date-time format: {time_format}")
         else:
-            raise ValueError(
-                f"Unsupported time scale: {time_scale}."
-            )
-    
+            raise ValueError(f"Unsupported time scale: {time_scale}.")
+
     def to_astropy_time(self) -> Astropy_Time:
         """Convert the AbsoluteDate object to an Astropy Time object.
 
@@ -173,8 +175,12 @@ class AbsoluteDate:
         date_part, time_part = gregorian_utc_time_string.split("T")
         year, month, day = map(int, date_part.split("-"))
         hour, minute = map(int, time_part.split(":")[:2])
-        second = int(float(time_part.split(":")[2]))  # Handle fractional seconds
-        skyfield_time = ts.utc(year, month=month, day=day, hour=hour, minute=minute, second=second)
+        second = int(
+            float(time_part.split(":")[2])
+        )  # Handle fractional seconds
+        skyfield_time = ts.utc(
+            year, month=month, day=day, hour=hour, minute=minute, second=second
+        )
         return skyfield_time
 
     def __eq__(self, value):

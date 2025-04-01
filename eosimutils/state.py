@@ -60,7 +60,9 @@ class CartesianState:
             CartesianState: CartesianState object.
         """
         time = AbsoluteDate.from_dict(dict_in["time"])
-        frame = ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
+        frame = (
+            ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
+        )
         position = Cartesian3DPosition.from_list(dict_in["position"], frame)
         velocity = Cartesian3DVelocity.from_list(dict_in["velocity"], frame)
         return CartesianState(time, position, velocity, frame)

@@ -28,13 +28,14 @@ class Cartesian3DPosition:
 
     @staticmethod
     def from_list(
-        list_in: List[float], frame: Optional[Union[ReferenceFrame, str, None]]=None
+        list_in: List[float],
+        frame: Optional[Union[ReferenceFrame, str, None]] = None,
     ) -> "Cartesian3DPosition":
         """Construct a Cartesian3DPosition object from a list.
 
         Args:
             list_in (List[float]): Position coordinates in kilometers.
-            frame (Union[ReferenceFrame, str, None]): The reference-frame as a ReferenceFrame object, string, or None.
+            frame (Union[ReferenceFrame, str, None]): Reference-frame.
 
         Returns:
             Cartesian3DPosition: Cartesian3DPosition object.
@@ -46,7 +47,9 @@ class Cartesian3DPosition:
         if isinstance(frame, str):
             frame = ReferenceFrame.get(frame)
         if frame is not None and not isinstance(frame, ReferenceFrame):
-            raise ValueError("frame must be a ReferenceFrame object, a valid string, or None.")
+            raise ValueError(
+                "frame must be a ReferenceFrame object, a valid string, or None."
+            )
         return Cartesian3DPosition(list_in[0], list_in[1], list_in[2], frame)
 
     def to_list(self) -> List[float]:
@@ -74,7 +77,9 @@ class Cartesian3DPosition:
         Returns:
             Cartesian3DPosition: Cartesian3DPosition object.
         """
-        frame = ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
+        frame = (
+            ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
+        )
         return Cartesian3DPosition(
             dict_in["x"], dict_in["y"], dict_in["z"], frame
         )
@@ -108,13 +113,14 @@ class Cartesian3DVelocity:
 
     @staticmethod
     def from_list(
-        list_in: List[float], frame: Optional[Union[ReferenceFrame, str, None]]=None
+        list_in: List[float],
+        frame: Optional[Union[ReferenceFrame, str, None]] = None,
     ) -> "Cartesian3DVelocity":
         """Construct a Cartesian3DVelocity object from a list.
 
         Args:
             list_in (List[float]): Velocity in km-per-s.
-            frame (Union[ReferenceFrame, str, None]): The reference-frame as a ReferenceFrame object, string, or None.
+            frame (Union[ReferenceFrame, str, None]): Reference-frame.
 
         Returns:
             Cartesian3DVelocity: Cartesian3DVelocity object.
@@ -126,7 +132,9 @@ class Cartesian3DVelocity:
         if isinstance(frame, str):
             frame = ReferenceFrame.get(frame)
         if frame is not None and not isinstance(frame, ReferenceFrame):
-            raise ValueError("frame must be a ReferenceFrame object, a valid string, or None.")
+            raise ValueError(
+                "frame must be a ReferenceFrame object, a valid string, or None."
+            )
         return Cartesian3DVelocity(list_in[0], list_in[1], list_in[2], frame)
 
     def to_list(self) -> List[float]:
@@ -154,7 +162,9 @@ class Cartesian3DVelocity:
         Returns:
             Cartesian3DVelocity: Cartesian3DVelocity object.
         """
-        frame = ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
+        frame = (
+            ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
+        )
         return Cartesian3DVelocity(
             dict_in["vx"], dict_in["vy"], dict_in["vz"], frame
         )

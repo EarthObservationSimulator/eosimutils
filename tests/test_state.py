@@ -85,9 +85,7 @@ class TestCartesianState(unittest.TestCase):
             "frame": "GCRF",
         }
         state = CartesianState.from_dict(dict_in)
-        self.assertEqual(
-            state.time, self.time
-        )
+        self.assertEqual(state.time, self.time)
         np.testing.assert_array_equal(
             state.position.coords, self.position.coords
         )
@@ -95,7 +93,7 @@ class TestCartesianState(unittest.TestCase):
             state.velocity.coords, self.velocity.coords
         )
         self.assertEqual(state.frame, self.frame)
-    
+
     def from_dict_no_frame(self):
         """Test from_dict method without frame."""
         dict_in = {

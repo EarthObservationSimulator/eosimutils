@@ -25,7 +25,7 @@ class EnumBase(str, Enum):
                 return cls(key.upper())
             except:  # pylint: disable=bare-except
                 return None
-    
+
     def to_string(self) -> str:
         """Returns the string representation of the enum value.
 

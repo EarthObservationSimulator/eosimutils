@@ -6,7 +6,7 @@ Collection of classes and functions for handling state vector information.
 """
 
 import numpy as np
-from typing import Dict, List, Any, Union, Optional
+from typing import Dict, List, Tuple, Any, Union, Optional
 
 from skyfield.positionlib import build_position as skyfield_build_position
 from skyfield.constants import AU_KM as Skyfield_AU_KM
@@ -30,31 +30,45 @@ class Cartesian3DPosition:
         self.frame = frame
 
     @staticmethod
-    def from_list(
-        list_in: List[float],
+    def from_array(
+        array_in: Union[List[float], np.ndarray, Tuple[float, float, float]],
         frame: Optional[Union[ReferenceFrame, str, None]] = None,
     ) -> "Cartesian3DPosition":
-        """Construct a Cartesian3DPosition object from a list.
+        """Construct a Cartesian3DPosition object from a list, tuple, or NumPy array.
 
         Args:
-            list_in (List[float]): Position coordinates in kilometers.
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]): 
+                Position coordinates in kilometers.
             frame (Union[ReferenceFrame, str, None]): Reference-frame.
 
         Returns:
             Cartesian3DPosition: Cartesian3DPosition object.
         """
-        if len(list_in) != 3:
-            raise ValueError("The list must contain exactly 3 elements.")
-        if not all(isinstance(coord, (int, float)) for coord in list_in):
-            raise ValueError("All elements in list_in must be numeric values.")
+        if isinstance(array_in, np.ndarray):
+            array_in = array_in.tolist()  # Convert NumPy array to list
+        elif isinstance(array_in, tuple):
+            array_in = list(array_in)  # Convert tuple to list
+
+        if len(array_in) != 3:
+            raise ValueError("The input must contain exactly 3 elements.")
+        if not all(isinstance(coord, (int, float)) for coord in array_in):
+            raise ValueError("All elements in the input must be numeric values.")
         if isinstance(frame, str):
             frame = ReferenceFrame.get(frame)
         if frame is not None and not isinstance(frame, ReferenceFrame):
             raise ValueError(
                 "frame must be a ReferenceFrame object, a valid string, or None."
             )
-        return Cartesian3DPosition(list_in[0], list_in[1], list_in[2], frame)
+        return Cartesian3DPosition(array_in[0], array_in[1], array_in[2], frame)
 
+    def to_numpy(self) -> np.ndarray:
+        """Convert the Cartesian3DPosition object to a NumPy array.
+
+        Returns:
+            np.ndarray: Position coordinates in kilometers.
+        """
+        return self.coords
+    
     def to_list(self) -> List[float]:
         """Convert the Cartesian3DPosition object to a list.
 
@@ -115,31 +129,45 @@ class Cartesian3DVelocity:
         self.frame = frame
 
     @staticmethod
-    def from_list(
-        list_in: List[float],
+    def from_array(
+        array_in: Union[List[float], np.ndarray, Tuple[float, float, float]],
         frame: Optional[Union[ReferenceFrame, str, None]] = None,
     ) -> "Cartesian3DVelocity":
-        """Construct a Cartesian3DVelocity object from a list.
+        """Construct a Cartesian3DVelocity object from a list, tuple, or NumPy array.
 
         Args:
-            list_in (List[float]): Velocity in km-per-s.
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]): 
+                Velocity coordinates in kilometers-per-second.
             frame (Union[ReferenceFrame, str, None]): Reference-frame.
 
         Returns:
             Cartesian3DVelocity: Cartesian3DVelocity object.
         """
-        if len(list_in) != 3:
-            raise ValueError("The list must contain exactly 3 elements.")
-        if not all(isinstance(coord, (int, float)) for coord in list_in):
-            raise ValueError("All elements in list_in must be numeric values.")
+        if isinstance(array_in, np.ndarray):
+            array_in = array_in.tolist()  # Convert NumPy array to list
+        elif isinstance(array_in, tuple):
+            array_in = list(array_in)  # Convert tuple to list
+
+        if len(array_in) != 3:
+            raise ValueError("The input must contain exactly 3 elements.")
+        if not all(isinstance(coord, (int, float)) for coord in array_in):
+            raise ValueError("All elements in the input must be numeric values.")
         if isinstance(frame, str):
             frame = ReferenceFrame.get(frame)
         if frame is not None and not isinstance(frame, ReferenceFrame):
             raise ValueError(
                 "frame must be a ReferenceFrame object, a valid string, or None."
             )
-        return Cartesian3DVelocity(list_in[0], list_in[1], list_in[2], frame)
+        return Cartesian3DVelocity(array_in[0], array_in[1], array_in[2], frame)
 
+    def to_numpy(self) -> np.ndarray:
+        """Convert the Cartesian3DVelocity object to a NumPy array.
+
+        Returns:
+            np.ndarray: Velocity coordinates in kilometers-per-second.
+        """
+        return self.coords
+    
     def to_list(self) -> List[float]:
         """Convert the Cartesian3DVelocity object to a list.
 
@@ -309,8 +337,8 @@ class CartesianState:
         frame = (
             ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
         )
-        position = Cartesian3DPosition.from_list(dict_in["position"], frame)
-        velocity = Cartesian3DVelocity.from_list(dict_in["velocity"], frame)
+        position = Cartesian3DPosition.from_array(dict_in["position"], frame)
+        velocity = Cartesian3DVelocity.from_array(dict_in["velocity"], frame)
         return CartesianState(time, position, velocity, frame)
 
     def to_dict(self) -> Dict[str, Any]:

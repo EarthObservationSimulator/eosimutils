@@ -1,4 +1,4 @@
-"""Unit tests for orbitpy.time module."""
+"""Unit tests for eosimutils.time module."""
 
 import unittest
 
@@ -19,7 +19,7 @@ class TestAbsoluteDate(unittest.TestCase):
             "time_scale": "utc",
         }
         absolute_date = AbsoluteDate.from_dict(dict_in)
-        # results may differ across platforms and kernels used
+        # results may differ across computing platforms and kernels used
         self.assertAlmostEqual(
             absolute_date.ephemeris_time, 553333629.183727, places=6
         )
@@ -33,6 +33,7 @@ class TestAbsoluteDate(unittest.TestCase):
             "time_scale": "utc",
         }
         absolute_date = AbsoluteDate.from_dict(dict_in)
+        # results may differ across computing platforms and kernels used
         self.assertAlmostEqual(
             absolute_date.ephemeris_time, 553333629.183727, places=4
         )
@@ -98,6 +99,22 @@ class TestAbsoluteDate(unittest.TestCase):
         self.assertEqual(
             absolute_date_gregorian["calendar_date"], "2024-01-15T15:29:09.600"
         )
+
+    def test_to_spice_ephemeris_time(self):
+        """Test the to_spice_ephemeris_time method."""
+        # validation with data in the SPICE help file
+        # https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/str2et_c.html
+        dict_in = {
+            "time_format": "Gregorian_Date",
+            "calendar_date": "2017-07-14T19:46:00.0",
+            "time_scale": "utc",
+        }
+        absolute_date = AbsoluteDate.from_dict(dict_in)
+
+        spice_ephemeris_time = absolute_date.to_spice_ephemeris_time()
+
+        # results may differ across computing platforms and kernels used
+        self.assertAlmostEqual(spice_ephemeris_time, 553333629.183727, places=6)
 
     def test_to_astropy_time(self):
 

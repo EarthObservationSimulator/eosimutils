@@ -28,8 +28,8 @@ def download_latest_kernels() -> None:
 
     # Define the latest kernel URLs
     kernels = {
-        "LSK": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls", #pylint: disable=line-too-long
-        "BPC": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_000101_250627_250331.bpc", #pylint: disable=line-too-long
+        "LSK": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls",  # pylint: disable=line-too-long
+        "BPC": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_000101_250627_250331.bpc",  # pylint: disable=line-too-long
     }
 
     # Function to download a kernel if it doesn't already exist
@@ -43,7 +43,7 @@ def download_latest_kernels() -> None:
                 print(f"Downloading {filename}...")
                 urllib.request.urlretrieve(url, filename)
                 print(f"Downloaded and saved: {filename}\n")
-            except Exception as e: #pylint: disable=broad-exception-caught
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"Failed to download {filename}: {e}")
 
     # Download the required kernels

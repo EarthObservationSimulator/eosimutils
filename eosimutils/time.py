@@ -64,7 +64,7 @@ class AbsoluteDate:
                                       See :class:`eosimutils.time.TimeScale` for options.
 
                 For "Gregorian_Date" format:
-                - "calendar_date" (str): The date-time in YYYY-MM-DDTHH:MM:SS.SSS format. 
+                - "calendar_date" (str): The date-time in YYYY-MM-DDTHH:MM:SS.SSS format.
                                          (e.g., "2025-03-31T12:34:56.789").
 
                 For "Julian_Date" format:
@@ -182,6 +182,15 @@ class AbsoluteDate:
             year, month=month, day=day, hour=hour, minute=minute, second=second
         )
         return skyfield_time
+
+    def to_spice_ephemeris_time(self) -> float:
+        """Convert the AbsoluteDate object to a SPICE Ephemeris Time (ET).
+        In the SPICE toolkit, ET Means TDB.
+
+        Returns:
+            float: Ephemeris Time (ET).
+        """
+        return self.ephemeris_time
 
     def __eq__(self, value):
         """Check equality of two AbsoluteDate objects.

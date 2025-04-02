@@ -34,6 +34,21 @@ class EnumBase(str, Enum):
         """
         return str(self.value)
 
+    def __eq__(self, other) -> bool:
+        """Check equality between EnumBase and another object.
+
+        Args:
+            other (Any): The object to compare with.
+
+        Returns:
+            bool: True if the objects are equal, False otherwise.
+        """
+        if isinstance(other, EnumBase):
+            return self.value == other.value
+        if isinstance(other, str):
+            return self.value == other.upper()
+        return False
+
 
 class ReferenceFrame(EnumBase):
     """
@@ -42,6 +57,11 @@ class ReferenceFrame(EnumBase):
     Attributes:
         GCRF (str): Geocentric Celestial Reference Frame. See:
                     https://rhodesmill.org/skyfield/api-position.html#geocentric-position-relative-to-the-earth
+
+                    In the context of the SPICE toolkit:
+                    It seems that J2000 is same as ICRF. See Slide 12 in
+                    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/17_frames_and_coordinate_systems.pdf
+                    Further, GCRF is aligned to ICRF with the center at the center of the Earth.
 
         ITRF (str): International Terrestrial Reference Frame. See:
                     https://rhodesmill.org/skyfield/api-framelib.html#skyfield.framelib.itrs

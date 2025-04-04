@@ -55,19 +55,23 @@ class ReferenceFrame(EnumBase):
     Enumeration of recognized Reference frames.
 
     Attributes:
-        GCRF (str): Geocentric Celestial Reference Frame. See:
-                    https://rhodesmill.org/skyfield/api-position.html#geocentric-position-relative-to-the-earth
+        
+        EARTH_ICRF (str): Earth centered inertial frame aligned to the ICRF (International Celestial Reference Frame) . 
 
-                    In the context of the SPICE toolkit:
-                    It seems that J2000 is same as ICRF. See Slide 12 in
+                    The alignment of the ICRF is as defined in the SPICE toolkit.
+                    This is implemented with the J2000 frame defined in the SPICE toolkit.
+                    It seems that J2000 is same as ICRF. 
+                    In SPICE the center of any inertial frame is ALWAYS the solar system barycenter.
+                    See Slide 12 and 7 in
                     https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/17_frames_and_coordinate_systems.pdf
-                    Further, GCRF is aligned to ICRF with the center at the center of the Earth.
 
-        ITRF (str): International Terrestrial Reference Frame. See:
+        ITRF (str): International Terrestrial Reference Frame. 
+                    This is implemented with the ITRF93 frame defined in the SPICE toolkit.
+                    
+                    Also see:
                     https://rhodesmill.org/skyfield/api-framelib.html#skyfield.framelib.itrs
 
     """
-
-    GCRF = "GCRF"  # Geocentric Celestial Reference Frame (ECI)
-    ITRF = "ITRF"  # International Terrestrial Reference Frame (ECEF)
+    EARTH_ICRF  = "EARTH_ICRF"  # Geocentric Celestial Reference Frame (ECI)
+    ITRF        = "ITRF"  # International Terrestrial Reference Frame (ECEF)
     # TEME = "TEME"  # True Equator Mean Equinox

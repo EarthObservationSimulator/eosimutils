@@ -217,7 +217,9 @@ class Cartesian3DVelocity:
 class GeographicPosition:
     """Handles geographic position information using Skyfield.
     The geographic position is managed internally using the Skyfield
-    GeographicPosition object and is referenced to the WGS84 ellipsoid."""
+    GeographicPosition object and is referenced to the WGS84 ellipsoid.
+    TODO: Revise to implement with SPICE: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/xfmsta_c.html
+    """
 
     def __init__(
         self,
@@ -341,6 +343,45 @@ class CartesianState:
         velocity = Cartesian3DVelocity.from_array(dict_in["velocity"], frame)
         return CartesianState(time, position, velocity, frame)
 
+    def from_array(
+        array_in: Union[List[float], np.ndarray, Tuple[float, float, float]],
+        time: AbsoluteDate,
+        frame: Optional[Union[ReferenceFrame, str, None]] = None,
+    ) -> "CartesianState":
+        """Construct a CartesianState object from a list, tuple, or NumPy array.
+
+        Args:
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]): 
+                Position and velocity coordinates in kilometers and km-per-s.
+            time (AbsoluteDate): Absolute date-time object.
+            frame (Union[ReferenceFrame, str, None]): Reference-frame.
+                If None, the frame will be taken from the position and velocity
+                objects.
+        Returns:
+            CartesianState: CartesianState object.
+        """ 
+        if isinstance(array_in, np.ndarray):
+            array_in = array_in.tolist()
+        elif isinstance(array_in, tuple):
+            array_in = list(array_in)
+        if len(array_in) != 6:
+            raise ValueError("The input must contain exactly 6 elements.")
+        if not all(isinstance(coord, (int, float)) for coord in array_in):
+            raise ValueError("All elements in the input must be numeric values.")
+        if isinstance(frame, str):
+            frame = ReferenceFrame.get(frame)
+        if frame is not None and not isinstance(frame, ReferenceFrame):
+            raise ValueError(
+                "frame must be a ReferenceFrame object, a valid string, or None."
+            )
+        position = Cartesian3DPosition.from_array(
+            array_in[0:3], frame
+        )
+        velocity = Cartesian3DVelocity.from_array(
+            array_in[3:6], frame
+        )
+        return CartesianState(time, position, velocity, frame)
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert the CartesianState object to a dictionary.
 
@@ -353,6 +394,17 @@ class CartesianState:
             "velocity": self.velocity.to_list(),
             "frame": self.frame.value,
         }
+    
+    def to_numpy(self) ->  np.ndarray:
+        """Output the position and velocity in a single NumPy array.
+
+        The resulting array will have a length of 6, containing the 
+        position (x, y, z) and velocity (vx, vy, vz) components.
+
+        Returns:
+            np.ndarray: NumPy array with the position and velocity information.
+        """
+        return np.concatenate((self.position.to_numpy(), self.velocity.to_numpy()))
 
     def to_skyfield_gcrf_position(self):
         """Convert the CartesianState object to a Skyfield position object.
@@ -363,11 +415,11 @@ class CartesianState:
             Skyfield position (state) object.
 
         Raises:
-            ValueError: If the frame is not GCRF.
+            ValueError: If the frame is not EARTH_ICRF.
         """
-        if self.frame != ReferenceFrame.GCRF:
+        if self.frame != ReferenceFrame.EARTH_ICRF:
             raise ValueError(
-                "Only CartesianState object in GCRF frame is supported for "
+                "Only CartesianState object in EARTH_ICRF frame is supported for "
                 "conversion to Skyfield GCRF position."
             )
 

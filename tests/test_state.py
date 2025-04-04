@@ -26,9 +26,9 @@ class TestCartesian3DPosition(unittest.TestCase):
         self.z = round(random.uniform(-1e6, 1e6), 6)
 
     def test_initialization(self):
-        pos = Cartesian3DPosition(self.x, self.y, self.z, ReferenceFrame.GCRF)
+        pos = Cartesian3DPosition(self.x, self.y, self.z, ReferenceFrame.EARTH_ICRF)
         np.testing.assert_array_equal(pos.coords, [self.x, self.y, self.z])
-        self.assertEqual(pos.frame, ReferenceFrame.GCRF)
+        self.assertEqual(pos.frame, ReferenceFrame.EARTH_ICRF)
 
     def test_from_array(self):
         pos = Cartesian3DPosition.from_array(
@@ -47,20 +47,20 @@ class TestCartesian3DPosition(unittest.TestCase):
 
     def test_to_numpy(self):
         pos = Cartesian3DVelocity(
-            self.x, self.y, self.z, ReferenceFrame.GCRF
+            self.x, self.y, self.z, ReferenceFrame.EARTH_ICRF
         )
         self.assertIsInstance(pos.to_numpy(), np.ndarray)
         np.testing.assert_array_equal(pos.to_numpy(), np.array([self.x, self.y, self.z]))
 
     def test_to_list(self):
-        pos = Cartesian3DPosition(self.x, self.y, self.z, ReferenceFrame.GCRF)
+        pos = Cartesian3DPosition(self.x, self.y, self.z, ReferenceFrame.EARTH_ICRF)
         self.assertEqual(pos.to_list(), [self.x, self.y, self.z])
 
     def test_from_dict(self):
-        dict_in = {"x": self.x, "y": self.y, "z": self.z, "frame": "GCRF"}
+        dict_in = {"x": self.x, "y": self.y, "z": self.z, "frame": "EARTH_ICRF"}
         pos = Cartesian3DPosition.from_dict(dict_in)
         np.testing.assert_array_equal(pos.coords, [self.x, self.y, self.z])
-        self.assertEqual(pos.frame, ReferenceFrame.GCRF)
+        self.assertEqual(pos.frame, ReferenceFrame.EARTH_ICRF)
 
     def test_from_dict_no_frame(self):
         dict_in = {"x": self.x, "y": self.y, "z": self.z}
@@ -87,10 +87,10 @@ class TestCartesian3DVelocity(unittest.TestCase):
 
     def test_initialization(self):
         vel = Cartesian3DVelocity(
-            self.vx, self.vy, self.vz, ReferenceFrame.GCRF
+            self.vx, self.vy, self.vz, ReferenceFrame.EARTH_ICRF
         )
         np.testing.assert_array_equal(vel.coords, [self.vx, self.vy, self.vz])
-        self.assertEqual(vel.frame, ReferenceFrame.GCRF)
+        self.assertEqual(vel.frame, ReferenceFrame.EARTH_ICRF)
 
     def test_from_array(self):
         vel = Cartesian3DVelocity.from_array(
@@ -109,23 +109,23 @@ class TestCartesian3DVelocity(unittest.TestCase):
 
     def test_to_numpy(self):
         vel = Cartesian3DVelocity(
-            self.vx, self.vy, self.vz, ReferenceFrame.GCRF
+            self.vx, self.vy, self.vz, ReferenceFrame.EARTH_ICRF
         )
         self.assertIsInstance(vel.to_numpy(), np.ndarray)
         np.testing.assert_array_equal(vel.to_numpy(), np.array([self.vx, self.vy, self.vz]))
 
     def test_to_list(self):
         vel = Cartesian3DVelocity(
-            self.vx, self.vy, self.vz, ReferenceFrame.GCRF
+            self.vx, self.vy, self.vz, ReferenceFrame.EARTH_ICRF
         )
         self.assertIsInstance(vel.to_list(), list)
         self.assertEqual(vel.to_list(), [self.vx, self.vy, self.vz])
     
     def test_from_dict(self):
-        dict_in = {"vx": self.vx, "vy": self.vy, "vz": self.vz, "frame": "GCRF"}
+        dict_in = {"vx": self.vx, "vy": self.vy, "vz": self.vz, "frame": "EARTH_ICRF"}
         vel = Cartesian3DVelocity.from_dict(dict_in)
         np.testing.assert_array_equal(vel.coords, [self.vx, self.vy, self.vz])
-        self.assertEqual(vel.frame, ReferenceFrame.GCRF)
+        self.assertEqual(vel.frame, ReferenceFrame.EARTH_ICRF)
 
     def from_dict_no_frame(self):
         dict_in = {"vx": self.vx, "vy": self.vy, "vz": self.vz}
@@ -254,7 +254,7 @@ class TestCartesianState(unittest.TestCase):
             "x": round(random.uniform(-1e6, 1e6), 6),
             "y": round(random.uniform(-1e6, 1e6), 6),
             "z": round(random.uniform(-1e6, 1e6), 6),
-            "frame": "GCRF",
+            "frame": "EARTH_ICRF",
         }
         self.position = Cartesian3DPosition.from_dict(self.position_dict)
 
@@ -262,11 +262,11 @@ class TestCartesianState(unittest.TestCase):
             "vx": round(random.uniform(-1e6, 1e6), 6),
             "vy": round(random.uniform(-1e6, 1e6), 6),
             "vz": round(random.uniform(-1e6, 1e6), 6),
-            "frame": "GCRF",
+            "frame": "EARTH_ICRF",
         }
         self.velocity = Cartesian3DVelocity.from_dict(self.velocity_dict)
 
-        self.frame = ReferenceFrame.GCRF
+        self.frame = ReferenceFrame.EARTH_ICRF
 
     def test_initialization(self):
         state = CartesianState(
@@ -286,7 +286,7 @@ class TestCartesianState(unittest.TestCase):
             "x": round(random.uniform(-1e6, 1e6), 6),
             "y": round(random.uniform(-1e6, 1e6), 6),
             "z": round(random.uniform(-1e6, 1e6), 6),
-            "frame": "GCRF",
+            "frame": "EARTH_ICRF",
         }
         position = Cartesian3DPosition.from_dict(position_dict)
 
@@ -299,7 +299,7 @@ class TestCartesianState(unittest.TestCase):
         velocity = Cartesian3DVelocity.from_dict(velocity_dict)
 
         with self.assertRaises(ValueError) as context:
-            CartesianState(self.time, position, velocity, ReferenceFrame.GCRF)
+            CartesianState(self.time, position, velocity, ReferenceFrame.EARTH_ICRF)
 
         self.assertTrue(
             "Velocity frame does not match the provided frame."
@@ -311,7 +311,7 @@ class TestCartesianState(unittest.TestCase):
             "time": self.time_dict,
             "position": self.position.to_list(),
             "velocity": self.velocity.to_list(),
-            "frame": "GCRF",
+            "frame": "EARTH_ICRF",
         }
         state = CartesianState.from_dict(dict_in)
         self.assertEqual(state.time, self.time)
@@ -350,7 +350,7 @@ class TestCartesianState(unittest.TestCase):
         self.assertEqual(dict_out["time"], self.time.to_dict())
         self.assertEqual(dict_out["position"], self.position.to_list())
         self.assertEqual(dict_out["velocity"], self.velocity.to_list())
-        self.assertEqual(dict_out["frame"], "GCRF")
+        self.assertEqual(dict_out["frame"], "EARTH_ICRF")
 
     def test_to_skyfield_gcrf_position(self):
         # Create a CartesianState object
@@ -397,8 +397,8 @@ class TestCartesianState(unittest.TestCase):
         )
 
     def test_to_skyfield_gcrf_position_invalid_frame(self):
-        """Test that ValueError is raised when frame is not GCRF."""
-        # Create a CartesianState object with a non-GCRF frame
+        """Test that ValueError is raised when frame is not EARTH_ICRF."""
+        # Create a CartesianState object with a non-EARTH_ICRF frame
         position = Cartesian3DPosition(
             self.position.coords[0],
             self.position.coords[1],
@@ -420,6 +420,6 @@ class TestCartesianState(unittest.TestCase):
             state.to_skyfield_gcrf_position()
 
         self.assertTrue(
-            "Only CartesianState object in GCRF frame is supported for "
+            "Only CartesianState object in EARTH_ICRF frame is supported for "
             "conversion to Skyfield GCRF position." in str(context.exception)
         )

@@ -16,31 +16,31 @@ class TestReferenceFrame(unittest.TestCase):
 
     def test_get(self):
         # Test valid input
-        self.assertEqual(ReferenceFrame.get("GCRF"), ReferenceFrame.GCRF)
-        self.assertEqual(ReferenceFrame.get("gcrf"), ReferenceFrame.GCRF)
+        self.assertEqual(ReferenceFrame.get("EARTH_ICRF"), ReferenceFrame.EARTH_ICRF)
+        self.assertEqual(ReferenceFrame.get("earth_ICrf"), ReferenceFrame.EARTH_ICRF)
         self.assertEqual(
-            ReferenceFrame.get(["GCRF", "ITRF"]),
-            [ReferenceFrame.GCRF, ReferenceFrame.ITRF],
+            ReferenceFrame.get(["EARTH_ICRF", "ITRF"]),
+            [ReferenceFrame.EARTH_ICRF, ReferenceFrame.ITRF],
         )
 
         # Test invalid input
         self.assertIsNone(ReferenceFrame.get("INVALID"))
-        self.assertIsNone(ReferenceFrame.get(["GCRF", "INVALID"])[1])
+        self.assertIsNone(ReferenceFrame.get(["EARTH_ICRF", "INVALID"])[1])
 
     def test_to_string(self):
         # Test string representation
-        self.assertEqual(ReferenceFrame.GCRF.to_string(), "GCRF")
+        self.assertEqual(ReferenceFrame.EARTH_ICRF.to_string(), "EARTH_ICRF")
         self.assertEqual(ReferenceFrame.ITRF.to_string(), "ITRF")
 
     def test_equality(self):
         # Test equality with EnumBase
-        self.assertEqual(ReferenceFrame.GCRF, ReferenceFrame.GCRF)
-        self.assertNotEqual(ReferenceFrame.GCRF, ReferenceFrame.ITRF)
+        self.assertEqual(ReferenceFrame.EARTH_ICRF, ReferenceFrame.EARTH_ICRF)
+        self.assertNotEqual(ReferenceFrame.EARTH_ICRF, ReferenceFrame.ITRF)
 
         # Test equality with string
-        self.assertEqual(ReferenceFrame.GCRF, "GCRF")
-        self.assertNotEqual(ReferenceFrame.GCRF, "ITRF")
+        self.assertEqual(ReferenceFrame.EARTH_ICRF, "EARTH_ICRF")
+        self.assertNotEqual(ReferenceFrame.EARTH_ICRF, "ITRF")
 
         # Test equality with other types
-        self.assertNotEqual(ReferenceFrame.GCRF, 123)
-        self.assertNotEqual(ReferenceFrame.GCRF, None)
+        self.assertNotEqual(ReferenceFrame.EARTH_ICRF, 123)
+        self.assertNotEqual(ReferenceFrame.EARTH_ICRF, None)

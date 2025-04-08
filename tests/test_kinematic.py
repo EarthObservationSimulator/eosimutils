@@ -23,7 +23,7 @@ _TEST_POSITION_I = Cartesian3DPosition.from_dict(
         "x": random.uniform(-10000, 10000),
         "y": random.uniform(-10000, 10000),
         "z": random.uniform(-10000, 10000),
-        "frame": ReferenceFrame.EARTH_ICRF,
+        "frame": ReferenceFrame.ICRF_EC,
     }
 )
 _TEST_VELOCITY_I = Cartesian3DVelocity.from_dict(
@@ -31,7 +31,7 @@ _TEST_VELOCITY_I = Cartesian3DVelocity.from_dict(
                 "vx": random.uniform(-10, 10),
                 "vy": random.uniform(-10, 10),
                 "vz": random.uniform(-10, 10),
-                "frame": ReferenceFrame.EARTH_ICRF,
+                "frame": ReferenceFrame.ICRF_EC,
             }
         )
 
@@ -51,7 +51,7 @@ _TEST_TIME = AbsoluteDate.from_dict(
 )
 
 # Example state in inertial frame
-_TEST_STATE_I = CartesianState(_TEST_TIME, _TEST_POSITION_I, _TEST_VELOCITY_I, ReferenceFrame.EARTH_ICRF)
+_TEST_STATE_I = CartesianState(_TEST_TIME, _TEST_POSITION_I, _TEST_VELOCITY_I, ReferenceFrame.ICRF_EC)
 
 # Example position in Earth-fixed frame
 _TEST_POSITION_EF = Cartesian3DPosition.from_dict(
@@ -80,20 +80,20 @@ class TestTransformPosition(unittest.TestCase):
     def test_no_transformation(self):
         """Test no transformation when from_frame and to_frame are the same."""
         transformed_position = transform_position(
-            from_frame=ReferenceFrame.EARTH_ICRF,
-            to_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
+            to_frame=ReferenceFrame.ICRF_EC,
             position=_TEST_POSITION_I,
             time=_TEST_TIME,
         )
         np.testing.assert_array_equal(
             transformed_position.to_list(), _TEST_POSITION_I.to_list()
         )
-        self.assertEqual(transformed_position.frame, ReferenceFrame.EARTH_ICRF)
+        self.assertEqual(transformed_position.frame, ReferenceFrame.ICRF_EC)
 
     def test_transform_gcrf_to_itrf(self):
-        """Test transformation from EARTH_ICRF to ITRF."""
+        """Test transformation from ICRF_EC to ITRF."""
         transformed_position = transform_position(
-            from_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
             to_frame=ReferenceFrame.ITRF,
             position=_TEST_POSITION_I,
             time=_TEST_TIME,
@@ -119,19 +119,19 @@ class TestTransformPosition(unittest.TestCase):
             )
     
     def test_round_trip_transformation(self):
-        """Test round-trip transformation from EARTH_ICRF to ITRF and back to EARTH_ICRF."""
-        # Transform position from EARTH_ICRF to ITRF
+        """Test round-trip transformation from ICRF_EC to ITRF and back to ICRF_EC."""
+        # Transform position from ICRF_EC to ITRF
         transformed_to_itrf = transform_position(
-            from_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
             to_frame=ReferenceFrame.ITRF,
             position=_TEST_POSITION_I,
             time=_TEST_TIME,
         )
 
-        # Transform position back from ITRF to EARTH_ICRF
-        transformed_back_to_earth_icrf = transform_position(
+        # Transform position back from ITRF to ICRF_EC
+        transformed_back_to_ICRF_EC = transform_position(
             from_frame=ReferenceFrame.ITRF,
-            to_frame=ReferenceFrame.EARTH_ICRF,
+            to_frame=ReferenceFrame.ICRF_EC,
             position=transformed_to_itrf,
             time=_TEST_TIME,
         )
@@ -139,14 +139,14 @@ class TestTransformPosition(unittest.TestCase):
         # Compare the original position to the resulting position
         np.testing.assert_allclose(
             _TEST_POSITION_I.to_numpy(),
-            transformed_back_to_earth_icrf.to_numpy(),
+            transformed_back_to_ICRF_EC.to_numpy(),
             atol=1e-6,
-            err_msg="Round-trip transformation failed: EARTH_ICRF -> ITRF -> EARTH_ICRF",
+            err_msg="Round-trip transformation failed: ICRF_EC -> ITRF -> ICRF_EC",
         )
         self.assertEqual(
-            transformed_back_to_earth_icrf.frame,
-            ReferenceFrame.EARTH_ICRF,
-            "The resulting frame is not EARTH_ICRF after round-trip transformation.",
+            transformed_back_to_ICRF_EC.frame,
+            ReferenceFrame.ICRF_EC,
+            "The resulting frame is not ICRF_EC after round-trip transformation.",
         )
 
     def test_transform_position_with_astropy(self):
@@ -154,19 +154,19 @@ class TestTransformPosition(unittest.TestCase):
         It has been found that the results agree to about a meter accuracy.
         This could be due to the differences in the ICRF (SPICE) and GCRF 
         (Astropy) frames."""
-        # Validate the position transformation from EARTH_ICRF to ITRF
+        # Validate the position transformation from ICRF_EC to ITRF
         is_valid = validate_transform_position_with_astropy(
-            from_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
             to_frame=ReferenceFrame.ITRF,
             position=_TEST_POSITION_I,
             time=_TEST_TIME,
         )
         self.assertTrue(is_valid, "Transform position validation failed.")
 
-        # Validate the position transformation from ITRF to EARTH_ICRF
+        # Validate the position transformation from ITRF to ICRF_EC
         is_valid = validate_transform_position_with_astropy(
             from_frame=ReferenceFrame.ITRF,
-            to_frame=ReferenceFrame.EARTH_ICRF,
+            to_frame=ReferenceFrame.ICRF_EC,
             position=_TEST_POSITION_EF,
             time=_TEST_TIME,
         )
@@ -179,8 +179,8 @@ class TestTransformState(unittest.TestCase):
     def test_no_transformation(self):
         """Test no transformation when from_frame and to_frame are the same."""
         transformed_state = transform_state(
-            from_frame=ReferenceFrame.EARTH_ICRF,
-            to_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
+            to_frame=ReferenceFrame.ICRF_EC,
             state=_TEST_STATE_I,
             time=_TEST_TIME,
         )
@@ -190,12 +190,12 @@ class TestTransformState(unittest.TestCase):
         np.testing.assert_array_equal(
             transformed_state.velocity.to_list(), _TEST_STATE_I.velocity.to_list()
         )
-        self.assertEqual(transformed_state.frame, ReferenceFrame.EARTH_ICRF)
+        self.assertEqual(transformed_state.frame, ReferenceFrame.ICRF_EC)
 
     def test_transform_gcrf_to_itrf(self):
-        """Test transformation from EARTH_ICRF to ITRF."""
+        """Test transformation from ICRF_EC to ITRF."""
         transformed_state = transform_state(
-            from_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
             to_frame=ReferenceFrame.ITRF,
             state=_TEST_STATE_I,
             time=_TEST_TIME,
@@ -222,19 +222,19 @@ class TestTransformState(unittest.TestCase):
             )
     
     def test_round_trip_transformation(self):
-        """Test round-trip transformation from EARTH_ICRF to ITRF and back to EARTH_ICRF."""
-        # Transform state from EARTH_ICRF to ITRF
+        """Test round-trip transformation from ICRF_EC to ITRF and back to ICRF_EC."""
+        # Transform state from ICRF_EC to ITRF
         transformed_to_itrf = transform_state(
-            from_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
             to_frame=ReferenceFrame.ITRF,
             state=_TEST_STATE_I,
             time=_TEST_TIME,
         )
 
-        # Transform state back from ITRF to EARTH_ICRF
+        # Transform state back from ITRF to ICRF_EC
         transformed_back_to_icrf = transform_state(
             from_frame=ReferenceFrame.ITRF,
-            to_frame=ReferenceFrame.EARTH_ICRF,
+            to_frame=ReferenceFrame.ICRF_EC,
             state=transformed_to_itrf,
             time=_TEST_TIME,
         )
@@ -244,40 +244,40 @@ class TestTransformState(unittest.TestCase):
             _TEST_STATE_I.position.to_numpy(),
             transformed_back_to_icrf.position.to_numpy(),
             atol=1e-6,
-            err_msg="Round-trip transformation failed for position: EARTH_ICRF -> ITRF -> EARTH_ICRF",
+            err_msg="Round-trip transformation failed for position: ICRF_EC -> ITRF -> ICRF_EC",
         )
         np.testing.assert_allclose(
             _TEST_STATE_I.velocity.to_numpy(),
             transformed_back_to_icrf.velocity.to_numpy(),
             atol=1e-6,
-            err_msg="Round-trip transformation failed for velocity: EARTH_ICRF -> ITRF -> EARTH_ICRF",
+            err_msg="Round-trip transformation failed for velocity: ICRF_EC -> ITRF -> ICRF_EC",
         )
         self.assertEqual(
             transformed_back_to_icrf.frame,
-            ReferenceFrame.EARTH_ICRF,
-            "The resulting frame is not EARTH_ICRF after round-trip transformation.",
+            ReferenceFrame.ICRF_EC,
+            "The resulting frame is not ICRF_EC after round-trip transformation.",
         )
 
     def test_transform_state_with_astropy(self):
         """Test transformation using astropy_transform for validation.
         Validates both position and velocity transformations."""
-        # Validate the state transformation from EARTH_ICRF to ITRF
+        # Validate the state transformation from ICRF_EC to ITRF
         is_valid = validate_transform_state_with_astropy(
-            from_frame=ReferenceFrame.EARTH_ICRF,
+            from_frame=ReferenceFrame.ICRF_EC,
             to_frame=ReferenceFrame.ITRF,
             state=_TEST_STATE_I,
             time=_TEST_TIME,
         )
-        self.assertTrue(is_valid, "Transform state validation failed for EARTH_ICRF to ITRF.")
+        self.assertTrue(is_valid, "Transform state validation failed for ICRF_EC to ITRF.")
 
-        # Validate the state transformation from ITRF to EARTH_ICRF
+        # Validate the state transformation from ITRF to ICRF_EC
         is_valid = validate_transform_state_with_astropy(
             from_frame=ReferenceFrame.ITRF,
-            to_frame=ReferenceFrame.EARTH_ICRF,
+            to_frame=ReferenceFrame.ICRF_EC,
             state=_TEST_STATE_EF,
             time=_TEST_TIME,
         )
-        self.assertTrue(is_valid, "Transform state validation failed for ITRF to EARTH_ICRF.")
+        self.assertTrue(is_valid, "Transform state validation failed for ITRF to ICRF_EC.")
 
 if __name__ == "__main__":
     unittest.main()

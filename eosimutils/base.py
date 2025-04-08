@@ -56,7 +56,7 @@ class ReferenceFrame(EnumBase):
 
     Attributes:
         
-        EARTH_ICRF (str): Earth centered inertial frame aligned to the ICRF (International Celestial Reference Frame) . 
+        ICRF_EC (str): Earth centered inertial frame aligned to the ICRF (International Celestial Reference Frame) . 
 
                     The alignment of the ICRF is as defined in the SPICE toolkit.
                     This is implemented with the J2000 frame defined in the SPICE toolkit.
@@ -72,6 +72,6 @@ class ReferenceFrame(EnumBase):
                     https://rhodesmill.org/skyfield/api-framelib.html#skyfield.framelib.itrs
 
     """
-    EARTH_ICRF  = "EARTH_ICRF"  # Geocentric Celestial Reference Frame (ECI)
+    ICRF_EC  = "ICRF_EC"  # Geocentric Celestial Reference Frame (ECI)
     ITRF        = "ITRF"  # International Terrestrial Reference Frame (ECEF)
     # TEME = "TEME"  # True Equator Mean Equinox

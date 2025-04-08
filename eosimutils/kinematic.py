@@ -42,16 +42,16 @@ def _transform_position_vector(
         # No transformation needed, return the same position
         return position_vector
 
-    if from_frame == ReferenceFrame.EARTH_ICRF and to_frame == ReferenceFrame.ITRF:
-        # Transform from EARTH_ICRF to ITRF
+    if from_frame == ReferenceFrame.ICRF_EC and to_frame == ReferenceFrame.ITRF:
+        # Transform from ICRF_EC to ITRF
         if et is not None:
             rot_matrix = spice.pxform("J2000", "ITRF93", et)
         else:
             raise ValueError(
                 "Ephemeris time (ET) must be provided for transformation."
             )
-    elif from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.EARTH_ICRF:
-        # Transform from ITRF to EARTH_ICRF
+    elif from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC:
+        # Transform from ITRF to ICRF_EC
         if et is not None:
             rot_matrix = spice.pxform("ITRF93", "J2000", et)
         else:
@@ -112,9 +112,9 @@ def _transform_state(
         # No transformation needed, return the same state
         return state
 
-    if from_frame == ReferenceFrame.EARTH_ICRF and to_frame == ReferenceFrame.ITRF:
+    if from_frame == ReferenceFrame.ICRF_EC and to_frame == ReferenceFrame.ITRF:
         state_matrix = spice.sxform("J2000", "ITRF93", et)
-    elif from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.EARTH_ICRF:
+    elif from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC:
         state_matrix = spice.sxform("ITRF93", "J2000", et)
     else:
         raise NotImplementedError(

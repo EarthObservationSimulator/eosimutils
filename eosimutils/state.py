@@ -415,11 +415,11 @@ class CartesianState:
             Skyfield position (state) object.
 
         Raises:
-            ValueError: If the frame is not EARTH_ICRF.
+            ValueError: If the frame is not ICRF_EC.
         """
-        if self.frame != ReferenceFrame.EARTH_ICRF:
+        if self.frame != ReferenceFrame.ICRF_EC:
             raise ValueError(
-                "Only CartesianState object in EARTH_ICRF frame is supported for "
+                "Only CartesianState object in ICRF_EC frame is supported for "
                 "conversion to Skyfield GCRF position."
             )
 

@@ -7,6 +7,7 @@ Collection of classes and functions for handling time information.
 
 from typing import Dict, Any, Union
 
+import numpy as np
 import spiceypy as spice
 
 from eosimutils.spicekernels import load_spice_kernels
@@ -195,3 +196,104 @@ class AbsoluteDate:
         if not isinstance(value, AbsoluteDate):
             return False
         return self.ephemeris_time == value.ephemeris_time
+
+
+class AbsoluteDates:
+    """
+    Vectorized representation of time in Ephemeris Time (ET).
+
+    This class stores a set of time points as a 1D numpy array (in Ephemeris Time, ET)
+    for efficiency. It provides vectorized methods to convert to other time representations,
+    such as Astropy Time objects and Skyfield Time objects, as well as exporting time information
+    to a dictionary.
+
+    Attributes:
+        et (np.ndarray): 1D numpy array of ephemeris times.
+    """
+    def __init__(self, et: np.ndarray) -> None:
+        """
+        Constructor for the AbsoluteDates class.
+        
+        Args:
+            et (np.ndarray): 1D array of ephemeris times.
+        """
+        if not isinstance(et, np.ndarray):
+            raise TypeError("et must be a numpy.ndarray")
+        if et.ndim != 1:
+            raise ValueError("et must be a 1D numpy array")
+        self.et = et
+
+    def to_astropy_time(self) -> Astropy_Time:
+        """
+        Convert the ephemeris times to an Astropy Time object (UTC scale).
+
+        Returns:
+            Astropy_Time: Astropy Time object representing the vector of times.
+        """
+        # Use AbsoluteDate.to_dict to retrieve the Gregorian UTC string for consistency.
+        utc_strings = [
+            AbsoluteDate(t).to_dict("GREGORIAN_DATE", "UTC")["calendar_date"]
+            for t in self.et
+        ]
+        return Astropy_Time(utc_strings, scale="utc")
+
+    def to_skyfield_time(self):
+        """
+        Convert the ephemeris times to a Skyfield Time object.
+
+        Returns:
+            skyfield.timelib.Time: Skyfield Time object representing the vector of times.
+        """
+        ts = Skyfield_Load.timescale()
+        years, months, days, hours, minutes, seconds = [], [], [], [], [], []
+        for t in self.et:
+            # Get the UTC string using AbsoluteDate conversion for consistency.
+            utc_string = AbsoluteDate(t).to_dict("GREGORIAN_DATE", "UTC")["calendar_date"]
+            date_part, time_part = utc_string.split("T")
+            y, m, d = map(int, date_part.split("-"))
+            h, mi = map(int, time_part.split(":")[:2])
+            s = int(float(time_part.split(":")[2]))
+            years.append(y)
+            months.append(m)
+            days.append(d)
+            hours.append(h)
+            minutes.append(mi)
+            seconds.append(s)
+        return ts.utc(years, months, days, hours, minutes, seconds)
+
+    def to_dict(
+        self,
+        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
+        time_scale: Union[str, EnumBase] = "UTC"
+    ) -> Dict[str, Any]:
+        """
+        Convert the AbsoluteDates object to a dictionary. For each ephemeris time, an ISO UTC string 
+        is generated (if Gregorian) or a Julian Date is computed.
+
+        Args:
+            time_format (str or EnumBase): The desired time format. Options are "GREGORIAN_DATE" 
+                                           or "JULIAN_DATE". Default is "GREGORIAN_DATE".
+            time_scale (str or EnumBase): The time scale to use (e.g., "UTC"). Default is "UTC".
+
+        Returns:
+            dict: Dictionary with keys:
+                - "time_format": the chosen format,
+                - "times": a list of times (ISO strings/Gregorian or float/Julian Date),
+                - "time_scale": the time scale.
+        """
+        # Convert each ephemeris time using AbsoluteDate.to_dict for consistency.
+        times_list = []
+        upper_format = str(time_format).upper()
+        for t in self.et:
+            ad_dict = AbsoluteDate(t).to_dict(time_format, time_scale)
+            if upper_format == "GREGORIAN_DATE":
+                times_list.append(ad_dict["calendar_date"])
+            elif upper_format == "JULIAN_DATE":
+                times_list.append(ad_dict["jd"])
+            else:
+                raise ValueError(f"Unsupported time_format: {time_format}")
+        return {
+            "time_format": str(time_format),
+            "times": times_list,
+            "time_scale": str(time_scale)
+        }

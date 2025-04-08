@@ -1,10 +1,11 @@
 """Unit tests for orbitpy.time module."""
 
 import unittest
+import numpy as np
 
 from astropy.time import Time as Astropy_Time
 
-from eosimutils.time import AbsoluteDate
+from eosimutils.time import AbsoluteDate, AbsoluteDates
 
 
 class TestAbsoluteDate(unittest.TestCase):
@@ -167,6 +168,49 @@ class TestAbsoluteDate(unittest.TestCase):
 
         # Test comparison with a non-AbsoluteDate object
         self.assertFalse(date1 == "not an AbsoluteDate")
+
+
+class TestAbsoluteDates(unittest.TestCase):
+    """Test the AbsoluteDates class."""
+
+    def test_to_astropy_time(self):
+        et_array = np.array([553333629.183727, 553333630.183727])
+        abs_dates = AbsoluteDates(et_array)
+        astropy_times = abs_dates.to_astropy_time()
+        self.assertEqual(len(astropy_times), 2)
+        self.assertEqual(astropy_times[0].isot, "2017-07-14T19:46:00.000")
+        self.assertEqual(astropy_times[1].isot, "2017-07-14T19:46:01.000")
+
+    def test_to_dict_gregorian(self):
+        et_array = np.array([553333629.183727, 553333630.183727])
+        abs_dates = AbsoluteDates(et_array)
+        result = abs_dates.to_dict("GREGORIAN_DATE", "UTC")
+        self.assertEqual(result["time_format"], "GREGORIAN_DATE")
+        self.assertEqual(result["time_scale"], "UTC")
+        self.assertEqual(result["times"][0], "2017-07-14T19:46:00.000")
+        self.assertEqual(result["times"][1], "2017-07-14T19:46:01.000")
+
+    def test_to_dict_julian(self):
+        et_array = np.array([553333629.183727, 553333630.183727])
+        abs_dates = AbsoluteDates(et_array)
+        result = abs_dates.to_dict("JULIAN_DATE", "UTC")
+        self.assertEqual(result["time_format"], "JULIAN_DATE")
+        self.assertEqual(result["time_scale"], "UTC")
+        self.assertAlmostEqual(result["times"][0], 2457949.323611, places=6)
+        self.assertAlmostEqual(result["times"][1], 2457949.323623, places=6)
+
+    def test_to_dict_and_from_dict(self):
+        et_array = np.array([553333629.183727, 553333630.183727])
+        abs_dates = AbsoluteDates(et_array)
+
+        # Convert to dictionary
+        dict_representation = abs_dates.to_dict("GREGORIAN_DATE", "UTC")
+
+        # Reconstruct from dictionary
+        reconstructed_abs_dates = AbsoluteDates.from_dict(dict_representation)
+
+        # Assert that the reconstructed object matches the original
+        np.testing.assert_allclose(abs_dates.et, reconstructed_abs_dates.et, rtol=1e-6)
 
 
 if __name__ == "__main__":

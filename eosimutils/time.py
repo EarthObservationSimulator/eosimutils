@@ -223,6 +223,52 @@ class AbsoluteDates:
             raise ValueError("et must be a 1D numpy array")
         self.et = et
 
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDates":
+        """
+        Construct an AbsoluteDates object from a dictionary.
+
+        Args:
+            dict_in (dict): Dictionary with the time information.
+                The dictionary should contain the following key-value pairs:
+                - "time_format" (str): The date-time format, either
+                                       "Gregorian_Date" or "Julian_Date"
+                                       (case-insensitive).
+                - "time_scale" (str): The time scale, e.g., "UTC"
+                                      (case-insensitive).
+                                      See :class:`eosimutils.time.TimeScale` for options.
+
+                For "Gregorian_Date" format:
+                - "times" (list of str): List of date-times in YYYY-MM-DDTHH:MM:SS.SSS format.
+
+                For "Julian_Date" format:
+                - "times" (list of float): List of Julian Dates.
+
+        Returns:
+            AbsoluteDates: AbsoluteDates object.
+        """
+        time_scale: TimeScale = TimeScale.get(dict_in["time_scale"])
+        time_format: TimeFormat = TimeFormat.get(dict_in["time_format"])
+
+        # Load SPICE kernel files
+        load_spice_kernels()
+
+        ephemeris_times = []
+        if time_scale == TimeScale.UTC:
+            if time_format == TimeFormat.GREGORIAN_DATE:
+                for calendar_date_str in dict_in["times"]:
+                    ephemeris_times.append(spice.str2et(calendar_date_str))
+            elif time_format == TimeFormat.JULIAN_DATE:
+                for jd in dict_in["times"]:
+                    time_string = f"jd {jd}"  # Format as Julian Date string
+                    ephemeris_times.append(spice.str2et(time_string))
+            else:
+                raise ValueError(f"Unsupported date-time format: {time_format}")
+        else:
+            raise ValueError(f"Unsupported time scale: {time_scale}.")
+
+        return cls(et=np.array(ephemeris_times))
+
     def to_astropy_time(self) -> Astropy_Time:
         """
         Convert the ephemeris times to an Astropy Time object (UTC scale).

@@ -150,6 +150,27 @@ class Trajectory(Timeseries):
         pos, vel = convert_frame(self.data[0], self.data[1], self.time.et, self.frame, to_frame)
         return Trajectory(AbsoluteDates(self.time.et.copy()), [pos, vel], to_frame)
 
+    def to_dict(self) -> dict:
+        """
+        Serialize the Trajectory object to a dictionary.
+        """
+        return {
+            "time": self.time.to_dict(),
+            "data": [arr.tolist() for arr in self.data],
+            "frame": self.frame.to_string(),
+            "headers": self.headers
+        }
+
+    @classmethod
+    def from_dict(cls, dct: dict) -> "Trajectory":
+        """
+        Deserialize a Trajectory object from a dictionary.
+        """
+        time = AbsoluteDates.from_dict(dct["time"])
+        data_arrays = [np.array(arr) for arr in dct["data"]]
+        frame = ReferenceFrame(dct["frame"])
+        return cls(time, data_arrays, frame)
+
     @classmethod
     def constant_position(cls, t1: float, t2: float,
         position: np.ndarray, frame: ReferenceFrame) -> "Trajectory":

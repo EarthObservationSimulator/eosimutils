@@ -5,7 +5,7 @@
 Collection of classes and functions for handling kinematic transformations.
 
 Each function has two versions: one which takes `eosimutils` objects
-and another which takes numpy arrays (wherever possible). 
+and another which takes numpy arrays (wherever possible).
 The numpy array version is used internally by the `eosimutils` version.
 """
 
@@ -17,7 +17,6 @@ import spiceypy as spice
 from .base import ReferenceFrame
 from .time import AbsoluteDate
 from .state import Cartesian3DPosition, CartesianState
-from .spicekernels import load_spice_kernels
 
 
 def _transform_position_vector(
@@ -50,7 +49,9 @@ def _transform_position_vector(
             raise ValueError(
                 "Ephemeris time (ET) must be provided for transformation."
             )
-    elif from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC:
+    elif (
+        from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC
+    ):
         # Transform from ITRF to ICRF_EC
         if et is not None:
             rot_matrix = spice.pxform("ITRF93", "J2000", et)
@@ -91,11 +92,12 @@ def transform_position(
 
     return Cartesian3DPosition.from_array(transformed_position, to_frame)
 
+
 def _transform_state(
-        from_frame: Optional[Union[ReferenceFrame, str]],
-        to_frame: Optional[Union[ReferenceFrame, str]],
-        state: np.ndarray,
-        et: Optional[float] = None,
+    from_frame: Optional[Union[ReferenceFrame, str]],
+    to_frame: Optional[Union[ReferenceFrame, str]],
+    state: np.ndarray,
+    et: Optional[float] = None,
 ) -> np.ndarray:
     """Transform a state vector from one reference frame to another.
 
@@ -114,7 +116,9 @@ def _transform_state(
 
     if from_frame == ReferenceFrame.ICRF_EC and to_frame == ReferenceFrame.ITRF:
         state_matrix = spice.sxform("J2000", "ITRF93", et)
-    elif from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC:
+    elif (
+        from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC
+    ):
         state_matrix = spice.sxform("ITRF93", "J2000", et)
     else:
         raise NotImplementedError(
@@ -122,11 +126,12 @@ def _transform_state(
         )
     return state_matrix @ state
 
+
 def transform_state(
-        from_frame: Optional[Union[ReferenceFrame, str]],
-        to_frame: Optional[Union[ReferenceFrame, str]],
-        state: CartesianState,
-        time: Optional[AbsoluteDate] = None,
+    from_frame: Optional[Union[ReferenceFrame, str]],
+    to_frame: Optional[Union[ReferenceFrame, str]],
+    state: CartesianState,
+    time: Optional[AbsoluteDate] = None,
 ) -> CartesianState:
     """Transform a state vector from one reference frame to another.
 
@@ -147,4 +152,3 @@ def transform_state(
     )
 
     return CartesianState.from_array(transformed_state, time, to_frame)
-  

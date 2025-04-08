@@ -37,7 +37,7 @@ class Cartesian3DPosition:
         """Construct a Cartesian3DPosition object from a list, tuple, or NumPy array.
 
         Args:
-            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]): 
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]):
                 Position coordinates in kilometers.
             frame (Union[ReferenceFrame, str, None]): Reference-frame.
 
@@ -52,7 +52,9 @@ class Cartesian3DPosition:
         if len(array_in) != 3:
             raise ValueError("The input must contain exactly 3 elements.")
         if not all(isinstance(coord, (int, float)) for coord in array_in):
-            raise ValueError("All elements in the input must be numeric values.")
+            raise ValueError(
+                "All elements in the input must be numeric values."
+            )
         if isinstance(frame, str):
             frame = ReferenceFrame.get(frame)
         if frame is not None and not isinstance(frame, ReferenceFrame):
@@ -68,7 +70,7 @@ class Cartesian3DPosition:
             np.ndarray: Position coordinates in kilometers.
         """
         return self.coords
-    
+
     def to_list(self) -> List[float]:
         """Convert the Cartesian3DPosition object to a list.
 
@@ -136,7 +138,7 @@ class Cartesian3DVelocity:
         """Construct a Cartesian3DVelocity object from a list, tuple, or NumPy array.
 
         Args:
-            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]): 
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]):
                 Velocity coordinates in kilometers-per-second.
             frame (Union[ReferenceFrame, str, None]): Reference-frame.
 
@@ -151,7 +153,9 @@ class Cartesian3DVelocity:
         if len(array_in) != 3:
             raise ValueError("The input must contain exactly 3 elements.")
         if not all(isinstance(coord, (int, float)) for coord in array_in):
-            raise ValueError("All elements in the input must be numeric values.")
+            raise ValueError(
+                "All elements in the input must be numeric values."
+            )
         if isinstance(frame, str):
             frame = ReferenceFrame.get(frame)
         if frame is not None and not isinstance(frame, ReferenceFrame):
@@ -167,7 +171,7 @@ class Cartesian3DVelocity:
             np.ndarray: Velocity coordinates in kilometers-per-second.
         """
         return self.coords
-    
+
     def to_list(self) -> List[float]:
         """Convert the Cartesian3DVelocity object to a list.
 
@@ -218,7 +222,8 @@ class GeographicPosition:
     """Handles geographic position information using Skyfield.
     The geographic position is managed internally using the Skyfield
     GeographicPosition object and is referenced to the WGS84 ellipsoid.
-    TODO: Revise to implement with SPICE: https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/xfmsta_c.html
+    TODO: Revise to implement with SPICE: 
+        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/xfmsta_c.html
     """
 
     def __init__(
@@ -343,6 +348,7 @@ class CartesianState:
         velocity = Cartesian3DVelocity.from_array(dict_in["velocity"], frame)
         return CartesianState(time, position, velocity, frame)
 
+    @staticmethod
     def from_array(
         array_in: Union[List[float], np.ndarray, Tuple[float, float, float]],
         time: AbsoluteDate,
@@ -351,7 +357,7 @@ class CartesianState:
         """Construct a CartesianState object from a list, tuple, or NumPy array.
 
         Args:
-            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]): 
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]):
                 Position and velocity coordinates in kilometers and km-per-s.
             time (AbsoluteDate): Absolute date-time object.
             frame (Union[ReferenceFrame, str, None]): Reference-frame.
@@ -359,7 +365,7 @@ class CartesianState:
                 objects.
         Returns:
             CartesianState: CartesianState object.
-        """ 
+        """
         if isinstance(array_in, np.ndarray):
             array_in = array_in.tolist()
         elif isinstance(array_in, tuple):
@@ -367,21 +373,19 @@ class CartesianState:
         if len(array_in) != 6:
             raise ValueError("The input must contain exactly 6 elements.")
         if not all(isinstance(coord, (int, float)) for coord in array_in):
-            raise ValueError("All elements in the input must be numeric values.")
+            raise ValueError(
+                "All elements in the input must be numeric values."
+            )
         if isinstance(frame, str):
             frame = ReferenceFrame.get(frame)
         if frame is not None and not isinstance(frame, ReferenceFrame):
             raise ValueError(
                 "frame must be a ReferenceFrame object, a valid string, or None."
             )
-        position = Cartesian3DPosition.from_array(
-            array_in[0:3], frame
-        )
-        velocity = Cartesian3DVelocity.from_array(
-            array_in[3:6], frame
-        )
+        position = Cartesian3DPosition.from_array(array_in[0:3], frame)
+        velocity = Cartesian3DVelocity.from_array(array_in[3:6], frame)
         return CartesianState(time, position, velocity, frame)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert the CartesianState object to a dictionary.
 
@@ -394,17 +398,19 @@ class CartesianState:
             "velocity": self.velocity.to_list(),
             "frame": self.frame.value,
         }
-    
-    def to_numpy(self) ->  np.ndarray:
+
+    def to_numpy(self) -> np.ndarray:
         """Output the position and velocity in a single NumPy array.
 
-        The resulting array will have a length of 6, containing the 
+        The resulting array will have a length of 6, containing the
         position (x, y, z) and velocity (vx, vy, vz) components.
 
         Returns:
             np.ndarray: NumPy array with the position and velocity information.
         """
-        return np.concatenate((self.position.to_numpy(), self.velocity.to_numpy()))
+        return np.concatenate(
+            (self.position.to_numpy(), self.velocity.to_numpy())
+        )
 
     def to_skyfield_gcrf_position(self):
         """Convert the CartesianState object to a Skyfield position object.

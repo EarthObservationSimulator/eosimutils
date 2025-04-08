@@ -14,7 +14,10 @@ from eosimutils.time import AbsoluteDate
 from eosimutils.kinematic import transform_position
 from eosimutils.kinematic import transform_state
 
-from testutils import validate_transform_position_with_astropy, validate_transform_state_with_astropy
+from testutils import (
+    validate_transform_position_with_astropy,
+    validate_transform_state_with_astropy,
+)
 
 # Shared constants for the tests
 # Example position in inertial frame
@@ -27,13 +30,13 @@ _TEST_POSITION_I = Cartesian3DPosition.from_dict(
     }
 )
 _TEST_VELOCITY_I = Cartesian3DVelocity.from_dict(
-            {
-                "vx": random.uniform(-10, 10),
-                "vy": random.uniform(-10, 10),
-                "vz": random.uniform(-10, 10),
-                "frame": ReferenceFrame.ICRF_EC,
-            }
-        )
+    {
+        "vx": random.uniform(-10, 10),
+        "vy": random.uniform(-10, 10),
+        "vz": random.uniform(-10, 10),
+        "frame": ReferenceFrame.ICRF_EC,
+    }
+)
 
 # Example time
 _TEST_YEAR = random.randint(2000, 2024)
@@ -44,14 +47,23 @@ _TEST_MINUTE = random.randint(0, 59)
 _TEST_SECOND = random.randint(0, 59)
 _TEST_TIME = AbsoluteDate.from_dict(
     {
-    "time_format": "Gregorian_Date",
-    "calendar_date": f"{_TEST_YEAR:04d}-{_TEST_MONTH:02d}-{_TEST_DAY:02d}T{_TEST_HOUR:02d}:{_TEST_MINUTE:02d}:{_TEST_SECOND:02d}",
-    "time_scale": "UTC",
+        "time_format": "Gregorian_Date",
+        "calendar_date": (
+            f"{_TEST_YEAR:04d}-"
+            f"{_TEST_MONTH:02d}-"
+            f"{_TEST_DAY:02d}T"
+            f"{_TEST_HOUR:02d}:"
+            f"{_TEST_MINUTE:02d}:"
+            f"{_TEST_SECOND:02d}"
+        ),
+        "time_scale": "UTC",
     }
 )
 
 # Example state in inertial frame
-_TEST_STATE_I = CartesianState(_TEST_TIME, _TEST_POSITION_I, _TEST_VELOCITY_I, ReferenceFrame.ICRF_EC)
+_TEST_STATE_I = CartesianState(
+    _TEST_TIME, _TEST_POSITION_I, _TEST_VELOCITY_I, ReferenceFrame.ICRF_EC
+)
 
 # Example position in Earth-fixed frame
 _TEST_POSITION_EF = Cartesian3DPosition.from_dict(
@@ -63,15 +75,17 @@ _TEST_POSITION_EF = Cartesian3DPosition.from_dict(
     }
 )
 _TEST_VELOCITY_EF = Cartesian3DVelocity.from_dict(
-            {
-                "vx": random.uniform(-10, 10),
-                "vy": random.uniform(-10, 10),
-                "vz": random.uniform(-10, 10),
-                "frame": ReferenceFrame.ITRF,
-            }
-        )
+    {
+        "vx": random.uniform(-10, 10),
+        "vy": random.uniform(-10, 10),
+        "vz": random.uniform(-10, 10),
+        "frame": ReferenceFrame.ITRF,
+    }
+)
 # Example state in EF frame
-_TEST_STATE_EF = CartesianState(_TEST_TIME, _TEST_POSITION_EF, _TEST_VELOCITY_EF, ReferenceFrame.ITRF)
+_TEST_STATE_EF = CartesianState(
+    _TEST_TIME, _TEST_POSITION_EF, _TEST_VELOCITY_EF, ReferenceFrame.ITRF
+)
 
 
 class TestTransformPosition(unittest.TestCase):
@@ -117,7 +131,7 @@ class TestTransformPosition(unittest.TestCase):
                 position=_TEST_POSITION_I,
                 time=_TEST_TIME,
             )
-    
+
     def test_round_trip_transformation(self):
         """Test round-trip transformation from ICRF_EC to ITRF and back to ICRF_EC."""
         # Transform position from ICRF_EC to ITRF
@@ -129,7 +143,7 @@ class TestTransformPosition(unittest.TestCase):
         )
 
         # Transform position back from ITRF to ICRF_EC
-        transformed_back_to_ICRF_EC = transform_position(
+        transformed_back_to_icrf_ec = transform_position(
             from_frame=ReferenceFrame.ITRF,
             to_frame=ReferenceFrame.ICRF_EC,
             position=transformed_to_itrf,
@@ -139,12 +153,12 @@ class TestTransformPosition(unittest.TestCase):
         # Compare the original position to the resulting position
         np.testing.assert_allclose(
             _TEST_POSITION_I.to_numpy(),
-            transformed_back_to_ICRF_EC.to_numpy(),
+            transformed_back_to_icrf_ec.to_numpy(),
             atol=1e-6,
             err_msg="Round-trip transformation failed: ICRF_EC -> ITRF -> ICRF_EC",
         )
         self.assertEqual(
-            transformed_back_to_ICRF_EC.frame,
+            transformed_back_to_icrf_ec.frame,
             ReferenceFrame.ICRF_EC,
             "The resulting frame is not ICRF_EC after round-trip transformation.",
         )
@@ -152,7 +166,7 @@ class TestTransformPosition(unittest.TestCase):
     def test_transform_position_with_astropy(self):
         """Test transformation using astropy_transform for validation.
         It has been found that the results agree to about a meter accuracy.
-        This could be due to the differences in the ICRF (SPICE) and GCRF 
+        This could be due to the differences in the ICRF (SPICE) and GCRF
         (Astropy) frames."""
         # Validate the position transformation from ICRF_EC to ITRF
         is_valid = validate_transform_position_with_astropy(
@@ -171,7 +185,7 @@ class TestTransformPosition(unittest.TestCase):
             time=_TEST_TIME,
         )
         self.assertTrue(is_valid, "Transform position validation failed.")
-        
+
 
 class TestTransformState(unittest.TestCase):
     """Test the transform_state function."""
@@ -185,10 +199,12 @@ class TestTransformState(unittest.TestCase):
             time=_TEST_TIME,
         )
         np.testing.assert_array_equal(
-            transformed_state.position.to_list(), _TEST_STATE_I.position.to_list()
+            transformed_state.position.to_list(),
+            _TEST_STATE_I.position.to_list(),
         )
         np.testing.assert_array_equal(
-            transformed_state.velocity.to_list(), _TEST_STATE_I.velocity.to_list()
+            transformed_state.velocity.to_list(),
+            _TEST_STATE_I.velocity.to_list(),
         )
         self.assertEqual(transformed_state.frame, ReferenceFrame.ICRF_EC)
 
@@ -205,10 +221,16 @@ class TestTransformState(unittest.TestCase):
         self.assertEqual(len(transformed_state.position.to_list()), 3)
         self.assertEqual(len(transformed_state.velocity.to_list()), 3)
         self.assertTrue(
-            all(isinstance(coord, float) for coord in transformed_state.position.to_list())
+            all(
+                isinstance(coord, float)
+                for coord in transformed_state.position.to_list()
+            )
         )
         self.assertTrue(
-            all(isinstance(coord, float) for coord in transformed_state.velocity.to_list())
+            all(
+                isinstance(coord, float)
+                for coord in transformed_state.velocity.to_list()
+            )
         )
 
     def test_invalid_frame(self):
@@ -220,7 +242,7 @@ class TestTransformState(unittest.TestCase):
                 state=_TEST_STATE_I,
                 time=_TEST_TIME,
             )
-    
+
     def test_round_trip_transformation(self):
         """Test round-trip transformation from ICRF_EC to ITRF and back to ICRF_EC."""
         # Transform state from ICRF_EC to ITRF
@@ -268,7 +290,9 @@ class TestTransformState(unittest.TestCase):
             state=_TEST_STATE_I,
             time=_TEST_TIME,
         )
-        self.assertTrue(is_valid, "Transform state validation failed for ICRF_EC to ITRF.")
+        self.assertTrue(
+            is_valid, "Transform state validation failed for ICRF_EC to ITRF."
+        )
 
         # Validate the state transformation from ITRF to ICRF_EC
         is_valid = validate_transform_state_with_astropy(
@@ -277,7 +301,10 @@ class TestTransformState(unittest.TestCase):
             state=_TEST_STATE_EF,
             time=_TEST_TIME,
         )
-        self.assertTrue(is_valid, "Transform state validation failed for ITRF to ICRF_EC.")
+        self.assertTrue(
+            is_valid, "Transform state validation failed for ITRF to ICRF_EC."
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

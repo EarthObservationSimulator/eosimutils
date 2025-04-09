@@ -14,7 +14,7 @@ class TestTrajectory(unittest.TestCase):
         self.time = AbsoluteDates(np.array([0, 1, 2]))
         self.positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
         self.velocities = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
-        self.frame = ReferenceFrame("GCRF")
+        self.frame = ReferenceFrame("ICRF_EC")
         self.trajectory = Trajectory(self.time, [self.positions, self.velocities], self.frame)
 
     def test_resample(self):

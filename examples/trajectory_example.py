@@ -35,7 +35,7 @@ missing_end = int(0.5 * N)    # End of missing data (50% of the way through).
 position1[missing_start:missing_end, :] = np.nan
 velocity1[missing_start:missing_end, :] = np.nan
 
-traj1 = Trajectory(abs_dates, [position1, velocity1], ReferenceFrame.GCRF)
+traj1 = Trajectory(abs_dates, [position1, velocity1], ReferenceFrame.ICRF_EC)
 traj1_itrf = traj1.to_frame(ReferenceFrame.ITRF)  # Convert to ITRF frame.
 
 # Orbit 2: Nearly identical orbit with a small increase in radius.
@@ -50,7 +50,7 @@ vz2 = np.full_like(time_points, 0)
 
 position2 = np.column_stack((x2, y2, z2))
 velocity2 = np.column_stack((vx2, vy2, vz2))
-traj2 = Trajectory(abs_dates, [position2, velocity2], ReferenceFrame.GCRF)
+traj2 = Trajectory(abs_dates, [position2, velocity2], ReferenceFrame.ICRF_EC)
 
 # Compute the difference between the two trajectories
 traj_diff = traj1 - traj2

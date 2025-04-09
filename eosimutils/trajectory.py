@@ -38,7 +38,7 @@ def convert_frame(positions: np.ndarray, velocities: np.ndarray, times: np.ndarr
 
     if from_frame.to_string() == "ITRF":
         from_string = "J2000"
-    elif from_frame.to_string() == "GCRF":
+    elif from_frame.to_string() == "ICRF_EC":
         from_string = "ITRF93"
     else:
         raise NotImplementedError(
@@ -47,7 +47,7 @@ def convert_frame(positions: np.ndarray, velocities: np.ndarray, times: np.ndarr
 
     if to_frame.to_string() == "ITRF":
         to_string = "J2000"
-    elif to_frame.to_string() == "GCRF":
+    elif to_frame.to_string() == "ICRF_EC":
         to_string = "ITRF93"
     else:
         raise NotImplementedError(f"Conversion from {from_frame} to {to_frame} is not implemented.")

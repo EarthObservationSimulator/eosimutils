@@ -34,20 +34,46 @@ class EnumBase(str, Enum):
         """
         return str(self.value)
 
+    def __eq__(self, other) -> bool:
+        """Check equality between EnumBase and another object.
+
+        Args:
+            other (Any): The object to compare with.
+
+        Returns:
+            bool: True if the objects are equal, False otherwise.
+        """
+        if isinstance(other, EnumBase):
+            return self.value == other.value
+        if isinstance(other, str):
+            return self.value == other.upper()
+        return False
+
 
 class ReferenceFrame(EnumBase):
     """
     Enumeration of recognized Reference frames.
 
     Attributes:
-        GCRF (str): Geocentric Celestial Reference Frame. See:
-                    https://rhodesmill.org/skyfield/api-position.html#geocentric-position-relative-to-the-earth
 
-        ITRF (str): International Terrestrial Reference Frame. See:
+        ICRF_EC (str): Earth centered inertial frame aligned to the ICRF 
+                        (International Celestial Reference Frame) .
+
+                    The alignment of the ICRF is as defined in the SPICE toolkit.
+                    This is implemented with the J2000 frame defined in the SPICE toolkit.
+                    It seems that J2000 is same as ICRF.
+                    In SPICE the center of any inertial frame is ALWAYS the solar system barycenter.
+                    See Slide 12 and 7 in
+                    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/17_frames_and_coordinate_systems.pdf
+
+        ITRF (str): International Terrestrial Reference Frame.
+                    This is implemented with the ITRF93 frame defined in the SPICE toolkit.
+
+                    Also see:
                     https://rhodesmill.org/skyfield/api-framelib.html#skyfield.framelib.itrs
 
     """
 
-    GCRF = "GCRF"  # Geocentric Celestial Reference Frame (ECI)
+    ICRF_EC = "ICRF_EC"  # Geocentric Celestial Reference Frame (ECI)
     ITRF = "ITRF"  # International Terrestrial Reference Frame (ECEF)
     # TEME = "TEME"  # True Equator Mean Equinox

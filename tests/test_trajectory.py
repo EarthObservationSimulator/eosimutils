@@ -2,7 +2,7 @@
 
 import unittest
 import numpy as np
-from eosimutils.trajectory import Trajectory
+from eosimutils.trajectory import Trajectory, PositionSeries
 from eosimutils.time import AbsoluteDateArray, AbsoluteDate
 from eosimutils.base import ReferenceFrame
 from eosimutils.state import (
@@ -161,6 +161,97 @@ class TestTrajectory(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             Trajectory.from_list_of_cartesian_state(states)
+
+
+class TestPositionSeries:
+    """Unit tests for the PositionSeries class."""
+
+    def test_initialization(self):
+        """Test initialization of PositionSeries."""
+        time = AbsoluteDateArray(np.array([0.0, 1.0]))
+        data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        frame = ReferenceFrame.ICRF_EC
+        ps = PositionSeries(time, data, frame)
+        assert np.array_equal(ps.data[0], data)
+        assert ps.frame == frame
+
+    def test_resample(self):
+        """Test resampling of PositionSeries."""
+        time = AbsoluteDateArray(np.array([0.0, 1.0]))
+        data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        frame = ReferenceFrame.ICRF_EC
+        ps = PositionSeries(time, data, frame)
+        new_time = np.array([0.5])
+        resampled_ps = ps.resample(new_time)
+        assert resampled_ps.data[0].shape == (1, 3)
+
+    def test_remove_gaps(self):
+        """Test removing gaps (NaN values) from PositionSeries."""
+        time = AbsoluteDateArray(np.array([0.0, 1.0, 2.0]))
+        data = np.array(
+            [[1.0, 2.0, 3.0], [np.nan, np.nan, np.nan], [4.0, 5.0, 6.0]]
+        )
+        frame = ReferenceFrame.ICRF_EC
+        ps = PositionSeries(time, data, frame)
+        gapless_ps = ps.remove_gaps()
+        assert gapless_ps.data[0].shape == (2, 3)
+
+    def test_to_frame(self):
+        """Test frame conversion for PositionSeries."""
+        time = AbsoluteDateArray(np.array([0.0, 1.0]))
+        data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        frame = ReferenceFrame.ICRF_EC
+        ps = PositionSeries(time, data, frame)
+        converted_ps = ps.to_frame(ReferenceFrame.ITRF)
+        assert converted_ps.frame == ReferenceFrame.ITRF
+
+    def test_from_list_of_cartesian_position(self):
+        """Test creation of PositionSeries from a list of Cartesian3DPosition objects."""
+        positions = [
+            Cartesian3DPosition(1.0, 2.0, 3.0, ReferenceFrame.ICRF_EC),
+            Cartesian3DPosition(4.0, 5.0, 6.0, ReferenceFrame.ICRF_EC),
+        ]
+        for pos in positions:
+            pos.time = AbsoluteDateArray(
+                np.array([0.0, 1.0])
+            )  # Mock time attribute
+        ps = PositionSeries.from_list_of_cartesian_position(positions)
+        assert ps.data[0].shape == (2, 3)
+        assert ps.frame == ReferenceFrame.ICRF_EC
+
+    def test_arithmetic_operations(self):
+        """Test arithmetic operations between PositionSeries."""
+        time = AbsoluteDateArray(np.array([0.0, 1.0, 2.0]))
+        data1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+        data2 = np.array([[0.5, 1.5, 2.5], [3.5, 4.5, 5.5], [6.5, 7.5, 8.5]])
+        frame = ReferenceFrame.ICRF_EC
+
+        ps1 = PositionSeries(time, data1, frame)
+        ps2 = PositionSeries(time, data2, frame)
+
+        # Test addition
+        added = ps1 + ps2
+        np.testing.assert_allclose(added.data[0], data1 + data2)
+
+        # Test subtraction
+        subtracted = ps1 - ps2
+        np.testing.assert_allclose(subtracted.data[0], data1 - data2)
+
+        # Test multiplication
+        multiplied = ps1 * 2
+        np.testing.assert_allclose(multiplied.data[0], data1 * 2)
+
+        # Test division
+        divided = ps1 / 2
+        np.testing.assert_allclose(divided.data[0], data1 / 2)
+
+        # Test scalar addition
+        scalar_added = ps1 + 1
+        np.testing.assert_allclose(scalar_added.data[0], data1 + 1)
+
+        # Test scalar subtraction
+        scalar_subtracted = ps1 - 1
+        np.testing.assert_allclose(scalar_subtracted.data[0], data1 - 1)
 
 
 if __name__ == "__main__":

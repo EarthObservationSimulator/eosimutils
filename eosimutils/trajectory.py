@@ -75,6 +75,55 @@ def convert_frame(
     return new_positions, new_velocities
 
 
+def convert_frame_position(
+    positions: np.ndarray,
+    times: np.ndarray,
+    from_frame: ReferenceFrame,
+    to_frame: ReferenceFrame,
+) -> np.ndarray:
+    """
+    Converts position arrays from one reference frame to another using SPICE.
+
+    Args:
+        positions (np.ndarray): Array of shape (N, 3) representing positions in `from_frame`.
+        times (np.ndarray): Array of time samples corresponding to each position in ephemeris time.
+        from_frame (ReferenceFrame): The original reference frame.
+        to_frame (ReferenceFrame): The target reference frame.
+
+    Returns:
+        np.ndarray: Converted positions in `to_frame`.
+
+    Raises:
+        NotImplementedError: If the frame conversion is not implemented.
+    """
+    if from_frame == to_frame:
+        return positions
+
+    if from_frame.to_string() == "ITRF":
+        from_string = "J2000"
+    elif from_frame.to_string() == "ICRF_EC":
+        from_string = "ITRF93"
+    else:
+        raise NotImplementedError(
+            f"Frame conversion from {from_frame} to {to_frame} is not implemented."
+        )
+
+    if to_frame.to_string() == "ITRF":
+        to_string = "J2000"
+    elif to_frame.to_string() == "ICRF_EC":
+        to_string = "ITRF93"
+    else:
+        raise NotImplementedError(
+            f"Conversion from {from_frame} to {to_frame} is not implemented."
+        )
+
+    new_positions = np.empty_like(positions)
+    for i, t in enumerate(times):
+        t_matrix = spice.pxform(from_string, to_string, t)
+        new_positions[i] = t_matrix.dot(positions[i])
+    return new_positions
+
+
 class Trajectory(Timeseries):
     """
     Represents trajectory data as a timeseries with separate arrays for position and velocity.
@@ -406,3 +455,267 @@ class Trajectory(Timeseries):
 
         # Return a new Trajectory object
         return cls(time_obj, [positions, velocities], frame)
+
+
+class PositionSeries(Timeseries):
+    """
+    Represents position data as a timeseries with a single array for position.
+
+    Attributes:
+        time (AbsoluteDateArray): A vector of time samples.
+        data (np.ndarray): A single array containing position (Nx3).
+        headers (list): Labels for position components.
+        frame (ReferenceFrame): The reference frame for the position data.
+    """
+
+    def __init__(
+        self, time: "AbsoluteDateArray", data: np.ndarray, frame: ReferenceFrame
+    ):
+        """
+        Initializes a PositionSeries object.
+
+        Args:
+            time (AbsoluteDateArray): A vector of time samples.
+            data (np.ndarray): An array of shape (N, 3) representing positions.
+            frame (ReferenceFrame): The reference frame for the position data.
+
+        Raises:
+            ValueError: If `data` does not have shape (N, 3).
+        """
+        if data.shape[1] != 3:
+            raise ValueError(
+                "Data must be an array of shape (N, 3) for positions."
+            )
+        headers = ["pos_x", "pos_y", "pos_z"]
+        super().__init__(time, [data], headers=[headers])
+        self.frame = frame
+        load_spice_kernels()  # Load SPICE kernels for frame conversion
+
+    def resample(
+        self, new_time: np.ndarray, method: str = "linear"
+    ) -> "PositionSeries":
+        """
+        Resamples the position data to a new time base.
+
+        Args:
+            new_time (np.ndarray): The new time samples.
+            method (str): The interpolation method to use. Defaults to "linear".
+
+        Returns:
+            PositionSeries: A new PositionSeries object with resampled data.
+        """
+        new_time_obj, new_data, _ = self._resample_data(new_time, method)
+        return PositionSeries(new_time_obj, new_data[0], self.frame)
+
+    def remove_gaps(self) -> "PositionSeries":
+        """
+        Removes gaps (NaN values) from the position data.
+
+        Returns:
+            PositionSeries: A new PositionSeries object with gaps removed.
+        """
+        new_time, new_data, _ = self._remove_gaps_data()
+        return PositionSeries(new_time, new_data[0], self.frame)
+
+    def to_frame(self, to_frame: ReferenceFrame) -> "PositionSeries":
+        """
+        Converts the position data's reference frame to a new frame.
+
+        Args:
+            to_frame (ReferenceFrame): The target reference frame.
+
+        Returns:
+            PositionSeries: A new PositionSeries object in the target frame.
+        """
+        if self.frame == to_frame:
+            return self
+        pos = convert_frame_position(
+            self.data[0],
+            self.time.et,
+            self.frame,
+            to_frame,
+        )
+        return PositionSeries(
+            AbsoluteDateArray(self.time.et.copy()), pos, to_frame
+        )
+
+    def to_dict(self) -> dict:
+        """
+        Serializes the PositionSeries object to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the PositionSeries object.
+        """
+        return {
+            "time": self.time.to_dict(),
+            "data": self.data[0].tolist(),
+            "frame": self.frame.to_string(),
+            "headers": self.headers[0],
+        }
+
+    @classmethod
+    def from_dict(cls, dct: dict) -> "PositionSeries":
+        """
+        Deserializes a PositionSeries object from a dictionary.
+
+        Args:
+            dct (dict): A dictionary representation of a PositionSeries object.
+
+        Returns:
+            PositionSeries: The deserialized PositionSeries object.
+        """
+        time = AbsoluteDateArray.from_dict(dct["time"])
+        data_array = np.array(dct["data"])
+        frame = ReferenceFrame(dct["frame"])
+        return cls(time, data_array, frame)
+
+    @classmethod
+    def constant_position(
+        cls, t1: float, t2: float, position: np.ndarray, frame: ReferenceFrame
+    ) -> "PositionSeries":
+        """
+        Creates a constant position series.
+
+        Args:
+            t1 (float): The start time.
+            t2 (float): The end time.
+            position (np.ndarray): A 3-element array representing the position.
+            frame (ReferenceFrame): The reference frame for the position data.
+
+        Returns:
+            PositionSeries: A new PositionSeries object with constant position.
+
+        Raises:
+            ValueError: If `position` is not a 3-element array.
+        """
+        if position.shape != (3,):
+            raise ValueError("position must be a 3-element array.")
+        time_obj = AbsoluteDateArray(np.array([t1, t2]))
+        pos_data = np.tile(position, (2, 1))
+        return cls(time_obj, pos_data, frame)
+
+    @classmethod
+    def from_list_of_cartesian_position(
+        cls, positions: list
+    ) -> "PositionSeries":
+        """
+        Creates a PositionSeries object from a list of Cartesian3DPosition objects.
+
+        Args:
+            positions (list): A list of Cartesian3DPosition objects.
+
+        Returns:
+            PositionSeries: A new PositionSeries object.
+
+        Raises:
+            ValueError: If the list is empty or if the frames of the Cartesian3DPosition objects
+            do not match.
+        """
+        if not positions:
+            raise ValueError(
+                "The list of Cartesian3DPosition objects cannot be empty."
+            )
+
+        # Extract the frame from the first position and ensure all frames match
+        frame = positions[0].frame
+        if any(pos.frame != frame for pos in positions):
+            raise ValueError(
+                "All Cartesian3DPosition objects must have the same reference frame."
+            )
+
+        # Extract time and position data
+        times = np.array([pos.time.ephemeris_time for pos in positions])
+        pos_data = np.array([pos.to_numpy() for pos in positions])
+
+        # Create an AbsoluteDateArray for the time
+        time_obj = AbsoluteDateArray(times)
+
+        # Return a new PositionSeries object
+        return cls(time_obj, pos_data, frame)
+
+    def _arithmetic_op(self, other, op, interp_method: str = "linear"):
+        """
+        Perform arithmetic operations (e.g., addition, subtraction) between position series
+        or with a scalar.
+
+        Args:
+            other (PositionSeries or scalar): The operand for the operation.
+            op (callable): The operation to perform (e.g., addition, subtraction).
+            interp_method (str): The interpolation method to use. Defaults to "linear".
+
+        Returns:
+            PositionSeries: A new PositionSeries object with the result of the operation.
+
+        Raises:
+            TypeError: If the operand is neither a PositionSeries nor a scalar.
+        """
+        if np.isscalar(other):
+            # Delegate scalar operations to the parent class.
+            return super()._arithmetic_op(other, op)
+        elif isinstance(other, PositionSeries):
+            # Resample other onto self.time.et (using the underlying ephemeris times).
+            other_resamp = other.resample(self.time.et, method=interp_method)
+            # If frames do not match, attempt frame conversion.
+            if self.frame != other.frame:
+                pos_conv = convert_frame_position(
+                    other_resamp.data[0],
+                    self.time.et,
+                    other.frame,
+                    self.frame,
+                )
+                other_resamp_data = pos_conv
+            else:
+                other_resamp_data = other_resamp.data[0]
+            # Perform vectorized operation for the data array.
+            new_data = [op(self.data[0], other_resamp_data)]
+            return PositionSeries(self.time, new_data[0], self.frame)
+        else:
+            raise TypeError("Operand must be a PositionSeries or a scalar.")
+
+    def __add__(self, other):
+        """
+        Adds another PositionSeries or scalar to this PositionSeries.
+
+        Args:
+            other (PositionSeries or scalar): The operand for addition.
+
+        Returns:
+            PositionSeries: A new PositionSeries object with the result of the addition.
+        """
+        return self._arithmetic_op(other, lambda a, b: a + b)
+
+    def __sub__(self, other):
+        """
+        Subtracts another PositionSeries or scalar from this PositionSeries.
+
+        Args:
+            other (PositionSeries or scalar): The operand for subtraction.
+
+        Returns:
+            PositionSeries: A new PositionSeries object with the result of the subtraction.
+        """
+        return self._arithmetic_op(other, lambda a, b: a - b)
+
+    def __mul__(self, other):
+        """
+        Multiplies this PositionSeries by another PositionSeries or scalar.
+
+        Args:
+            other (PositionSeries or scalar): The operand for multiplication.
+
+        Returns:
+            PositionSeries: A new PositionSeries object with the result of the multiplication.
+        """
+        return self._arithmetic_op(other, lambda a, b: a * b)
+
+    def __truediv__(self, other):
+        """
+        Divides this PositionSeries by another PositionSeries or scalar.
+
+        Args:
+            other (PositionSeries or scalar): The operand for division.
+
+        Returns:
+            PositionSeries: A new PositionSeries object with the result of the division.
+        """
+        return self._arithmetic_op(other, lambda a, b: a / b)

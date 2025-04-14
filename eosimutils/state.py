@@ -222,7 +222,7 @@ class GeographicPosition:
     """Handles geographic position information using Skyfield.
     The geographic position is managed internally using the Skyfield
     GeographicPosition object and is referenced to the WGS84 ellipsoid.
-    TODO: Revise to implement with SPICE: 
+    TODO: Revise to implement with SPICE:
         https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/xfmsta_c.html
     """
 

@@ -1,12 +1,22 @@
 """Module for plotting timeseries data."""
+
 import matplotlib.pyplot as plt
 
-def plot_timeseries(ts, cols: list = None, unused_colors: list = None, title: str = None,
-                      xlabel: str = "Time", ylabel: str = "Values", background: str = "white",
-                      grid: bool = True, **kwargs):
+
+def plot_timeseries(
+    ts,
+    cols: list = None,
+    unused_colors: list = None,
+    title: str = None,
+    xlabel: str = "Time",
+    ylabel: str = "Values",
+    background: str = "white",
+    grid: bool = True,
+    **kwargs
+):
     """
     Plots the timeseries data.
-    
+
     Args:
         ts (Timeseries): The timeseries object to plot.
         cols (list, optional): List of column indices to plot. If None, all columns are plotted.
@@ -28,12 +38,14 @@ def plot_timeseries(ts, cols: list = None, unused_colors: list = None, title: st
         if isinstance(header, list):  # Vector data
             for i, subheader in enumerate(header):
                 if cols is None or i + col_offset in cols:
-                    line, = ax.plot(ts.time.et, arr[:, i], label=subheader, **kwargs)
+                    (line,) = ax.plot(
+                        ts.time.et, arr[:, i], label=subheader, **kwargs
+                    )
                     lines.append(line)
             col_offset += len(header)
         else:  # Scalar data
             if cols is None or col_offset in cols:
-                line, = ax.plot(ts.time.et, arr, label=header, **kwargs)
+                (line,) = ax.plot(ts.time.et, arr, label=header, **kwargs)
                 lines.append(line)
             col_offset += 1
 

@@ -207,7 +207,7 @@ class AbsoluteDate:
         return self.ephemeris_time == value.ephemeris_time
 
 
-class AbsoluteDates:
+class AbsoluteDateArray:
     """
     Vectorized representation of time in Ephemeris Time (ET).
 
@@ -219,10 +219,11 @@ class AbsoluteDates:
     Attributes:
         et (np.ndarray): 1D numpy array of ephemeris times.
     """
+
     def __init__(self, et: np.ndarray) -> None:
         """
-        Constructor for the AbsoluteDates class.
-        
+        Constructor for the AbsoluteDateArray class.
+
         Args:
             et (np.ndarray): 1D array of ephemeris times.
         """
@@ -233,9 +234,9 @@ class AbsoluteDates:
         self.et = et
 
     @classmethod
-    def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDates":
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDateArray":
         """
-        Construct an AbsoluteDates object from a dictionary.
+        Construct an AbsoluteDateArray object from a dictionary.
 
         Args:
             dict_in (dict): Dictionary with the time information.
@@ -254,7 +255,7 @@ class AbsoluteDates:
                 - "times" (list of float): List of Julian Dates.
 
         Returns:
-            AbsoluteDates: AbsoluteDates object.
+            AbsoluteDateArray: AbsoluteDateArray object.
         """
         time_scale: TimeScale = TimeScale.get(dict_in["time_scale"])
         time_format: TimeFormat = TimeFormat.get(dict_in["time_format"])
@@ -303,7 +304,9 @@ class AbsoluteDates:
         years, months, days, hours, minutes, seconds = [], [], [], [], [], []
         for t in self.et:
             # Get the UTC string using AbsoluteDate conversion for consistency.
-            utc_string = AbsoluteDate(t).to_dict("GREGORIAN_DATE", "UTC")["calendar_date"]
+            utc_string = AbsoluteDate(t).to_dict("GREGORIAN_DATE", "UTC")[
+                "calendar_date"
+            ]
             date_part, time_part = utc_string.split("T")
             y, m, d = map(int, date_part.split("-"))
             h, mi = map(int, time_part.split(":")[:2])
@@ -319,14 +322,14 @@ class AbsoluteDates:
     def to_dict(
         self,
         time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
-        time_scale: Union[str, EnumBase] = "UTC"
+        time_scale: Union[str, EnumBase] = "UTC",
     ) -> Dict[str, Any]:
         """
-        Convert the AbsoluteDates object to a dictionary. For each ephemeris time, an ISO UTC string 
-        is generated (if Gregorian) or a Julian Date is computed.
+        Convert the AbsoluteDateArray object to a dictionary. For each ephemeris time,
+        an ISO UTC string is generated (if Gregorian) or a Julian Date is computed.
 
         Args:
-            time_format (str or EnumBase): The desired time format. Options are "GREGORIAN_DATE" 
+            time_format (str or EnumBase): The desired time format. Options are "GREGORIAN_DATE"
                                            or "JULIAN_DATE". Default is "GREGORIAN_DATE".
             time_scale (str or EnumBase): The time scale to use (e.g., "UTC"). Default is "UTC".
 
@@ -350,5 +353,5 @@ class AbsoluteDates:
         return {
             "time_format": str(time_format),
             "times": times_list,
-            "time_scale": str(time_scale)
+            "time_scale": str(time_scale),
         }

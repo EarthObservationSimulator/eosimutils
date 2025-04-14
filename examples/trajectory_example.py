@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from eosimutils.trajectory import Trajectory
 from eosimutils.base import ReferenceFrame
 from eosimutils.plotting import plot_timeseries
-from eosimutils.time import AbsoluteDates  # New import
+from eosimutils.time import AbsoluteDateArray
 
 # Generate two sample trajectories representing circular orbits.
 
@@ -16,7 +16,7 @@ omega = 2 * np.pi / period  # angular velocity in rad/s.
 # Create an array of time samples.
 N = 200
 time_points = np.linspace(0, period, N)
-abs_dates = AbsoluteDates(time_points)
+abs_dates = AbsoluteDateArray(time_points)
 
 # Orbit 1: Circular orbit in the xy-plane.
 x1 = R * np.cos(omega * time_points)

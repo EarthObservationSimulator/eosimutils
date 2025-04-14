@@ -1,4 +1,5 @@
 """Utility functions to help with the tests."""
+
 import numpy as np
 from typing import Union
 
@@ -91,7 +92,7 @@ def validate_transform_state_with_astropy(
         time (AbsoluteDate): The time of the transformation.
 
     Returns:
-        bool: True if the transform_state output matches astropy_transform for both 
+        bool: True if the transform_state output matches astropy_transform for both
             position and velocity, False otherwise.
     """
     # Use eosimutils transform_state to get the transformed state

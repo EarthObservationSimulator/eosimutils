@@ -56,7 +56,7 @@ class ReferenceFrame(EnumBase):
 
     Attributes:
 
-        ICRF_EC (str): Earth centered inertial frame aligned to the ICRF 
+        ICRF_EC (str): Earth centered inertial frame aligned to the ICRF
                         (International Celestial Reference Frame) .
 
                     The alignment of the ICRF is as defined in the SPICE toolkit.

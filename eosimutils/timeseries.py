@@ -1,5 +1,7 @@
 """Module for handling timeseries data."""
 
+# pylint: disable=protected-access
+
 import numpy as np
 from scipy.interpolate import interp1d
 from .time import AbsoluteDateArray
@@ -251,3 +253,82 @@ class Timeseries:
         instance = cls(time_instance, reconstructed_data, headers)
         instance.interpolator = dct.get("interpolator", "linear")
         return instance
+
+    def _arithmetic_op(self, other, op):
+        """
+        Perform arithmetic operations (e.g., addition, subtraction) between timeseries or
+        with a scalar.
+
+        Args:
+            other (Timeseries or scalar): The operand for the operation.
+            op (callable): The operation to perform (e.g., addition, subtraction).
+
+        Returns:
+            Timeseries: A new Timeseries object with the result of the operation.
+
+        Raises:
+            TypeError: If the operand is neither a Timeseries nor a scalar.
+        """
+        if np.isscalar(other):
+            # For scalar operations, the arithmetic naturally propagates NaNs.
+            new_data = [op(arr, other) for arr in self.data]
+            return Timeseries(self.time, new_data, self.headers)
+        elif isinstance(other, Timeseries):
+            # Resample other onto self.time.et (using the underlying ephemeris times).
+            other_resamp = other._resample_data(self.time.et)[1]
+            # Perform vectorized operation for each data array.
+            new_data = [
+                op(arr, other_arr)
+                for arr, other_arr in zip(self.data, other_resamp)
+            ]
+            return Timeseries(self.time, new_data, self.headers)
+        else:
+            raise TypeError("Operand must be a Timeseries or a scalar.")
+
+    def __add__(self, other):
+        """
+        Adds another Timeseries or scalar to this Timeseries.
+
+        Args:
+            other (Timeseries or scalar): The operand for addition.
+
+        Returns:
+            Timeseries: A new Timeseries object with the result of the addition.
+        """
+        return self._arithmetic_op(other, lambda a, b: a + b)
+
+    def __sub__(self, other):
+        """
+        Subtracts another Timeseries or scalar from this Timeseries.
+
+        Args:
+            other (Timeseries or scalar): The operand for subtraction.
+
+        Returns:
+            Timeseries: A new Timeseries object with the result of the subtraction.
+        """
+        return self._arithmetic_op(other, lambda a, b: a - b)
+
+    def __mul__(self, other):
+        """
+        Multiplies this Timeseries by another Timeseries or scalar.
+
+        Args:
+            other (Timeseries or scalar): The operand for multiplication.
+
+        Returns:
+            Timeseries: A new Timeseries object with the result of the multiplication.
+        """
+        return self._arithmetic_op(other, lambda a, b: a * b)
+
+    def __truediv__(self, other):
+        """
+        Divides this Timeseries by another Timeseries or scalar.
+
+        Args:
+            other (Timeseries or scalar): The operand for division.
+
+        Returns:
+            Timeseries: A new Timeseries object with the result of the division.
+        """
+        return self._arithmetic_op(other, lambda a, b: a / b)

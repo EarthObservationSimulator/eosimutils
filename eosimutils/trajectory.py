@@ -141,20 +141,12 @@ class Trajectory(Timeseries):
         new_time, new_data, _ = self._remove_gaps_data()
         return Trajectory(new_time, new_data, self.frame)
 
-    def _arithmetic_op(
-        self, other, op, interp_method: str = "linear"
-    ) -> "Trajectory":
+    def _arithmetic_op(self, other, op, interp_method: str = "linear"):
         """
-        Helper for arithmetic operations (e.g., subtraction) between trajectories or with a scalar.
+        Perform arithmetic operations (e.g., addition, subtraction) between trajectories
+        or with a scalar.
 
-        The operation is performed item-by-item on the data arrays. When performing
-        an operation between two Trajectories, 'other' is resampled onto self.time so that
-        the result has the same time base as self. If either self or other has NaN for a given
-        element, the result will be NaN.
-
-        Intended logic: For a binary operation (e.g., traj1 - traj2), the result is computed at
-        the timepoints of traj1. Even if traj1 has valid data at some time, if traj2 is
-        missing data (NaN) at that time,the result for that channel will be NaN.
+        This method ensures that reference frames are compatible before performing the operation.
 
         Args:
             other (Trajectory or scalar): The operand for the operation.
@@ -168,39 +160,29 @@ class Trajectory(Timeseries):
             TypeError: If the operand is neither a Trajectory nor a scalar.
         """
         if np.isscalar(other):
-            # For scalar operations, the arithmetic naturally propagates NaNs.
-            new_data = [op(arr, other) for arr in self.data]
-            return Trajectory(
-                AbsoluteDateArray(self.time.et.copy()), new_data, self.frame
-            )
+            # Delegate scalar operations to the parent class.
+            return super()._arithmetic_op(other, op)
         elif isinstance(other, Trajectory):
             # Resample other onto self.time.et (using the underlying ephemeris times).
             other_resamp = other.resample(self.time.et, method=interp_method)
             # If frames do not match, attempt frame conversion.
             if self.frame != other.frame:
                 pos_conv, vel_conv = convert_frame(
-                    self.data[0],
-                    self.data[1],
+                    other_resamp.data[0],
+                    other_resamp.data[1],
                     self.time.et,
-                    self.frame,
                     other.frame,
+                    self.frame,
                 )
-                conv_data = [pos_conv, vel_conv]
-                result_frame = other.frame
+                other_resamp_data = [pos_conv, vel_conv]
             else:
-                conv_data = self.data
-                result_frame = self.frame
+                other_resamp_data = other_resamp.data
             # Perform vectorized operation for each data array.
-            new_data = []
-            for idx in range(len(conv_data)):
-                arr = conv_data[idx]
-                other_arr = other_resamp.data[idx]
-                # Numpy op will propagate nans
-                new_arr = op(arr, other_arr)
-                new_data.append(new_arr)
-            return Trajectory(
-                AbsoluteDateArray(self.time.et.copy()), new_data, result_frame
-            )
+            new_data = [
+                op(arr, other_arr)
+                for arr, other_arr in zip(self.data, other_resamp_data)
+            ]
+            return Trajectory(self.time, new_data, self.frame)
         else:
             raise TypeError("Operand must be a Trajectory or a scalar.")
 

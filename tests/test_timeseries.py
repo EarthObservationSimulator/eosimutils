@@ -19,12 +19,12 @@ class TestTimeseries(unittest.TestCase):
     def test_resample_data(self):
         """Test the resampling of data with interpolation."""
         ts = Timeseries(self.time, self.data)
-        new_time = np.array([0.5, 1.5, 2.5])
+        new_time = np.array([0.5, 1.5, 2.5, 4.5])
         resampled_time, resampled_data, _ = ts._resample_data(new_time)
 
         np.testing.assert_allclose(resampled_time.et, new_time)
         np.testing.assert_allclose(
-            resampled_data[0], [1.5, np.nan, np.nan], equal_nan=True
+            resampled_data[0], [1.5, np.nan, np.nan, np.nan], equal_nan=True
         )
 
     def test_remove_gaps_data(self):

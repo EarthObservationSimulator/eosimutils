@@ -3,8 +3,13 @@
 import unittest
 import numpy as np
 from eosimutils.trajectory import Trajectory
-from eosimutils.time import AbsoluteDateArray
+from eosimutils.time import AbsoluteDateArray, AbsoluteDate
 from eosimutils.base import ReferenceFrame
+from eosimutils.state import (
+    CartesianState,
+    Cartesian3DPosition,
+    Cartesian3DVelocity,
+)
 
 
 class TestTrajectory(unittest.TestCase):
@@ -113,6 +118,49 @@ class TestTrajectory(unittest.TestCase):
         for d1, d2 in zip(deserialized.data, self.trajectory.data):
             np.testing.assert_allclose(d1, d2)
         self.assertEqual(deserialized.frame, self.trajectory.frame)
+
+    def test_from_list_of_cartesian_state(self):
+        """Test creation of a Trajectory from a list of CartesianState objects."""
+        frame = ReferenceFrame("ICRF_EC")
+        states = [
+            CartesianState(
+                time=AbsoluteDate(0),
+                position=Cartesian3DPosition(0, 0, 0, frame),
+                velocity=Cartesian3DVelocity(1, 1, 1, frame),
+                frame=frame,
+            ),
+            CartesianState(
+                time=AbsoluteDate(1),
+                position=Cartesian3DPosition(1, 1, 1, frame),
+                velocity=Cartesian3DVelocity(2, 2, 2, frame),
+                frame=frame,
+            ),
+            CartesianState(
+                time=AbsoluteDate(2),
+                position=Cartesian3DPosition(2, 2, 2, frame),
+                velocity=Cartesian3DVelocity(3, 3, 3, frame),
+                frame=frame,
+            ),
+        ]
+        trajectory = Trajectory.from_list_of_cartesian_state(states)
+        np.testing.assert_array_equal(trajectory.time.et, [0, 1, 2])
+        np.testing.assert_array_equal(
+            trajectory.data[0], [[0, 0, 0], [1, 1, 1], [2, 2, 2]]
+        )
+        np.testing.assert_array_equal(
+            trajectory.data[1], [[1, 1, 1], [2, 2, 2], [3, 3, 3]]
+        )
+        self.assertEqual(trajectory.frame, frame)
+
+        # Test for mismatched frames
+        states[1] = CartesianState(
+            time=AbsoluteDate(1),
+            position=Cartesian3DPosition(1, 1, 1, ReferenceFrame("ITRF")),
+            velocity=Cartesian3DVelocity(2, 2, 2, ReferenceFrame("ITRF")),
+            frame=ReferenceFrame("ITRF"),
+        )
+        with self.assertRaises(ValueError):
+            Trajectory.from_list_of_cartesian_state(states)
 
 
 if __name__ == "__main__":

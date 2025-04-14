@@ -290,11 +290,32 @@ class Trajectory(Timeseries):
         """
         Deserializes a Trajectory object from a dictionary.
 
+        The dictionary must contain the following keys:
+            - "time": A dictionary representing the AbsoluteDateArray.
+            - "data": A list of two arrays:
+                - The first array represents positions (Nx3).
+                - The second array represents velocities (Nx3).
+            - "frame": A string representing the reference frame.
+            - "headers": A nested list of labels for position and velocity.
+
         Args:
             dct (dict): A dictionary representation of a Trajectory object.
 
         Returns:
             Trajectory: The deserialized Trajectory object.
+
+        Examples:
+            dct = {
+                "time": {"et": [0.0, 1.0]},
+                "data": [
+                    [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],  # Positions
+                    [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]   # Velocities
+                ],
+                "frame": "J2000",
+                "headers": [["pos_x", "pos_y", "pos_z"], ["vel_x", "vel_y", "vel_z"]]
+            }
+
+            trajectory = Trajectory.from_dict(dct)
         """
         time = AbsoluteDateArray.from_dict(dct["time"])
         data_arrays = [np.array(arr) for arr in dct["data"]]
@@ -365,3 +386,41 @@ class Trajectory(Timeseries):
             )
         )
         return cls(time_obj, [traj[:, :3], traj[:, 3:]], frame)
+
+    @classmethod
+    def from_list_of_cartesian_state(cls, states: list) -> "Trajectory":
+        """
+        Creates a Trajectory object from a list of CartesianState objects.
+
+        Args:
+            states (list): A list of CartesianState objects.
+
+        Returns:
+            Trajectory: A new Trajectory object.
+
+        Raises:
+            ValueError: If the list is empty or if the frames of the CartesianState objects do not
+            match.
+        """
+        if not states:
+            raise ValueError(
+                "The list of CartesianState objects cannot be empty."
+            )
+
+        # Extract the frame from the first state and ensure all frames match
+        frame = states[0].frame
+        if any(state.frame != frame for state in states):
+            raise ValueError(
+                "All CartesianState objects must have the same reference frame."
+            )
+
+        # Extract time, position, and velocity data
+        times = np.array([state.time.ephemeris_time for state in states])
+        positions = np.array([state.position.to_numpy() for state in states])
+        velocities = np.array([state.velocity.to_numpy() for state in states])
+
+        # Create an AbsoluteDateArray for the time
+        time_obj = AbsoluteDateArray(times)
+
+        # Return a new Trajectory object
+        return cls(time_obj, [positions, velocities], frame)

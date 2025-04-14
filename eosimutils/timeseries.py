@@ -15,7 +15,7 @@ def _group_contiguous(indices):
     valid (non-NaN) indices into contiguous segments, interpolation is applied only over
     stretches of valid data so that gaps (NaN regions) remain unfilled.
 
-    Parameters:
+    Args:
         indices (list of int): A list of numerical indices.
 
     Returns:
@@ -50,12 +50,18 @@ class Timeseries:
         interpolator: str = "linear",
     ):
         """
-        Constructor for Timeseries.
+        Initialize a Timeseries instance.
 
         Args:
             time (AbsoluteDateArray): Time values provided as an AbsoluteDateArray object.
             data (list): List of numpy arrays.
-            headers (list, optional): List of headers for the data arrays.
+            headers (list, optional): List of headers for the data arrays. Defaults to None.
+            interpolator (str, optional): Interpolation method. Defaults to "linear".
+
+        Raises:
+            TypeError: If `time` is not an AbsoluteDateArray object.
+            ValueError: If data arrays do not match the length of `time`.
+            ValueError: If the number of headers does not match the number of data arrays.
         """
         if not isinstance(time, AbsoluteDateArray):
             raise TypeError("time must be an AbsoluteDateArray object.")
@@ -86,8 +92,19 @@ class Timeseries:
 
     def _resample_data(self, new_time: np.ndarray, method: str = "linear"):
         """
-        Returns new time and data arrays based on interpolation over contiguous segments.
+        Resample data arrays based on interpolation over contiguous segments.
+
         If a new time point falls outside a contiguous block of valid data, it remains NaN.
+
+        Args:
+            new_time (np.ndarray): New time points for resampling.
+            method (str, optional): Interpolation method. Defaults to "linear".
+
+        Returns:
+            tuple: A tuple containing:
+                - AbsoluteDateArray: Resampled time array.
+                - list: Resampled data arrays.
+                - list: Headers of the data arrays.
         """
         new_data = []
         original_time = self.time.et  # use underlying ephemeris times
@@ -157,8 +174,16 @@ class Timeseries:
 
     def _remove_gaps_data(self):
         """
-        Helper function that returns time and data arrays with leading and trailing
-        gaps (samples with NaN in the first element) removed.
+        Remove leading and trailing gaps (NaN values) from time and data arrays.
+
+        This function identifies valid (non-NaN) data points and trims the time and data arrays
+        to exclude any leading or trailing gaps.
+
+        Returns:
+            tuple: A tuple containing:
+                - AbsoluteDateArray: Time array with gaps removed.
+                - list: Data arrays with gaps removed.
+                - list: Headers of the data arrays.
         """
         original_time = self.time.et
         if self.data[0].ndim == 1:
@@ -183,7 +208,7 @@ class Timeseries:
         """
         Serialize the Timeseries instance into a dictionary.
 
-        Converts the AbsoluteDateArray time object via its own to_dict method,
+        Converts the AbsoluteDateArray time object via its own `to_dict` method,
         transforms each numpy data array to a native Python list for JSON compatibility,
         and retains the headers as provided.
 
@@ -206,7 +231,7 @@ class Timeseries:
         """
         Deserialize a dictionary into a new Timeseries instance.
 
-        Reconstructs the AbsoluteDateArray object using its from_dict method,
+        Reconstructs the AbsoluteDateArray object using its `from_dict` method,
         converts each nested list in the data back to a numpy array,
         and applies headers accordingly.
 

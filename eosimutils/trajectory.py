@@ -24,20 +24,22 @@ def convert_frame(
     to_frame: ReferenceFrame,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Convert the position and velocity arrays from one reference frame to another using SPICE.
+    Converts position and velocity arrays from one reference frame to another using SPICE.
 
     Args:
-        positions (np.ndarray): Array of shape (N,3) representing positions in from_frame.
-        velocities (np.ndarray): Array of shape (N,3) representing velocities in from_frame.
-        times (np.ndarray): Time samples corresponding to each state in et.
-        from_frame (ReferenceFrame): Original reference frame.
-        to_frame (ReferenceFrame): Target reference frame.
+        positions (np.ndarray): Array of shape (N, 3) representing positions in `from_frame`.
+        velocities (np.ndarray): Array of shape (N, 3) representing velocities in `from_frame`.
+        times (np.ndarray): Array of time samples corresponding to each state in ephemeris time.
+        from_frame (ReferenceFrame): The original reference frame.
+        to_frame (ReferenceFrame): The target reference frame.
 
     Returns:
-        tuple: Two numpy arrays (positions, velocities) converted to to_frame.
+        tuple: A tuple containing two numpy arrays:
+            - positions (np.ndarray): Converted positions in `to_frame`.
+            - velocities (np.ndarray): Converted velocities in `to_frame`.
 
     Raises:
-        NotImplementedError: When frame conversion is not implemented.
+        NotImplementedError: If the frame conversion is not implemented.
     """
     if from_frame == to_frame:
         return positions, velocities
@@ -78,8 +80,8 @@ class Trajectory(Timeseries):
     Represents trajectory data as a timeseries with separate arrays for position and velocity.
 
     Attributes:
-        time (AbsoluteDateArray): Contains a vector of time samples.
-        data (list): List containing position (Nx3) and velocity (Nx3) arrays.
+        time (AbsoluteDateArray): A vector of time samples.
+        data (list): A list containing position (Nx3) and velocity (Nx3) arrays.
         headers (list): Nested labels for position and velocity.
         frame (ReferenceFrame): The reference frame for the trajectory.
     """
@@ -87,6 +89,19 @@ class Trajectory(Timeseries):
     def __init__(
         self, time: "AbsoluteDateArray", data: list, frame: ReferenceFrame
     ):
+        """
+        Initializes a Trajectory object.
+
+        Args:
+            time (AbsoluteDateArray): A vector of time samples.
+            data (list): A list containing two arrays:
+                - Position array of shape (N, 3).
+                - Velocity array of shape (N, 3).
+            frame (ReferenceFrame): The reference frame for the trajectory.
+
+        Raises:
+            ValueError: If `data` does not contain two arrays of shape (N, 3).
+        """
         if len(data) != 2 or data[0].shape[1] != 3 or data[1].shape[1] != 3:
             raise ValueError(
                 "Data must be a list containing two arrays: pos (Nx3) and vel (Nx3)."
@@ -99,10 +114,30 @@ class Trajectory(Timeseries):
     def resample(
         self, new_time: np.ndarray, method: str = "linear"
     ) -> "Trajectory":
+        """
+        Resamples the trajectory to a new time base.
+
+        This method works by interpolating the data arrays to the new time samples.
+        It considers the position and velocity seperately (i.e., velocity is not used
+        to help interpolate posiiton).
+
+        Args:
+            new_time (np.ndarray): The new time samples.
+            method (str): The interpolation method to use. Defaults to "linear".
+
+        Returns:
+            Trajectory: A new Trajectory object with resampled data.
+        """
         new_time_obj, new_data, _ = self._resample_data(new_time, method)
         return Trajectory(new_time_obj, new_data, self.frame)
 
     def remove_gaps(self) -> "Trajectory":
+        """
+        Removes gaps (NaN values) from the trajectory.
+
+        Returns:
+            Trajectory: A new Trajectory object with gaps removed.
+        """
         new_time, new_data, _ = self._remove_gaps_data()
         return Trajectory(new_time, new_data, self.frame)
 
@@ -112,7 +147,7 @@ class Trajectory(Timeseries):
         """
         Helper for arithmetic operations (e.g., subtraction) between trajectories or with a scalar.
 
-        The operation is performed channel-by-channel on the data arrays. When performing
+        The operation is performed item-by-item on the data arrays. When performing
         an operation between two Trajectories, 'other' is resampled onto self.time so that
         the result has the same time base as self. If either self or other has NaN for a given
         element, the result will be NaN.
@@ -120,6 +155,17 @@ class Trajectory(Timeseries):
         Intended logic: For a binary operation (e.g., traj1 - traj2), the result is computed at
         the timepoints of traj1. Even if traj1 has valid data at some time, if traj2 is
         missing data (NaN) at that time,the result for that channel will be NaN.
+
+        Args:
+            other (Trajectory or scalar): The operand for the operation.
+            op (callable): The operation to perform (e.g., addition, subtraction).
+            interp_method (str): The interpolation method to use. Defaults to "linear".
+
+        Returns:
+            Trajectory: A new Trajectory object with the result of the operation.
+
+        Raises:
+            TypeError: If the operand is neither a Trajectory nor a scalar.
         """
         if np.isscalar(other):
             # For scalar operations, the arithmetic naturally propagates NaNs.
@@ -159,20 +205,62 @@ class Trajectory(Timeseries):
             raise TypeError("Operand must be a Trajectory or a scalar.")
 
     def __add__(self, other):
+        """
+        Adds another Trajectory or scalar to this Trajectory.
+
+        Args:
+            other (Trajectory or scalar): The operand for addition.
+
+        Returns:
+            Trajectory: A new Trajectory object with the result of the addition.
+        """
         return self._arithmetic_op(other, lambda a, b: a + b)
 
     def __sub__(self, other):
+        """
+        Subtracts another Trajectory or scalar from this Trajectory.
+
+        Args:
+            other (Trajectory or scalar): The operand for subtraction.
+
+        Returns:
+            Trajectory: A new Trajectory object with the result of the subtraction.
+        """
         return self._arithmetic_op(other, lambda a, b: a - b)
 
     def __mul__(self, other):
+        """
+        Multiplies this Trajectory by another Trajectory or scalar.
+
+        Args:
+            other (Trajectory or scalar): The operand for multiplication.
+
+        Returns:
+            Trajectory: A new Trajectory object with the result of the multiplication.
+        """
         return self._arithmetic_op(other, lambda a, b: a * b)
 
     def __truediv__(self, other):
+        """
+        Divides this Trajectory by another Trajectory or scalar.
+
+        Args:
+            other (Trajectory or scalar): The operand for division.
+
+        Returns:
+            Trajectory: A new Trajectory object with the result of the division.
+        """
         return self._arithmetic_op(other, lambda a, b: a / b)
 
     def to_frame(self, to_frame: ReferenceFrame) -> "Trajectory":
         """
-        Convert the trajectory's reference frame to 'to_frame' and return a new Trajectory object.
+        Converts the trajectory's reference frame to a new frame.
+
+        Args:
+            to_frame (ReferenceFrame): The target reference frame.
+
+        Returns:
+            Trajectory: A new Trajectory object in the target frame.
         """
         if self.frame == to_frame:
             return self
@@ -185,7 +273,10 @@ class Trajectory(Timeseries):
 
     def to_dict(self) -> dict:
         """
-        Serialize the Trajectory object to a dictionary.
+        Serializes the Trajectory object to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the Trajectory object.
         """
         return {
             "time": self.time.to_dict(),
@@ -197,7 +288,13 @@ class Trajectory(Timeseries):
     @classmethod
     def from_dict(cls, dct: dict) -> "Trajectory":
         """
-        Deserialize a Trajectory object from a dictionary.
+        Deserializes a Trajectory object from a dictionary.
+
+        Args:
+            dct (dict): A dictionary representation of a Trajectory object.
+
+        Returns:
+            Trajectory: The deserialized Trajectory object.
         """
         time = AbsoluteDateArray.from_dict(dct["time"])
         data_arrays = [np.array(arr) for arr in dct["data"]]
@@ -209,8 +306,19 @@ class Trajectory(Timeseries):
         cls, t1: float, t2: float, position: np.ndarray, frame: ReferenceFrame
     ) -> "Trajectory":
         """
-        Construct a constant position trajectory (zero velocity).
-        The trajectory consists of two time points with the same position.
+        Creates a constant position trajectory with zero velocity.
+
+        Args:
+            t1 (float): The start time.
+            t2 (float): The end time.
+            position (np.ndarray): A 3-element array representing the position.
+            frame (ReferenceFrame): The reference frame for the trajectory.
+
+        Returns:
+            Trajectory: A new Trajectory object with constant position.
+
+        Raises:
+            ValueError: If `position` is not a 3-element array.
         """
         if position.shape != (3,):
             raise ValueError("position must be a 3-element array.")
@@ -228,7 +336,20 @@ class Trajectory(Timeseries):
         frame: ReferenceFrame,
     ) -> "Trajectory":
         """
-        Create a constant velocity trajectory.
+        Creates a constant velocity trajectory.
+
+        Args:
+            t1 (float): The start time.
+            t2 (float): The end time.
+            velocity (np.ndarray): A 3-element array representing the velocity.
+            initial_position (np.ndarray): A 3-element array representing the initial position.
+            frame (ReferenceFrame): The reference frame for the trajectory.
+
+        Returns:
+            Trajectory: A new Trajectory object with constant velocity.
+
+        Raises:
+            ValueError: If `velocity` or `initial_position` is not a 3-element array.
         """
         if velocity.shape != (3,) or initial_position.shape != (3,):
             raise ValueError(

@@ -2,15 +2,18 @@
 .. module:: eosimutils.trajectory
    :synopsis: Trajectory data representation.
 
-This module provides a Trajectory class that stores a vector of times and separate numpy arrays
-for position (km) and velocity (km/s). Missing data (gaps) are represented by NaN values.
+This module provides a StateSeries class that stores a vector of times and separate numpy arrays
+for position (km) and velocity (km/s), and a PositionSeries class that stores a vector of times
+and a single numpy array for position (km). The time is represented as an AbsoluteDateArray object.
+Missing data (gaps) are represented by NaN values.
+
 Basic interpolation/resampling and arithmetic operations (with frame conversion) are supported.
 """
 
 import numpy as np
 import spiceypy as spice
 
-from .base import ReferenceFrame  # Assumed to exist
+from .base import ReferenceFrame
 from .time import AbsoluteDateArray
 from .timeseries import Timeseries
 from .spicekernels import load_spice_kernels
@@ -124,7 +127,7 @@ def convert_frame_position(
     return new_positions
 
 
-class Trajectory(Timeseries):
+class StateSeries(Timeseries):
     """
     Represents trajectory data as a timeseries with separate arrays for position and velocity.
 
@@ -139,7 +142,7 @@ class Trajectory(Timeseries):
         self, time: "AbsoluteDateArray", data: list, frame: ReferenceFrame
     ):
         """
-        Initializes a Trajectory object.
+        Initializes a StateSeries object.
 
         Args:
             time (AbsoluteDateArray): A vector of time samples.
@@ -162,9 +165,9 @@ class Trajectory(Timeseries):
 
     def resample(
         self, new_time: np.ndarray, method: str = "linear"
-    ) -> "Trajectory":
+    ) -> "StateSeries":
         """
-        Resamples the trajectory to a new time base.
+        Resamples the StateSeries to a new time base.
 
         This method works by interpolating the data arrays to the new time samples.
         It considers the position and velocity seperately (i.e., velocity is not used
@@ -175,20 +178,20 @@ class Trajectory(Timeseries):
             method (str): The interpolation method to use. Defaults to "linear".
 
         Returns:
-            Trajectory: A new Trajectory object with resampled data.
+            StateSeries: A new StateSeries object with resampled data.
         """
         new_time_obj, new_data, _ = self._resample_data(new_time, method)
-        return Trajectory(new_time_obj, new_data, self.frame)
+        return StateSeries(new_time_obj, new_data, self.frame)
 
-    def remove_gaps(self) -> "Trajectory":
+    def remove_gaps(self) -> "StateSeries":
         """
-        Removes gaps (NaN values) from the trajectory.
+        Removes gaps (NaN values) from the StateSeries.
 
         Returns:
-            Trajectory: A new Trajectory object with gaps removed.
+            StateSeries: A new StateSeries object with gaps removed.
         """
         new_time, new_data, _ = self._remove_gaps_data()
-        return Trajectory(new_time, new_data, self.frame)
+        return StateSeries(new_time, new_data, self.frame)
 
     def _arithmetic_op(self, other, op, interp_method: str = "linear"):
         """
@@ -198,20 +201,20 @@ class Trajectory(Timeseries):
         This method ensures that reference frames are compatible before performing the operation.
 
         Args:
-            other (Trajectory or scalar): The operand for the operation.
+            other (StateSeries or scalar): The operand for the operation.
             op (callable): The operation to perform (e.g., addition, subtraction).
             interp_method (str): The interpolation method to use. Defaults to "linear".
 
         Returns:
-            Trajectory: A new Trajectory object with the result of the operation.
+            StateSeries: A new StateSeries object with the result of the operation.
 
         Raises:
-            TypeError: If the operand is neither a Trajectory nor a scalar.
+            TypeError: If the operand is neither a StateSeries nor a scalar.
         """
         if np.isscalar(other):
             # Delegate scalar operations to the parent class.
             return super()._arithmetic_op(other, op)
-        elif isinstance(other, Trajectory):
+        elif isinstance(other, StateSeries):
             # Resample other onto self.time.et (using the underlying ephemeris times).
             other_resamp = other.resample(self.time.et, method=interp_method)
             # If frames do not match, attempt frame conversion.
@@ -231,83 +234,83 @@ class Trajectory(Timeseries):
                 op(arr, other_arr)
                 for arr, other_arr in zip(self.data, other_resamp_data)
             ]
-            return Trajectory(self.time, new_data, self.frame)
+            return StateSeries(self.time, new_data, self.frame)
         else:
-            raise TypeError("Operand must be a Trajectory or a scalar.")
+            raise TypeError("Operand must be a StateSeries or a scalar.")
 
     def __add__(self, other):
         """
-        Adds another Trajectory or scalar to this Trajectory.
+        Adds another StateSeries or scalar to this StateSeries.
 
         Args:
-            other (Trajectory or scalar): The operand for addition.
+            other (StateSeries or scalar): The operand for addition.
 
         Returns:
-            Trajectory: A new Trajectory object with the result of the addition.
+            StateSeries: A new StateSeries object with the result of the addition.
         """
         return self._arithmetic_op(other, lambda a, b: a + b)
 
     def __sub__(self, other):
         """
-        Subtracts another Trajectory or scalar from this Trajectory.
+        Subtracts another StateSeries or scalar from this StateSeries.
 
         Args:
-            other (Trajectory or scalar): The operand for subtraction.
+            other (StateSeries or scalar): The operand for subtraction.
 
         Returns:
-            Trajectory: A new Trajectory object with the result of the subtraction.
+            StateSeries: A new StateSeries object with the result of the subtraction.
         """
         return self._arithmetic_op(other, lambda a, b: a - b)
 
     def __mul__(self, other):
         """
-        Multiplies this Trajectory by another Trajectory or scalar.
+        Multiplies this StateSeries by another StateSeries or scalar.
 
         Args:
-            other (Trajectory or scalar): The operand for multiplication.
+            other (StateSeries or scalar): The operand for multiplication.
 
         Returns:
-            Trajectory: A new Trajectory object with the result of the multiplication.
+            StateSeries: A new StateSeries object with the result of the multiplication.
         """
         return self._arithmetic_op(other, lambda a, b: a * b)
 
     def __truediv__(self, other):
         """
-        Divides this Trajectory by another Trajectory or scalar.
+        Divides this StateSeries by another StateSeries or scalar.
 
         Args:
-            other (Trajectory or scalar): The operand for division.
+            other (StateSeries or scalar): The operand for division.
 
         Returns:
-            Trajectory: A new Trajectory object with the result of the division.
+            StateSeries: A new StateSeries object with the result of the division.
         """
         return self._arithmetic_op(other, lambda a, b: a / b)
 
-    def to_frame(self, to_frame: ReferenceFrame) -> "Trajectory":
+    def to_frame(self, to_frame: ReferenceFrame) -> "StateSeries":
         """
-        Converts the trajectory's reference frame to a new frame.
+        Converts the StateSeries's reference frame to a new frame.
 
         Args:
             to_frame (ReferenceFrame): The target reference frame.
 
         Returns:
-            Trajectory: A new Trajectory object in the target frame.
+            StateSeries: A new StateSeries object in the target frame.
         """
         if self.frame == to_frame:
             return self
         pos, vel = convert_frame(
             self.data[0], self.data[1], self.time.et, self.frame, to_frame
         )
-        return Trajectory(
+        return StateSeries(
             AbsoluteDateArray(self.time.et.copy()), [pos, vel], to_frame
         )
 
     def to_dict(self) -> dict:
         """
-        Serializes the Trajectory object to a dictionary.
+        Serializes the StateSeries object to a dictionary.
 
         Returns:
-            dict: A dictionary representation of the Trajectory object.
+            dict: A dictionary representation of the StateSeries object.
         """
         return {
             "time": self.time.to_dict(),
@@ -317,9 +320,9 @@ class Trajectory(Timeseries):
         }
 
     @classmethod
-    def from_dict(cls, dct: dict) -> "Trajectory":
+    def from_dict(cls, dct: dict) -> "StateSeries":
         """
-        Deserializes a Trajectory object from a dictionary.
+        Deserializes a StateSeries object from a dictionary.
 
         The dictionary must contain the following keys:
             - "time": A dictionary representing the AbsoluteDateArray.
@@ -330,10 +333,10 @@ class Trajectory(Timeseries):
             - "headers": A nested list of labels for position and velocity.
 
         Args:
-            dct (dict): A dictionary representation of a Trajectory object.
+            dct (dict): A dictionary representation of a StateSeries object.
 
         Returns:
-            Trajectory: The deserialized Trajectory object.
+            StateSeries: The deserialized StateSeries object.
 
         Examples:
             dct = {
@@ -346,7 +349,7 @@ class Trajectory(Timeseries):
                 "headers": [["pos_x", "pos_y", "pos_z"], ["vel_x", "vel_y", "vel_z"]]
             }
 
-            trajectory = Trajectory.from_dict(dct)
+            trajectory = StateSeries.from_dict(dct)
         """
         time = AbsoluteDateArray.from_dict(dct["time"])
         data_arrays = [np.array(arr) for arr in dct["data"]]
@@ -356,7 +359,7 @@ class Trajectory(Timeseries):
     @classmethod
     def constant_position(
         cls, t1: float, t2: float, position: np.ndarray, frame: ReferenceFrame
-    ) -> "Trajectory":
+    ) -> "StateSeries":
         """
         Creates a constant position trajectory with zero velocity.
 
@@ -367,7 +370,7 @@ class Trajectory(Timeseries):
             frame (ReferenceFrame): The reference frame for the trajectory.
 
         Returns:
-            Trajectory: A new Trajectory object with constant position.
+            StateSeries: A new StateSeries object with constant position.
 
         Raises:
             ValueError: If `position` is not a 3-element array.
@@ -386,7 +389,7 @@ class Trajectory(Timeseries):
         velocity: np.ndarray,
         initial_position: np.ndarray,
         frame: ReferenceFrame,
-    ) -> "Trajectory":
+    ) -> "StateSeries":
         """
         Creates a constant velocity trajectory.
 
@@ -398,7 +401,7 @@ class Trajectory(Timeseries):
             frame (ReferenceFrame): The reference frame for the trajectory.
 
         Returns:
-            Trajectory: A new Trajectory object with constant velocity.
+            StateSeries: A new StateSeries object with constant velocity.
 
         Raises:
             ValueError: If `velocity` or `initial_position` is not a 3-element array.
@@ -419,15 +422,15 @@ class Trajectory(Timeseries):
         return cls(time_obj, [traj[:, :3], traj[:, 3:]], frame)
 
     @classmethod
-    def from_list_of_cartesian_state(cls, states: list) -> "Trajectory":
+    def from_list_of_cartesian_state(cls, states: list) -> "StateSeries":
         """
-        Creates a Trajectory object from a list of CartesianState objects.
+        Creates a StateSeries object from a list of CartesianState objects.
 
         Args:
             states (list): A list of CartesianState objects.
 
         Returns:
-            Trajectory: A new Trajectory object.
+            StateSeries: A new StateSeries object.
 
         Raises:
             ValueError: If the list is empty or if the frames of the CartesianState objects do not
@@ -453,7 +456,7 @@ class Trajectory(Timeseries):
         # Create an AbsoluteDateArray for the time
         time_obj = AbsoluteDateArray(times)
 
-        # Return a new Trajectory object
+        # Return a new StateSeries object
         return cls(time_obj, [positions, velocities], frame)
 
 

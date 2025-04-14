@@ -2,7 +2,7 @@
 
 import unittest
 import numpy as np
-from eosimutils.trajectory import Trajectory, PositionSeries
+from eosimutils.trajectory import StateSeries, PositionSeries
 from eosimutils.time import AbsoluteDateArray, AbsoluteDate
 from eosimutils.base import ReferenceFrame
 from eosimutils.state import (
@@ -12,15 +12,15 @@ from eosimutils.state import (
 )
 
 
-class TestTrajectory(unittest.TestCase):
-    """Unit tests for the Trajectory class."""
+class TestStateSeries(unittest.TestCase):
+    """Unit tests for the StateSeries class."""
 
     def setUp(self):
         self.time = AbsoluteDateArray(np.array([0, 1, 2]))
         self.positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
         self.velocities = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
         self.frame = ReferenceFrame("ICRF_EC")
-        self.trajectory = Trajectory(
+        self.trajectory = StateSeries(
             self.time, [self.positions, self.velocities], self.frame
         )
 
@@ -44,7 +44,7 @@ class TestTrajectory(unittest.TestCase):
         velocities_with_gaps = np.array(
             [[np.nan, np.nan, np.nan], [1, 1, 1], [np.nan, np.nan, np.nan]]
         )
-        trajectory_with_gaps = Trajectory(
+        trajectory_with_gaps = StateSeries(
             self.time, [positions_with_gaps, velocities_with_gaps], self.frame
         )
         trimmed = trajectory_with_gaps.remove_gaps()
@@ -63,7 +63,7 @@ class TestTrajectory(unittest.TestCase):
         """Test arithmetic operations between trajectories."""
         other_positions = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
         other_velocities = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
-        other_trajectory = Trajectory(
+        other_trajectory = StateSeries(
             self.time, [other_positions, other_velocities], self.frame
         )
 
@@ -86,7 +86,9 @@ class TestTrajectory(unittest.TestCase):
     def test_constant_position(self):
         """Test creation of a constant position trajectory."""
         position = np.array([1, 1, 1])
-        constant_traj = Trajectory.constant_position(0, 1, position, self.frame)
+        constant_traj = StateSeries.constant_position(
+            0, 1, position, self.frame
+        )
         np.testing.assert_allclose(
             constant_traj.data[0], [[1, 1, 1], [1, 1, 1]]
         )
@@ -98,7 +100,7 @@ class TestTrajectory(unittest.TestCase):
         """Test creation of a constant velocity trajectory."""
         initial_position = np.array([0, 0, 0])
         velocity = np.array([1, 1, 1])
-        constant_vel_traj = Trajectory.constant_velocity(
+        constant_vel_traj = StateSeries.constant_velocity(
             0, 1, velocity, initial_position, self.frame
         )
         np.testing.assert_allclose(
@@ -109,9 +111,9 @@ class TestTrajectory(unittest.TestCase):
         )
 
     def test_to_dict_and_from_dict(self):
-        """Test serialization and deserialization of Trajectory."""
+        """Test serialization and deserialization of StateSeries."""
         serialized = self.trajectory.to_dict()
-        deserialized = Trajectory.from_dict(serialized)
+        deserialized = StateSeries.from_dict(serialized)
         np.testing.assert_allclose(
             deserialized.time.et, self.trajectory.time.et, rtol=1e-4, atol=1e-4
         )
@@ -120,7 +122,7 @@ class TestTrajectory(unittest.TestCase):
         self.assertEqual(deserialized.frame, self.trajectory.frame)
 
     def test_from_list_of_cartesian_state(self):
-        """Test creation of a Trajectory from a list of CartesianState objects."""
+        """Test creation of a StateSeries from a list of CartesianState objects."""
         frame = ReferenceFrame("ICRF_EC")
         states = [
             CartesianState(
@@ -142,7 +144,7 @@ class TestTrajectory(unittest.TestCase):
                 frame=frame,
             ),
         ]
-        trajectory = Trajectory.from_list_of_cartesian_state(states)
+        trajectory = StateSeries.from_list_of_cartesian_state(states)
         np.testing.assert_array_equal(trajectory.time.et, [0, 1, 2])
         np.testing.assert_array_equal(
             trajectory.data[0], [[0, 0, 0], [1, 1, 1], [2, 2, 2]]
@@ -160,7 +162,7 @@ class TestTrajectory(unittest.TestCase):
             frame=ReferenceFrame("ITRF"),
         )
         with self.assertRaises(ValueError):
-            Trajectory.from_list_of_cartesian_state(states)
+            StateSeries.from_list_of_cartesian_state(states)
 
 
 class TestPositionSeries:

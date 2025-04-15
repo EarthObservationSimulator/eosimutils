@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from eosimutils.trajectory import Trajectory
+from eosimutils.trajectory import StateSeries
 from eosimutils.base import ReferenceFrame
 from eosimutils.plotting import plot_timeseries
-from eosimutils.time import AbsoluteDates  # New import
+from eosimutils.time import AbsoluteDateArray
 
 # Generate two sample trajectories representing circular orbits.
 
@@ -16,7 +16,7 @@ omega = 2 * np.pi / period  # angular velocity in rad/s.
 # Create an array of time samples.
 N = 200
 time_points = np.linspace(0, period, N)
-abs_dates = AbsoluteDates(time_points)
+abs_dates = AbsoluteDateArray(time_points)
 
 # Orbit 1: Circular orbit in the xy-plane.
 x1 = R * np.cos(omega * time_points)
@@ -35,7 +35,7 @@ missing_end = int(0.5 * N)    # End of missing data (50% of the way through).
 position1[missing_start:missing_end, :] = np.nan
 velocity1[missing_start:missing_end, :] = np.nan
 
-traj1 = Trajectory(abs_dates, [position1, velocity1], ReferenceFrame.ICRF_EC)
+traj1 = StateSeries(abs_dates, [position1, velocity1], ReferenceFrame.ICRF_EC)
 traj1_itrf = traj1.to_frame(ReferenceFrame.ITRF)  # Convert to ITRF frame.
 
 # Orbit 2: Nearly identical orbit with a small increase in radius.
@@ -50,7 +50,7 @@ vz2 = np.full_like(time_points, 0)
 
 position2 = np.column_stack((x2, y2, z2))
 velocity2 = np.column_stack((vx2, vy2, vz2))
-traj2 = Trajectory(abs_dates, [position2, velocity2], ReferenceFrame.ICRF_EC)
+traj2 = StateSeries(abs_dates, [position2, velocity2], ReferenceFrame.ICRF_EC)
 
 # Compute the difference between the two trajectories
 traj_diff = traj1 - traj2

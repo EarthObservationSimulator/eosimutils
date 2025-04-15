@@ -3,10 +3,10 @@ This example demonstrates usage of the eosimutils.time module:
 - Creating an AbsoluteDate from a dictionary.
 - Converting AbsoluteDate to Gregorian and Julian formats.
 - Converting AbsoluteDate to Astropy and Skyfield times.
-- Using the AbsoluteDates class for vectorized time handling.
+- Using the AbsoluteDateArray class for vectorized time handling.
 """
 
-from eosimutils.time import AbsoluteDate, AbsoluteDates
+from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 import numpy as np
 from astropy.time import Time as AstropyTime
 
@@ -36,19 +36,19 @@ print("Astropy Time:", astropy_time.iso)
 skyfield_time = abs_date.to_skyfield_time()
 print("Skyfield Time:", skyfield_time.utc_strftime("%Y-%m-%d %H:%M:%S UTC"))
 
-# Example 2: Using the AbsoluteDates class for vectorized time handling
+# Example 2: Using the AbsoluteDateArray class for vectorized time handling
 t_values = abs_date.ephemeris_time + np.linspace(-100, 100, 5)
-abs_dates_obj = AbsoluteDates(t_values)
+abs_dates_obj = AbsoluteDateArray(t_values)
 
-# Convert AbsoluteDates object to an Astropy Time object
+# Convert AbsoluteDateArray object to an Astropy Time object
 astropy_times_vector = abs_dates_obj.to_astropy_time()
 print("Vectorized Astropy Times:")
 print(astropy_times_vector.iso)
 
-# Export AbsoluteDates object to a dictionary in Gregorian format
+# Export AbsoluteDateArray object to a dictionary in Gregorian format
 times_dict = abs_dates_obj.to_dict("GREGORIAN_DATE", "UTC")
-print("AbsoluteDates Object to Dict (Gregorian):", times_dict)
+print("AbsoluteDateArray Object to Dict (Gregorian):", times_dict)
 
-# Export AbsoluteDates object to a dictionary in Julian format
+# Export AbsoluteDateArray object to a dictionary in Julian format
 times_dict_jd = abs_dates_obj.to_dict("Julian_Date", "UTC")
-print("AbsoluteDates Object to Dict (Julian):", times_dict_jd)
+print("AbsoluteDateArray Object to Dict (Julian):", times_dict_jd)

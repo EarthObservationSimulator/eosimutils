@@ -11,11 +11,25 @@ def _group_contiguous(indices):
     """
     Group a list of indices into contiguous segments.
 
-    This function takes a list of numerical indices (e.g., [0, 1, 2, 4, 5, 7])
+    This function takes a list of numerical indices (e.g., [0, 1, 3, 4, 7, 8])
     and groups them into sublists where each sublist contains consecutive indices.
     This is useful when interpolating over time-series data: by grouping
     valid (non-NaN) indices into contiguous segments, interpolation is applied only over
     stretches of valid data so that gaps (NaN regions) remain unfilled.
+
+    Original Array:
+    +---+---+-----+---+---+-----+-----+---+---+
+    | 1 | 2 | NaN | 4 | 5 | NaN | NaN | 8 | 9 |
+    +---+---+-----+---+---+-----+-----+---+---+
+    0   1   2     3   4   5     6     7   8   <-- Indices
+    Valid Indices: [0, 1, 3, 4, 7, 8]
+
+    Valid Indices:
+    +---+---+         +---+---+         +---+---+
+    | 1 | 2 |         | 4 | 5 |         | 8 | 9 |
+    +---+---+         +---+---+         +---+---+
+    0   1             3   4             7   8   <-- Contiguous Groups
+    Contiguous Groups: [ [0, 1], [3, 4], [7, 8] ]
 
     Args:
         indices (list of int): A list of numerical indices.
@@ -38,10 +52,39 @@ class Timeseries:
     """
     General class for representing time-varying data with support for multiple arrays.
 
+    +-------------------+
+    |   Timeseries      |
+    +-------------------+
+    |                   |
+    |   time            |
+    |   +-------------+ |
+    |   | et (1D)     | |  --> [t1, t2, t3, ..., tn]  (Ephemeris times)
+    |   +-------------+ |
+    |                   |
+    |   data            |
+    |   +-------------+ |
+    |   | Array 1 (1D)| |  --> [d1, d2, d3, ..., dn]  (Scalar data)
+    |   +-------------+ |
+    |   | Array 2 (2D)| |  --> [[v11, v12, v13],      (Vector data)
+    |   |             | |       [v21, v22, v23],      (Each row corresponds to a time)
+    |   |             | |       ..., 
+    |   |             | |       [vn1, vn2, vn3]]
+    |   +-------------+ |
+    |                   |
+    |   headers         |
+    |   +-------------+ |
+    |   | Header 1    | |  --> "true_anomaly" (for scalar data)
+    |   +-------------+ |
+    |   | Header 2    | |  --> ["x", "y", "z"] (for vector data)
+    |   +-------------+ |
+    |                   |
+    +-------------------+
+
     Attributes:
         time (AbsoluteDateArray): Contains a 1D numpy array of ephemeris times.
         data (list): List of numpy arrays. Each array can be 1D (scalar) or 2D (vector).
         headers (list): List of headers for the data arrays. For vectors, headers are nested lists.
+    
     """
 
     def __init__(
@@ -258,6 +301,11 @@ class Timeseries:
         """
         Perform arithmetic operations (e.g., addition, subtraction) between timeseries or
         with a scalar.
+
+        This method supports operations between two Timeseries objects or between a 
+        Timeseries and a scalar. When operating on two Timeseries, the `other` Timeseries 
+        is resampled onto the time grid of `self` (using the underlying ephemeris times) 
+        before performing the operation.
 
         Args:
             other (Timeseries or scalar): The operand for the operation.

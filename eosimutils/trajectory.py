@@ -131,6 +131,42 @@ class StateSeries(Timeseries):
     """
     Represents trajectory data as a timeseries with separate arrays for position and velocity.
 
+    +-----------------------------------+
+    |           StateSeries             |
+    +-----------------------------------+
+    |                                   |
+    | time:                             |
+    | +-------------------------------+ |
+    | | t1, t2, t3, ..., tN           | |  --> AbsoluteDateArray (ephemeris times)
+    | +-------------------------------+ |
+    |                                   |
+    | data:                             |
+    | +-------------------------------+ |
+    | | Positions (Nx3):              | |
+    | | [[x1, y1, z1],                | |
+    | |  [x2, y2, z2],                | |  --> Position array in kilometers
+    | |  ...,                         | |
+    | |  [xN, yN, zN]]                | |
+    | +-------------------------------+ |
+    | | Velocities (Nx3):             | |
+    | | [[vx1, vy1, vz1],             | |
+    | |  [vx2, vy2, vz2],             | |  --> Velocity array in kilometers per second
+    | |  ...,                         | |
+    | |  [vxN, vyN, vzN]]             | |
+    | +-------------------------------+ |
+    |                                   |
+    | headers:                          |
+    | +-------------------------------+ |
+    | | ["pos_x", "pos_y", "pos_z"],  | |  --> Labels for position components
+    | | ["vel_x", "vel_y", "vel_z"]   | |  --> Labels for velocity components
+    | +-------------------------------+ |
+    |                                   |
+    | frame:                            |
+    | +-------------------------------+ |
+    | | ReferenceFrame (e.g., ITRF)   | |  --> Reference frame for the trajectory
+    | +-------------------------------+ |
+    +-----------------------------------+
+
     Attributes:
         time (AbsoluteDateArray): A vector of time samples.
         data (list): A list containing position (Nx3) and velocity (Nx3) arrays.
@@ -463,6 +499,35 @@ class StateSeries(Timeseries):
 class PositionSeries(Timeseries):
     """
     Represents position data as a timeseries with a single array for position.
+
+    +-----------------------------------+
+    |           PositionSeries          |
+    +-----------------------------------+
+    |                                   |
+    | time:                             |
+    | +-------------------------------+ |
+    | | t1, t2, t3, ..., tN           | |  --> AbsoluteDateArray (ephemeris times)
+    | +-------------------------------+ |
+    |                                   |
+    | data:                             |
+    | +-------------------------------+ |
+    | | Positions (Nx3):              | |
+    | | [[x1, y1, z1],                | |
+    | |  [x2, y2, z2],                | |  --> Position array in kilometers
+    | |  ...,                         | |
+    | |  [xN, yN, zN]]                | |
+    | +-------------------------------+ |
+    |                                   |
+    | headers:                          |
+    | +-------------------------------+ |
+    | | ["pos_x", "pos_y", "pos_z"]   | |  --> Labels for position components
+    | +-------------------------------+ |
+    |                                   |
+    | frame:                            |
+    | +-------------------------------+ |
+    | | ReferenceFrame (e.g., ITRF)   | |  --> Reference frame for the position data
+    | +-------------------------------+ |
+    +-----------------------------------+
 
     Attributes:
         time (AbsoluteDateArray): A vector of time samples.

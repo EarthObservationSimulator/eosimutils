@@ -241,7 +241,7 @@ class GeographicPosition:
         self.latitude_degrees = latitude_degrees
         self.longitude_degrees = longitude_degrees
         self.elevation_m = elevation_m
-        
+
         self.skyfield_geo_position = skyfield_wgs84.latlon(
             latitude_degrees=latitude_degrees,
             longitude_degrees=longitude_degrees,

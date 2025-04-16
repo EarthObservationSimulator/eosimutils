@@ -67,7 +67,7 @@ class Timeseries:
     |   +-------------+ |
     |   | Array 2 (2D)| |  --> [[v11, v12, v13],      (Vector data)
     |   |             | |       [v21, v22, v23],      (Each row corresponds to a time)
-    |   |             | |       ..., 
+    |   |             | |       ...,
     |   |             | |       [vn1, vn2, vn3]]
     |   +-------------+ |
     |                   |
@@ -84,7 +84,7 @@ class Timeseries:
         time (AbsoluteDateArray): Contains a 1D numpy array of ephemeris times.
         data (list): List of numpy arrays. Each array can be 1D (scalar) or 2D (vector).
         headers (list): List of headers for the data arrays. For vectors, headers are nested lists.
-    
+
     """
 
     def __init__(
@@ -302,9 +302,9 @@ class Timeseries:
         Perform arithmetic operations (e.g., addition, subtraction) between timeseries or
         with a scalar.
 
-        This method supports operations between two Timeseries objects or between a 
-        Timeseries and a scalar. When operating on two Timeseries, the `other` Timeseries 
-        is resampled onto the time grid of `self` (using the underlying ephemeris times) 
+        This method supports operations between two Timeseries objects or between a
+        Timeseries and a scalar. When operating on two Timeseries, the `other` Timeseries
+        is resampled onto the time grid of `self` (using the underlying ephemeris times)
         before performing the operation.
 
         Args:

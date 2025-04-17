@@ -185,6 +185,33 @@ class TestAbsoluteDate(unittest.TestCase):
 
         # Test comparison with a non-AbsoluteDate object
         self.assertFalse(date1 == "not an AbsoluteDate")
+    
+    def test_add_operator(self):
+        """Test the __add__ operator for AbsoluteDate."""
+        # Initialize an AbsoluteDate object
+        absolute_date = AbsoluteDate.from_dict(
+            {
+                "time_format": "Gregorian_Date",
+                "calendar_date": "2025-03-17T12:00:00",
+                "time_scale": "utc",
+            }
+        )
+
+        # Add 3600 seconds (1 hour)
+        new_date = absolute_date + 3600
+
+        # Convert the new date to Gregorian format
+        new_date_dict = new_date.to_dict("Gregorian_Date", "UTC")
+
+        # Expected result after adding 1 hour
+        expected_date = {
+            "time_format": "GREGORIAN_DATE",
+            "calendar_date": "2025-03-17T13:00:00.000",
+            "time_scale": "UTC",
+        }
+
+        # Assert the new date matches the expected result
+        self.assertEqual(new_date_dict, expected_date)
 
 
 class TestAbsoluteDateArray(unittest.TestCase):

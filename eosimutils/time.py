@@ -205,6 +205,17 @@ class AbsoluteDate:
         if not isinstance(value, AbsoluteDate):
             return False
         return self.ephemeris_time == value.ephemeris_time
+    
+    def __add__(self, value):
+        """Add a number of seconds to the AbsoluteDate object.
+
+        Args:
+            value (float): The number of seconds to add.
+
+        Returns:
+            AbsoluteDate: A new AbsoluteDate object with the updated time.
+        """
+        return AbsoluteDate(self.ephemeris_time + value)
 
 
 class AbsoluteDateArray:

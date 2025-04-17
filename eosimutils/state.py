@@ -79,8 +79,8 @@ class Cartesian3DPosition:
         """
         return self.coords.tolist()
 
-    @staticmethod
-    def from_dict(dict_in: Dict[str, Any]) -> "Cartesian3DPosition":
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "Cartesian3DPosition":
         """Construct a Cartesian3DPosition object from a dictionary.
 
         Args:
@@ -99,7 +99,7 @@ class Cartesian3DPosition:
         frame = (
             ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
         )
-        return Cartesian3DPosition(
+        return cls(
             dict_in["x"], dict_in["y"], dict_in["z"], frame
         )
 
@@ -180,8 +180,8 @@ class Cartesian3DVelocity:
         """
         return self.coords.tolist()
 
-    @staticmethod
-    def from_dict(dict_in: Dict[str, Any]) -> "Cartesian3DVelocity":
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "Cartesian3DVelocity":
         """Construct a Cartesian3DVelocity object from a dictionary.
 
         Args:
@@ -200,7 +200,7 @@ class Cartesian3DVelocity:
         frame = (
             ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
         )
-        return Cartesian3DVelocity(
+        return cls(
             dict_in["vx"], dict_in["vy"], dict_in["vz"], frame
         )
 
@@ -337,8 +337,8 @@ class CartesianState:
         self.velocity: Cartesian3DVelocity = velocity
         self.frame: ReferenceFrame = frame
 
-    @staticmethod
-    def from_dict(dict_in: Dict[str, Any]) -> "CartesianState":
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "CartesianState":
         """Construct a CartesianState object from a dictionary.
 
         Args:
@@ -360,7 +360,7 @@ class CartesianState:
         )
         position = Cartesian3DPosition.from_array(dict_in["position"], frame)
         velocity = Cartesian3DVelocity.from_array(dict_in["velocity"], frame)
-        return CartesianState(time, position, velocity, frame)
+        return cls(time, position, velocity, frame)
 
     @staticmethod
     def from_array(

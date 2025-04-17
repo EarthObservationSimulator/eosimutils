@@ -74,6 +74,6 @@ class ReferenceFrame(EnumBase):
 
     """
 
-    ICRF_EC = "ICRF_EC"  # Geocentric Celestial Reference Frame (ECI)
+    ICRF_EC = "ICRF_EC"  # Earth centered inertial frame aligned to the ICRF (ECI)
     ITRF = "ITRF"  # International Terrestrial Reference Frame (ECEF)
     # TEME = "TEME"  # True Equator Mean Equinox

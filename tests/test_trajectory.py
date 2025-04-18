@@ -83,11 +83,11 @@ class TestStateSeries(unittest.TestCase):
             }
         )
         trimmed = trajectory_with_gaps.remove_gaps()
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             trimmed.time.to_dict("JULIAN_DATE")["jd"], [JD_OF_J2000 + 1]
         )
-        np.testing.assert_allclose(trimmed.data[0], [[1, 1, 1]])
-        np.testing.assert_allclose(trimmed.data[1], [[1, 1, 1]])
+        np.testing.assert_array_equal(trimmed.data[0], [[1, 1, 1]])
+        np.testing.assert_array_equal(trimmed.data[1], [[1, 1, 1]])
 
     def test_to_frame(self):
         """Test conversion of trajectory to a different reference frame."""
@@ -113,18 +113,18 @@ class TestStateSeries(unittest.TestCase):
         )
 
         added = self.trajectory + other_trajectory
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             added.data[0], self.positions + other_positions
         )
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             added.data[1], self.velocities + other_velocities
         )
 
         subtracted = self.trajectory - other_trajectory
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             subtracted.data[0], self.positions - other_positions
         )
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             subtracted.data[1], self.velocities - other_velocities
         )
 
@@ -134,10 +134,10 @@ class TestStateSeries(unittest.TestCase):
         constant_traj = StateSeries.constant_position(
             JD_OF_J2000 + 0, JD_OF_J2000 + 1, position, self.frame
         )
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             constant_traj.data[0], [[1, 1, 1], [1, 1, 1]]
         )
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             constant_traj.data[1], [[0, 0, 0], [0, 0, 0]]
         )
 
@@ -152,10 +152,10 @@ class TestStateSeries(unittest.TestCase):
             initial_position,
             self.frame,
         )
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             constant_vel_traj.data[0], [[0, 0, 0], [1, 1, 1]]
         )
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             constant_vel_traj.data[1], [[1, 1, 1], [1, 1, 1]]
         )
 
@@ -163,6 +163,9 @@ class TestStateSeries(unittest.TestCase):
         """Test serialization and deserialization of StateSeries."""
         serialized = self.trajectory.to_dict()
         deserialized = StateSeries.from_dict(serialized)
+
+        # All close used due to rounding in serialization.
+        # TODO: May be worth looking into precision of timestrings in the future.
         np.testing.assert_allclose(
             deserialized.time.ephemeris_time,
             self.trajectory.time.ephemeris_time,
@@ -170,7 +173,7 @@ class TestStateSeries(unittest.TestCase):
             atol=1e-4,
         )
         for d1, d2 in zip(deserialized.data, self.trajectory.data):
-            np.testing.assert_allclose(d1, d2)
+            np.testing.assert_array_equal(d1, d2)
         self.assertEqual(deserialized.frame, self.trajectory.frame)
 
     def test_from_list_of_cartesian_state(self):
@@ -308,27 +311,27 @@ class TestPositionSeries:
 
         # Test addition
         added = ps1 + ps2
-        np.testing.assert_allclose(added.data[0], data1 + data2)
+        np.testing.assert_array_equal(added.data[0], data1 + data2)
 
         # Test subtraction
         subtracted = ps1 - ps2
-        np.testing.assert_allclose(subtracted.data[0], data1 - data2)
+        np.testing.assert_array_equal(subtracted.data[0], data1 - data2)
 
         # Test multiplication
         multiplied = ps1 * 2
-        np.testing.assert_allclose(multiplied.data[0], data1 * 2)
+        np.testing.assert_array_equal(multiplied.data[0], data1 * 2)
 
         # Test division
         divided = ps1 / 2
-        np.testing.assert_allclose(divided.data[0], data1 / 2)
+        np.testing.assert_array_equal(divided.data[0], data1 / 2)
 
         # Test scalar addition
         scalar_added = ps1 + 1
-        np.testing.assert_allclose(scalar_added.data[0], data1 + 1)
+        np.testing.assert_array_equal(scalar_added.data[0], data1 + 1)
 
         # Test scalar subtraction
         scalar_subtracted = ps1 - 1
-        np.testing.assert_allclose(scalar_subtracted.data[0], data1 - 1)
+        np.testing.assert_array_equal(scalar_subtracted.data[0], data1 - 1)
 
 
 if __name__ == "__main__":

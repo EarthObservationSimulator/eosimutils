@@ -43,9 +43,11 @@ class TestTimeseries(unittest.TestCase):
             new_time.ephemeris_time
         )
 
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             resampled_time.ephemeris_time, new_time.ephemeris_time
         )
+
+        # Allclose used since values are interpolated
         np.testing.assert_allclose(
             resampled_data[0], [1.5, np.nan, np.nan, np.nan], equal_nan=True
         )
@@ -63,17 +65,19 @@ class TestTimeseries(unittest.TestCase):
         )
         trimmed_time, trimmed_data, _ = ts._remove_gaps_data()
 
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             trimmed_time.to_dict("JULIAN_DATE")["jd"],
             [JD_OF_J2000 + t for t in [1, 2]],
         )
-        np.testing.assert_allclose(trimmed_data[0], [2.0, 3.0])
+        np.testing.assert_array_equal(trimmed_data[0], [2.0, 3.0])
 
     def test_to_dict_and_from_dict(self):
         """Test serialization and deserialization of Timeseries."""
         serialized = self.timeseries.to_dict()
         deserialized = Timeseries.from_dict(serialized)
 
+        # All close used due to rounding in serialization.
+        # TODO: May be worth looking into precision of timestrings in the future.
         np.testing.assert_allclose(
             deserialized.time.ephemeris_time,
             self.timeseries.time.ephemeris_time,
@@ -81,7 +85,7 @@ class TestTimeseries(unittest.TestCase):
             atol=1e-4,
         )
         for d1, d2 in zip(deserialized.data, self.timeseries.data):
-            np.testing.assert_allclose(d1, d2)
+            np.testing.assert_array_equal(d1, d2)
         self.assertEqual(deserialized.headers, self.timeseries.headers)
         self.assertEqual(
             deserialized.interpolator, self.timeseries.interpolator
@@ -127,7 +131,7 @@ class TestTimeseries(unittest.TestCase):
             new_time.ephemeris_time
         )
 
-        np.testing.assert_allclose(
+        np.testing.assert_array_equal(
             resampled_time.ephemeris_time, new_time.ephemeris_time
         )
         self.assertTrue(np.all(np.isnan(resampled_data[0])))

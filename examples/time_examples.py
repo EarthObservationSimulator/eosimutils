@@ -40,7 +40,7 @@ print("Skyfield Time:", skyfield_time.utc_strftime("%Y-%m-%d %H:%M:%S UTC"))
 t_values = abs_date.ephemeris_time + np.linspace(-100, 100, 5)
 abs_dates_obj = AbsoluteDateArray.from_dict({
     "time_format": "Julian_Date",
-    "times": t_values.tolist(),
+    "jd": t_values.tolist(),
     "time_scale": "UTC"
 })
 

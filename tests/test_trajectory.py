@@ -19,7 +19,7 @@ class TestStateSeries(unittest.TestCase):
         self.time = AbsoluteDateArray.from_dict(
             {
                 "time_format": "Julian_Date",
-                "times": [JD_OF_J2000 + t for t in [0, 1, 2]],
+                "jd": [JD_OF_J2000 + t for t in [0, 1, 2]],
                 "time_scale": "UTC",
             }
         )
@@ -44,12 +44,15 @@ class TestStateSeries(unittest.TestCase):
         new_time_obj = AbsoluteDateArray.from_dict(
             {
                 "time_format": "Julian_Date",
-                "times": new_time.tolist(),
+                "jd": new_time.tolist(),
                 "time_scale": "UTC",
             }
         )
         resampled = self.trajectory.resample(new_time_obj)
-        self.assertEqual(resampled.time.et.tolist(), new_time_obj.et.tolist())
+        self.assertEqual(
+            resampled.time.ephemeris_time.tolist(),
+            new_time_obj.ephemeris_time.tolist(),
+        )
         np.testing.assert_allclose(
             resampled.data[0], [[0.5, 0.5, 0.5], [1.5, 1.5, 1.5]]
         )
@@ -81,7 +84,7 @@ class TestStateSeries(unittest.TestCase):
         )
         trimmed = trajectory_with_gaps.remove_gaps()
         np.testing.assert_allclose(
-            trimmed.time.to_dict("JULIAN_DATE")["times"], [JD_OF_J2000 + 1]
+            trimmed.time.to_dict("JULIAN_DATE")["jd"], [JD_OF_J2000 + 1]
         )
         np.testing.assert_allclose(trimmed.data[0], [[1, 1, 1]])
         np.testing.assert_allclose(trimmed.data[1], [[1, 1, 1]])
@@ -161,7 +164,10 @@ class TestStateSeries(unittest.TestCase):
         serialized = self.trajectory.to_dict()
         deserialized = StateSeries.from_dict(serialized)
         np.testing.assert_allclose(
-            deserialized.time.et, self.trajectory.time.et, rtol=1e-4, atol=1e-4
+            deserialized.time.ephemeris_time,
+            self.trajectory.time.ephemeris_time,
+            rtol=1e-4,
+            atol=1e-4,
         )
         for d1, d2 in zip(deserialized.data, self.trajectory.data):
             np.testing.assert_allclose(d1, d2)
@@ -192,7 +198,7 @@ class TestStateSeries(unittest.TestCase):
         ]
         trajectory = StateSeries.from_list_of_cartesian_state(states)
         np.testing.assert_array_equal(
-            trajectory.time.et, [JD_OF_J2000 + t for t in [0, 1, 2]]
+            trajectory.time.ephemeris_time, [JD_OF_J2000 + t for t in [0, 1, 2]]
         )
         np.testing.assert_array_equal(
             trajectory.data[0], [[0, 0, 0], [1, 1, 1], [2, 2, 2]]
@@ -221,7 +227,7 @@ class TestPositionSeries:
         time = AbsoluteDateArray.from_dict(
             {
                 "time_format": "Julian_Date",
-                "times": [JD_OF_J2000 + t for t in [0.0, 1.0]],
+                "jd": [JD_OF_J2000 + t for t in [0.0, 1.0]],
                 "time_scale": "UTC",
             }
         )

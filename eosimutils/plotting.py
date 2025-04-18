@@ -39,13 +39,18 @@ def plot_timeseries(
             for i, subheader in enumerate(header):
                 if cols is None or i + col_offset in cols:
                     (line,) = ax.plot(
-                        ts.time.et, arr[:, i], label=subheader, **kwargs
+                        ts.time.ephemeris_time,
+                        arr[:, i],
+                        label=subheader,
+                        **kwargs
                     )
                     lines.append(line)
             col_offset += len(header)
         else:  # Scalar data
             if cols is None or col_offset in cols:
-                (line,) = ax.plot(ts.time.et, arr, label=header, **kwargs)
+                (line,) = ax.plot(
+                    ts.time.ephemeris_time, arr, label=header, **kwargs
+                )
                 lines.append(line)
             col_offset += 1
 

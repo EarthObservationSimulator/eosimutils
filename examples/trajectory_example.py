@@ -19,7 +19,7 @@ N = 200
 time_points = np.linspace(jd_of_j2000, jd_of_j2000 + period, N)
 abs_dates = AbsoluteDateArray.from_dict({
     "time_format": "Julian_Date",
-    "times": time_points.tolist(),
+    "jd": time_points.tolist(),
     "time_scale": "UTC"
 })
 

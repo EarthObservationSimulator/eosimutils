@@ -3,9 +3,9 @@
    :synopsis: Collection of miscellaneous utility functions based on third-party libraries.
 
 Collection of miscellaneous utility functions based on third-party libraries.
-The functions are designed to be independent of the main library and can be used 
+The functions are designed to be independent of the main library and can be used
 as standalone utilities.
-They are also used for testing purposes to validate the functionality of 
+They are also used for testing purposes to validate the functionality of
 the main library.
 """
 
@@ -35,10 +35,10 @@ def astropy_transform(
     Args:
         position (Union[List[float], np.ndarray]): Position [x, y, z] (in kilometers).
         velocity (Union[List[float], np.ndarray]): Velocity [vx, vy, vz] (in kilometers per second).
-        from_frame (str): The reference frame of the input position and velocity 
+        from_frame (str): The reference frame of the input position and velocity
                             (e.g., 'ICRS', 'GCRS', 'ITRS').
         to_frame (str): The reference frame to transform to (e.g., 'ICRS', 'ITRS', 'GCRS').
-        timestamp (str): A UTC string representing the time of the observation 
+        timestamp (str): A UTC string representing the time of the observation
                          (e.g., "2025-03-17T12:00:00").
 
     Returns:

@@ -219,11 +219,10 @@ class Cartesian3DVelocity:
 
 
 class GeographicPosition:
-    """Handles geographic position information using Skyfield.
-    The geographic position is managed internally using the Skyfield
-    GeographicPosition object and is referenced to the WGS84 ellipsoid.
-    TODO: Revise to implement with SPICE: 
-        https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/xfmsta_c.html
+    """Handles geographic position in the geodetic coordinate system.
+    The geodetic position is defined with respect World Geodetic System 1984 Geoid
+    as defined in Skyfield.
+    Reference: https://rhodesmill.org/skyfield/api-topos.html
     """
 
     def __init__(
@@ -234,10 +233,15 @@ class GeographicPosition:
     ):
         """
         Args:
-            latitude_degrees (float): Latitude in degrees.
-            longitude_degrees (float): Longitude in degrees.
+            latitude_degrees (float): WGS84 Geodetic latitude in degrees.
+            longitude_degrees (float): WGS84 Geodetic longitude in degrees.
             elevation_m (float): Elevation in meters.
         """
+
+        self.latitude_degrees = latitude_degrees
+        self.longitude_degrees = longitude_degrees
+        self.elevation_m = elevation_m
+
         self.skyfield_geo_position = skyfield_wgs84.latlon(
             latitude_degrees=latitude_degrees,
             longitude_degrees=longitude_degrees,
@@ -270,30 +274,40 @@ class GeographicPosition:
             dict: Dictionary with the geographic position information.
         """
         return {
-            "latitude": self.skyfield_geo_position.latitude.degrees,
-            "longitude": self.skyfield_geo_position.longitude.degrees,
-            "elevation": self.skyfield_geo_position.elevation.m,
+            "latitude": self.latitude_degrees,
+            "longitude": self.longitude_degrees,
+            "elevation": self.elevation_m,
         }
 
     @property
     def latitude(self):
         """Get the latitude in degrees."""
-        return self.skyfield_geo_position.latitude.degrees
+        return self.latitude_degrees
 
     @property
     def longitude(self):
         """Get the longitude in degrees."""
-        return self.skyfield_geo_position.longitude.degrees
+        return self.longitude_degrees
 
     @property
     def elevation(self):
         """Get the elevation in meters."""
-        return self.skyfield_geo_position.elevation.m
+        return self.elevation_m
 
     @property
     def itrs_xyz(self):
-        """Get the ITRS XYZ position in kilometers."""
-        return self.skyfield_geo_position.itrs_xyz.km
+        """Get the ITRS XYZ position in kilometers.
+        Covnersion is performed using Skyfield.
+        Returns:
+            np.ndarray: ITRS XYZ position in kilometers.
+        """
+        skyfield_geo_position = skyfield_wgs84.latlon(
+            latitude_degrees=self.latitude_degrees,
+            longitude_degrees=self.longitude_degrees,
+            elevation_m=self.elevation_m,
+        )
+        itrs_xyz = skyfield_geo_position.itrs_xyz.km
+        return itrs_xyz
 
 
 class CartesianState:

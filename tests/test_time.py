@@ -2,6 +2,7 @@
 
 import unittest
 import numpy as np
+import copy
 
 from astropy.time import Time as Astropy_Time
 
@@ -185,7 +186,7 @@ class TestAbsoluteDate(unittest.TestCase):
 
         # Test comparison with a non-AbsoluteDate object
         self.assertFalse(date1 == "not an AbsoluteDate")
-    
+
     def test_add_operator(self):
         """Test the __add__ operator for AbsoluteDate."""
         # Initialize an AbsoluteDate object
@@ -259,6 +260,47 @@ class TestAbsoluteDateArray(unittest.TestCase):
         np.testing.assert_allclose(
             abs_dates.et, reconstructed_abs_dates.et, rtol=1e-6
         )
+
+    def test_length(self):
+        """Test the length of the AbsoluteDateArray."""
+        et_array = np.random.uniform(
+            553333629.0, 553333630.0, size=np.random.randint(1, 10)
+        )
+        abs_dates = AbsoluteDateArray(et_array)
+        self.assertEqual(len(abs_dates), len(et_array))
+
+    def test_get_item(self):
+        """Test the __getitem__ method for AbsoluteDateArray."""
+        et_array = np.random.uniform(
+            553333629.0, 553333635.0, size=np.random.randint(3, 10)
+        )
+        abs_dates = AbsoluteDateArray(et_array)
+
+        # Test getting a single item
+        item = abs_dates[0]
+        self.assertIsInstance(item, AbsoluteDate)
+        self.assertAlmostEqual(item.ephemeris_time, et_array[0], places=6)
+
+        # Test getting a slice
+        slice_items = abs_dates[1:3]
+        self.assertIsInstance(slice_items, AbsoluteDateArray)
+        self.assertEqual(len(slice_items), 2)
+
+    def test_equality_operator(self):
+        """Test the equality operator for AbsoluteDateArray."""
+        et_array1 = np.random.uniform(
+            553333633.0, 553333635.0, size=np.random.randint(1, 10)
+        )
+        et_array2 = copy.deepcopy(et_array1)
+        et_array3 = np.array([553333631.0, 553333632.0])
+
+        abs_dates1 = AbsoluteDateArray(et_array1)
+        abs_dates2 = AbsoluteDateArray(et_array2)
+        abs_dates3 = AbsoluteDateArray(et_array3)
+
+        # Test equality
+        self.assertTrue(abs_dates1 == abs_dates2)
+        self.assertFalse(abs_dates1 == abs_dates3)
 
 
 if __name__ == "__main__":

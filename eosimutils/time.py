@@ -205,7 +205,7 @@ class AbsoluteDate:
         if not isinstance(value, AbsoluteDate):
             return False
         return self.ephemeris_time == value.ephemeris_time
-    
+
     def __add__(self, value):
         """Add a number of seconds to the AbsoluteDate object.
 
@@ -216,6 +216,10 @@ class AbsoluteDate:
             AbsoluteDate: A new AbsoluteDate object with the updated time.
         """
         return AbsoluteDate(self.ephemeris_time + value)
+
+    def __repr__(self):
+        """Return a string representation of the AbsoluteDate."""
+        return f"AbsoluteDate({self.ephemeris_time})"
 
 
 class AbsoluteDateArray:
@@ -366,3 +370,41 @@ class AbsoluteDateArray:
             "times": times_list,
             "time_scale": str(time_scale),
         }
+
+    def __len__(self):
+        """Return the length of the AbsoluteDateArray."""
+        return len(self.et)
+
+    def __getitem__(self, index):
+        """Get an item or a slice from the AbsoluteDateArray.
+
+        Args:
+            index (int or slice): Index or slice of the item(s) to retrieve.
+
+        Returns:
+            AbsoluteDate or AbsoluteDateArray: Selected item(s) as AbsoluteDate 
+                                                or AbsoluteDateArray.
+        """
+        if isinstance(index, slice):
+            # Handle slicing
+            return AbsoluteDateArray(self.et[index])
+        else:
+            # Handle single index
+            return AbsoluteDate(self.et[index])
+
+    def __eq__(self, value):
+        """Check equality of two AbsoluteDateArray objects.
+
+        Args:
+            value (AbsoluteDateArray): The AbsoluteDateArray object to compare with.
+
+        Returns:
+            bool: True if the objects are equal, False otherwise.
+        """
+        if not isinstance(value, AbsoluteDateArray):
+            return False
+        return np.array_equal(self.et, value.et)
+
+    def __repr__(self):
+        """Return a string representation of the AbsoluteDateArray."""
+        return f"AbsoluteDateArray({self.et})"

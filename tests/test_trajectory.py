@@ -3,7 +3,7 @@
 import unittest
 import numpy as np
 from eosimutils.trajectory import StateSeries, PositionSeries
-from eosimutils.time import AbsoluteDateArray, AbsoluteDate
+from eosimutils.time import AbsoluteDateArray, AbsoluteDate, JD_OF_J2000
 from eosimutils.base import ReferenceFrame
 from eosimutils.state import (
     CartesianState,
@@ -16,19 +16,40 @@ class TestStateSeries(unittest.TestCase):
     """Unit tests for the StateSeries class."""
 
     def setUp(self):
-        self.time = AbsoluteDateArray(np.array([0, 1, 2]))
+        self.time = AbsoluteDateArray.from_dict(
+            {
+                "time_format": "Julian_Date",
+                "times": [JD_OF_J2000 + t for t in [0, 1, 2]],
+                "time_scale": "UTC",
+            }
+        )
         self.positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
         self.velocities = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
         self.frame = ReferenceFrame("ICRF_EC")
-        self.trajectory = StateSeries(
-            self.time, [self.positions, self.velocities], self.frame
+        self.trajectory = StateSeries.from_dict(
+            {
+                "time": self.time.to_dict("JULIAN_DATE"),
+                "data": [self.positions.tolist(), self.velocities.tolist()],
+                "frame": self.frame.to_string(),
+                "headers": [
+                    ["pos_x", "pos_y", "pos_z"],
+                    ["vel_x", "vel_y", "vel_z"],
+                ],
+            }
         )
 
     def test_resample(self):
         """Test resampling of trajectory data."""
-        new_time = np.array([0.5, 1.5])
-        resampled = self.trajectory.resample(new_time)
-        self.assertEqual(resampled.time.et.tolist(), new_time.tolist())
+        new_time = np.array([JD_OF_J2000 + t for t in [0.5, 1.5]])
+        new_time_obj = AbsoluteDateArray.from_dict(
+            {
+                "time_format": "Julian_Date",
+                "times": new_time.tolist(),
+                "time_scale": "UTC",
+            }
+        )
+        resampled = self.trajectory.resample(new_time_obj)
+        self.assertEqual(resampled.time.et.tolist(), new_time_obj.et.tolist())
         np.testing.assert_allclose(
             resampled.data[0], [[0.5, 0.5, 0.5], [1.5, 1.5, 1.5]]
         )
@@ -44,11 +65,24 @@ class TestStateSeries(unittest.TestCase):
         velocities_with_gaps = np.array(
             [[np.nan, np.nan, np.nan], [1, 1, 1], [np.nan, np.nan, np.nan]]
         )
-        trajectory_with_gaps = StateSeries(
-            self.time, [positions_with_gaps, velocities_with_gaps], self.frame
+        trajectory_with_gaps = StateSeries.from_dict(
+            {
+                "time": self.time.to_dict("JULIAN_DATE"),
+                "data": [
+                    positions_with_gaps.tolist(),
+                    velocities_with_gaps.tolist(),
+                ],
+                "frame": self.frame.to_string(),
+                "headers": [
+                    ["pos_x", "pos_y", "pos_z"],
+                    ["vel_x", "vel_y", "vel_z"],
+                ],
+            }
         )
         trimmed = trajectory_with_gaps.remove_gaps()
-        np.testing.assert_allclose(trimmed.time.et, [1])
+        np.testing.assert_allclose(
+            trimmed.time.to_dict("JULIAN_DATE")["times"], [JD_OF_J2000 + 1]
+        )
         np.testing.assert_allclose(trimmed.data[0], [[1, 1, 1]])
         np.testing.assert_allclose(trimmed.data[1], [[1, 1, 1]])
 
@@ -63,8 +97,16 @@ class TestStateSeries(unittest.TestCase):
         """Test arithmetic operations between trajectories."""
         other_positions = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
         other_velocities = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
-        other_trajectory = StateSeries(
-            self.time, [other_positions, other_velocities], self.frame
+        other_trajectory = StateSeries.from_dict(
+            {
+                "time": self.time.to_dict("JULIAN_DATE"),
+                "data": [other_positions.tolist(), other_velocities.tolist()],
+                "frame": self.frame.to_string(),
+                "headers": [
+                    ["pos_x", "pos_y", "pos_z"],
+                    ["vel_x", "vel_y", "vel_z"],
+                ],
+            }
         )
 
         added = self.trajectory + other_trajectory
@@ -87,7 +129,7 @@ class TestStateSeries(unittest.TestCase):
         """Test creation of a constant position trajectory."""
         position = np.array([1, 1, 1])
         constant_traj = StateSeries.constant_position(
-            0, 1, position, self.frame
+            JD_OF_J2000 + 0, JD_OF_J2000 + 1, position, self.frame
         )
         np.testing.assert_allclose(
             constant_traj.data[0], [[1, 1, 1], [1, 1, 1]]
@@ -101,7 +143,11 @@ class TestStateSeries(unittest.TestCase):
         initial_position = np.array([0, 0, 0])
         velocity = np.array([1, 1, 1])
         constant_vel_traj = StateSeries.constant_velocity(
-            0, 1, velocity, initial_position, self.frame
+            JD_OF_J2000 + 0,
+            JD_OF_J2000 + 1,
+            velocity,
+            initial_position,
+            self.frame,
         )
         np.testing.assert_allclose(
             constant_vel_traj.data[0], [[0, 0, 0], [1, 1, 1]]
@@ -126,26 +172,28 @@ class TestStateSeries(unittest.TestCase):
         frame = ReferenceFrame("ICRF_EC")
         states = [
             CartesianState(
-                time=AbsoluteDate(0),
+                time=AbsoluteDate(JD_OF_J2000 + 0),
                 position=Cartesian3DPosition(0, 0, 0, frame),
                 velocity=Cartesian3DVelocity(1, 1, 1, frame),
                 frame=frame,
             ),
             CartesianState(
-                time=AbsoluteDate(1),
+                time=AbsoluteDate(JD_OF_J2000 + 1),
                 position=Cartesian3DPosition(1, 1, 1, frame),
                 velocity=Cartesian3DVelocity(2, 2, 2, frame),
                 frame=frame,
             ),
             CartesianState(
-                time=AbsoluteDate(2),
+                time=AbsoluteDate(JD_OF_J2000 + 2),
                 position=Cartesian3DPosition(2, 2, 2, frame),
                 velocity=Cartesian3DVelocity(3, 3, 3, frame),
                 frame=frame,
             ),
         ]
         trajectory = StateSeries.from_list_of_cartesian_state(states)
-        np.testing.assert_array_equal(trajectory.time.et, [0, 1, 2])
+        np.testing.assert_array_equal(
+            trajectory.time.et, [JD_OF_J2000 + t for t in [0, 1, 2]]
+        )
         np.testing.assert_array_equal(
             trajectory.data[0], [[0, 0, 0], [1, 1, 1], [2, 2, 2]]
         )
@@ -156,7 +204,7 @@ class TestStateSeries(unittest.TestCase):
 
         # Test for mismatched frames
         states[1] = CartesianState(
-            time=AbsoluteDate(1),
+            time=AbsoluteDate(JD_OF_J2000 + 1),
             position=Cartesian3DPosition(1, 1, 1, ReferenceFrame("ITRF")),
             velocity=Cartesian3DVelocity(2, 2, 2, ReferenceFrame("ITRF")),
             frame=ReferenceFrame("ITRF"),
@@ -170,26 +218,43 @@ class TestPositionSeries:
 
     def test_initialization(self):
         """Test initialization of PositionSeries."""
-        time = AbsoluteDateArray(np.array([0.0, 1.0]))
+        time = AbsoluteDateArray.from_dict(
+            {
+                "time_format": "Julian_Date",
+                "times": [JD_OF_J2000 + t for t in [0.0, 1.0]],
+                "time_scale": "UTC",
+            }
+        )
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
         frame = ReferenceFrame.ICRF_EC
-        ps = PositionSeries(time, data, frame)
+        ps = PositionSeries.from_dict(
+            {
+                "time": time.to_dict("JULIAN_DATE"),
+                "data": data.tolist(),
+                "frame": frame.to_string(),
+                "headers": ["pos_x", "pos_y", "pos_z"],
+            }
+        )
         assert np.array_equal(ps.data[0], data)
         assert ps.frame == frame
 
     def test_resample(self):
         """Test resampling of PositionSeries."""
-        time = AbsoluteDateArray(np.array([0.0, 1.0]))
+        time = AbsoluteDateArray(
+            np.array([JD_OF_J2000 + t for t in [0.0, 1.0]])
+        )
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
         frame = ReferenceFrame.ICRF_EC
         ps = PositionSeries(time, data, frame)
-        new_time = np.array([0.5])
+        new_time = np.array([JD_OF_J2000 + 0.5])
         resampled_ps = ps.resample(new_time)
         assert resampled_ps.data[0].shape == (1, 3)
 
     def test_remove_gaps(self):
         """Test removing gaps (NaN values) from PositionSeries."""
-        time = AbsoluteDateArray(np.array([0.0, 1.0, 2.0]))
+        time = AbsoluteDateArray(
+            np.array([JD_OF_J2000 + t for t in [0.0, 1.0, 2.0]])
+        )
         data = np.array(
             [[1.0, 2.0, 3.0], [np.nan, np.nan, np.nan], [4.0, 5.0, 6.0]]
         )
@@ -200,7 +265,9 @@ class TestPositionSeries:
 
     def test_to_frame(self):
         """Test frame conversion for PositionSeries."""
-        time = AbsoluteDateArray(np.array([0.0, 1.0]))
+        time = AbsoluteDateArray(
+            np.array([JD_OF_J2000 + t for t in [0.0, 1.0]])
+        )
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
         frame = ReferenceFrame.ICRF_EC
         ps = PositionSeries(time, data, frame)
@@ -215,7 +282,7 @@ class TestPositionSeries:
         ]
         for pos in positions:
             pos.time = AbsoluteDateArray(
-                np.array([0.0, 1.0])
+                np.array([JD_OF_J2000 + t for t in [0.0, 1.0]])
             )  # Mock time attribute
         ps = PositionSeries.from_list_of_cartesian_position(positions)
         assert ps.data[0].shape == (2, 3)
@@ -223,7 +290,9 @@ class TestPositionSeries:
 
     def test_arithmetic_operations(self):
         """Test arithmetic operations between PositionSeries."""
-        time = AbsoluteDateArray(np.array([0.0, 1.0, 2.0]))
+        time = AbsoluteDateArray(
+            np.array([JD_OF_J2000 + t for t in [0.0, 1.0, 2.0]])
+        )
         data1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
         data2 = np.array([[0.5, 1.5, 2.5], [3.5, 4.5, 5.5], [6.5, 7.5, 8.5]])
         frame = ReferenceFrame.ICRF_EC

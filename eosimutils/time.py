@@ -3,6 +3,9 @@
    :synopsis: Time information.
 
 Collection of classes and functions for handling time information.
+
+Constants:
+    JD_OF_J2000 (float): Julian Date of the J2000 epoch (2451545.0).
 """
 
 from typing import Dict, Any, Union
@@ -16,6 +19,9 @@ from skyfield.api import load as Skyfield_Load
 from skyfield.timelib import Time as Skyfield_Time
 
 from .base import EnumBase
+
+# Julian Date of the J2000 epoch
+JD_OF_J2000 = 2451545.0
 
 
 class TimeFormat(EnumBase):

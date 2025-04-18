@@ -10,6 +10,8 @@ Missing data (gaps) are represented by NaN values.
 Basic interpolation/resampling and arithmetic operations (with frame conversion) are supported.
 """
 
+# pylint: disable=protected-access
+
 import numpy as np
 import spiceypy as spice
 
@@ -200,6 +202,23 @@ class StateSeries(Timeseries):
         load_spice_kernels()  # Load SPICE kernels for frame conversion
 
     def resample(
+        self, new_time: AbsoluteDateArray, method: str = "linear"
+    ) -> "StateSeries":
+        """
+        Resamples the StateSeries to a new time base.
+
+        Takes AbsoluteDataArray as input and calls the private _resample method.
+
+        Args:
+            new_time (AbsoluteDateArray): The new time samples.
+            method (str, optional): Interpolation method. Defaults to "linear".
+
+        Returns:
+            StateSeries: A new StateSeries object with resampled data.
+        """
+        return self._resample(new_time.et, method)
+
+    def _resample(
         self, new_time: np.ndarray, method: str = "linear"
     ) -> "StateSeries":
         """
@@ -210,7 +229,7 @@ class StateSeries(Timeseries):
         to help interpolate posiiton).
 
         Args:
-            new_time (np.ndarray): The new time samples.
+            new_time (np.ndarray): The new time samples in ephemeris time.
             method (str): The interpolation method to use. Defaults to "linear".
 
         Returns:
@@ -252,7 +271,7 @@ class StateSeries(Timeseries):
             return super()._arithmetic_op(other, op)
         elif isinstance(other, StateSeries):
             # Resample other onto self.time.et (using the underlying ephemeris times).
-            other_resamp = other.resample(self.time.et, method=interp_method)
+            other_resamp = other._resample(self.time.et, method=interp_method)
             # If frames do not match, attempt frame conversion.
             if self.frame != other.frame:
                 pos_conv, vel_conv = convert_frame(

@@ -220,8 +220,8 @@ class Cartesian3DVelocity:
 
 class GeographicPosition:
     """Handles geographic position in the geodetic coordinate system.
-    The geodetic position is defined with respect World Geodetic System 1984 Geoid
-    as defined in Skyfield.
+    The geodetic position is defined with respect to the 
+    World Geodetic System 1984 Geoid as defined in Skyfield.
     Reference: https://rhodesmill.org/skyfield/api-topos.html
     """
 
@@ -297,7 +297,7 @@ class GeographicPosition:
     @property
     def itrs_xyz(self):
         """Get the ITRS XYZ position in kilometers.
-        Covnersion is performed using Skyfield.
+        Conversion is performed using Skyfield.
         Returns:
             np.ndarray: ITRS XYZ position in kilometers.
         """

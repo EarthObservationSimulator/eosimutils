@@ -382,7 +382,7 @@ class AbsoluteDateArray:
 
     def __len__(self):
         """Return the length of the AbsoluteDateArray."""
-        return len(self.et)
+        return len(self.ephemeris_time)
 
     def __getitem__(self, index):
         """Get an item or a slice from the AbsoluteDateArray.
@@ -396,10 +396,10 @@ class AbsoluteDateArray:
         """
         if isinstance(index, slice):
             # Handle slicing
-            return AbsoluteDateArray(self.et[index])
+            return AbsoluteDateArray(self.ephemeris_time[index])
         else:
             # Handle single index
-            return AbsoluteDate(self.et[index])
+            return AbsoluteDate(self.ephemeris_time[index])
 
     def __eq__(self, value):
         """Check equality of two AbsoluteDateArray objects.
@@ -412,8 +412,8 @@ class AbsoluteDateArray:
         """
         if not isinstance(value, AbsoluteDateArray):
             return False
-        return np.array_equal(self.et, value.et)
+        return np.array_equal(self.ephemeris_time, value.ephemeris_time)
 
     def __repr__(self):
         """Return a string representation of the AbsoluteDateArray."""
-        return f"AbsoluteDateArray({self.et})"
+        return f"AbsoluteDateArray({self.ephemeris_time})"

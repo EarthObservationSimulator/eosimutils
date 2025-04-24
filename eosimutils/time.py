@@ -3,6 +3,9 @@
    :synopsis: Time information.
 
 Collection of classes and functions for handling time information.
+
+Constants:
+    JD_OF_J2000 (float): Julian Date of the J2000 epoch (2451545.0).
 """
 
 from typing import Dict, Any, Union
@@ -16,6 +19,9 @@ from skyfield.api import load as Skyfield_Load
 from skyfield.timelib import Time as Skyfield_Time
 
 from .base import EnumBase
+
+# Julian Date of the J2000 epoch
+JD_OF_J2000 = 2451545.0
 
 
 class TimeFormat(EnumBase):
@@ -232,21 +238,21 @@ class AbsoluteDateArray:
     to a dictionary.
 
     Attributes:
-        et (np.ndarray): 1D numpy array of ephemeris times.
+        ephemeris_time (np.ndarray): 1D numpy array of ephemeris times.
     """
 
-    def __init__(self, et: np.ndarray) -> None:
+    def __init__(self, ephemeris_time: np.ndarray) -> None:
         """
         Constructor for the AbsoluteDateArray class.
 
         Args:
-            et (np.ndarray): 1D array of ephemeris times.
+            ephemeris_time (np.ndarray): 1D array of ephemeris times.
         """
-        if not isinstance(et, np.ndarray):
-            raise TypeError("et must be a numpy.ndarray")
-        if et.ndim != 1:
-            raise ValueError("et must be a 1D numpy array")
-        self.et = et
+        if not isinstance(ephemeris_time, np.ndarray):
+            raise TypeError("ephemeris_time must be a numpy.ndarray")
+        if ephemeris_time.ndim != 1:
+            raise ValueError("ephemeris_time must be a 1D numpy array")
+        self.ephemeris_time = ephemeris_time
 
     @classmethod
     def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDateArray":
@@ -264,10 +270,11 @@ class AbsoluteDateArray:
                                       See :class:`eosimutils.time.TimeScale` for options.
 
                 For "Gregorian_Date" format:
-                - "times" (list of str): List of date-times in YYYY-MM-DDTHH:MM:SS.SSS format.
+                - "calendar_date" (list of str): List of date-times in YYYY-MM-DDTHH:MM:SS.SSS
+                format.
 
                 For "Julian_Date" format:
-                - "times" (list of float): List of Julian Dates.
+                - "jd" (list of float): List of Julian Dates.
 
         Returns:
             AbsoluteDateArray: AbsoluteDateArray object.
@@ -281,10 +288,10 @@ class AbsoluteDateArray:
         ephemeris_times = []
         if time_scale == TimeScale.UTC:
             if time_format == TimeFormat.GREGORIAN_DATE:
-                for calendar_date_str in dict_in["times"]:
+                for calendar_date_str in dict_in["calendar_date"]:
                     ephemeris_times.append(spice.str2et(calendar_date_str))
             elif time_format == TimeFormat.JULIAN_DATE:
-                for jd in dict_in["times"]:
+                for jd in dict_in["jd"]:
                     time_string = f"jd {jd}"  # Format as Julian Date string
                     ephemeris_times.append(spice.str2et(time_string))
             else:
@@ -292,7 +299,7 @@ class AbsoluteDateArray:
         else:
             raise ValueError(f"Unsupported time scale: {time_scale}.")
 
-        return cls(et=np.array(ephemeris_times))
+        return cls(ephemeris_time=np.array(ephemeris_times))
 
     def to_astropy_time(self) -> Astropy_Time:
         """
@@ -304,7 +311,7 @@ class AbsoluteDateArray:
         # Use AbsoluteDate.to_dict to retrieve the Gregorian UTC string for consistency.
         utc_strings = [
             AbsoluteDate(t).to_dict("GREGORIAN_DATE", "UTC")["calendar_date"]
-            for t in self.et
+            for t in self.ephemeris_time
         ]
         return Astropy_Time(utc_strings, scale="utc")
 
@@ -317,7 +324,7 @@ class AbsoluteDateArray:
         """
         ts = Skyfield_Load.timescale()
         years, months, days, hours, minutes, seconds = [], [], [], [], [], []
-        for t in self.et:
+        for t in self.ephemeris_time:
             # Get the UTC string using AbsoluteDate conversion for consistency.
             utc_string = AbsoluteDate(t).to_dict("GREGORIAN_DATE", "UTC")[
                 "calendar_date"
@@ -351,13 +358,13 @@ class AbsoluteDateArray:
         Returns:
             dict: Dictionary with keys:
                 - "time_format": the chosen format,
-                - "times": a list of times (ISO strings/Gregorian or float/Julian Date),
+                - "calendar_date" or "jd": list of times (ISO strings/Gregorian or float/jd),
                 - "time_scale": the time scale.
         """
         # Convert each ephemeris time using AbsoluteDate.to_dict for consistency.
         times_list = []
         upper_format = str(time_format).upper()
-        for t in self.et:
+        for t in self.ephemeris_time:
             ad_dict = AbsoluteDate(t).to_dict(time_format, time_scale)
             if upper_format == "GREGORIAN_DATE":
                 times_list.append(ad_dict["calendar_date"])
@@ -367,7 +374,9 @@ class AbsoluteDateArray:
                 raise ValueError(f"Unsupported time_format: {time_format}")
         return {
             "time_format": str(time_format),
-            "times": times_list,
+            (
+                "calendar_date" if upper_format == "GREGORIAN_DATE" else "jd"
+            ): times_list,
             "time_scale": str(time_scale),
         }
 

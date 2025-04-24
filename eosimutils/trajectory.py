@@ -10,6 +10,8 @@ Missing data (gaps) are represented by NaN values.
 Basic interpolation/resampling and arithmetic operations (with frame conversion) are supported.
 """
 
+# pylint: disable=protected-access
+
 import numpy as np
 import spiceypy as spice
 
@@ -200,6 +202,23 @@ class StateSeries(Timeseries):
         load_spice_kernels()  # Load SPICE kernels for frame conversion
 
     def resample(
+        self, new_time: AbsoluteDateArray, method: str = "linear"
+    ) -> "StateSeries":
+        """
+        Resamples the StateSeries to a new time base.
+
+        Takes AbsoluteDataArray as input and calls the private _resample method.
+
+        Args:
+            new_time (AbsoluteDateArray): The new time samples.
+            method (str, optional): Interpolation method. Defaults to "linear".
+
+        Returns:
+            StateSeries: A new StateSeries object with resampled data.
+        """
+        return self._resample(new_time.ephemeris_time, method)
+
+    def _resample(
         self, new_time: np.ndarray, method: str = "linear"
     ) -> "StateSeries":
         """
@@ -210,7 +229,7 @@ class StateSeries(Timeseries):
         to help interpolate posiiton).
 
         Args:
-            new_time (np.ndarray): The new time samples.
+            new_time (np.ndarray): The new time samples in ephemeris time.
             method (str): The interpolation method to use. Defaults to "linear".
 
         Returns:
@@ -251,14 +270,16 @@ class StateSeries(Timeseries):
             # Delegate scalar operations to the parent class.
             return super()._arithmetic_op(other, op)
         elif isinstance(other, StateSeries):
-            # Resample other onto self.time.et (using the underlying ephemeris times).
-            other_resamp = other.resample(self.time.et, method=interp_method)
+            # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
+            other_resamp = other._resample(
+                self.time.ephemeris_time, method=interp_method
+            )
             # If frames do not match, attempt frame conversion.
             if self.frame != other.frame:
                 pos_conv, vel_conv = convert_frame(
                     other_resamp.data[0],
                     other_resamp.data[1],
-                    self.time.et,
+                    self.time.ephemeris_time,
                     other.frame,
                     self.frame,
                 )
@@ -335,10 +356,16 @@ class StateSeries(Timeseries):
         if self.frame == to_frame:
             return self
         pos, vel = convert_frame(
-            self.data[0], self.data[1], self.time.et, self.frame, to_frame
+            self.data[0],
+            self.data[1],
+            self.time.ephemeris_time,
+            self.frame,
+            to_frame,
         )
         return StateSeries(
-            AbsoluteDateArray(self.time.et.copy()), [pos, vel], to_frame
+            AbsoluteDateArray(self.time.ephemeris_time.copy()),
+            [pos, vel],
+            to_frame,
         )
 
     def to_dict(self) -> dict:
@@ -599,12 +626,12 @@ class PositionSeries(Timeseries):
             return self
         pos = convert_frame_position(
             self.data[0],
-            self.time.et,
+            self.time.ephemeris_time,
             self.frame,
             to_frame,
         )
         return PositionSeries(
-            AbsoluteDateArray(self.time.et.copy()), pos, to_frame
+            AbsoluteDateArray(self.time.ephemeris_time.copy()), pos, to_frame
         )
 
     def to_dict(self) -> dict:
@@ -721,13 +748,15 @@ class PositionSeries(Timeseries):
             # Delegate scalar operations to the parent class.
             return super()._arithmetic_op(other, op)
         elif isinstance(other, PositionSeries):
-            # Resample other onto self.time.et (using the underlying ephemeris times).
-            other_resamp = other.resample(self.time.et, method=interp_method)
+            # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
+            other_resamp = other.resample(
+                self.time.ephemeris_time, method=interp_method
+            )
             # If frames do not match, attempt frame conversion.
             if self.frame != other.frame:
                 pos_conv = convert_frame_position(
                     other_resamp.data[0],
-                    self.time.et,
+                    self.time.ephemeris_time,
                     other.frame,
                     self.frame,
                 )

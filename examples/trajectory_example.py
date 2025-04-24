@@ -10,13 +10,18 @@ from eosimutils.time import AbsoluteDateArray
 
 # Define orbit parameters.
 R = 7000             # km, orbital radius for Orbit 1.
-period = 5400        # seconds, orbital period (~1.5 hours).
+period = 5400.0/86400.0        # days, orbital period (~1.5 hours).
 omega = 2 * np.pi / period  # angular velocity in rad/s.
+jd_of_j2000 = 2451545.0  # Julian Date of J2000 epoch.
 
 # Create an array of time samples.
 N = 200
-time_points = np.linspace(0, period, N)
-abs_dates = AbsoluteDateArray(time_points)
+time_points = np.linspace(jd_of_j2000, jd_of_j2000 + period, N)
+abs_dates = AbsoluteDateArray.from_dict({
+    "time_format": "Julian_Date",
+    "jd": time_points.tolist(),
+    "time_scale": "UTC"
+})
 
 # Orbit 1: Circular orbit in the xy-plane.
 x1 = R * np.cos(omega * time_points)
@@ -35,7 +40,12 @@ missing_end = int(0.5 * N)    # End of missing data (50% of the way through).
 position1[missing_start:missing_end, :] = np.nan
 velocity1[missing_start:missing_end, :] = np.nan
 
-traj1 = StateSeries(abs_dates, [position1, velocity1], ReferenceFrame.ICRF_EC)
+traj1 = StateSeries.from_dict({
+    "time": abs_dates.to_dict(),
+    "data": [position1.tolist(), velocity1.tolist()],
+    "frame": ReferenceFrame.ICRF_EC.to_string(),
+    "headers": [["pos_x", "pos_y", "pos_z"], ["vel_x", "vel_y", "vel_z"]]
+})
 traj1_itrf = traj1.to_frame(ReferenceFrame.ITRF)  # Convert to ITRF frame.
 
 # Orbit 2: Nearly identical orbit with a small increase in radius.
@@ -50,7 +60,12 @@ vz2 = np.full_like(time_points, 0)
 
 position2 = np.column_stack((x2, y2, z2))
 velocity2 = np.column_stack((vx2, vy2, vz2))
-traj2 = StateSeries(abs_dates, [position2, velocity2], ReferenceFrame.ICRF_EC)
+traj2 = StateSeries.from_dict({
+    "time": abs_dates.to_dict(),
+    "data": [position2.tolist(), velocity2.tolist()],
+    "frame": ReferenceFrame.ICRF_EC.to_string(),
+    "headers": [["pos_x", "pos_y", "pos_z"], ["vel_x", "vel_y", "vel_z"]]
+})
 
 # Compute the difference between the two trajectories
 traj_diff = traj1 - traj2

@@ -67,7 +67,7 @@ class Timeseries:
     |   +-------------+ |
     |   | Array 2 (2D)| |  --> [[v11, v12, v13],      (Vector data)
     |   |             | |       [v21, v22, v23],      (Each row corresponds to a time)
-    |   |             | |       ..., 
+    |   |             | |       ...,
     |   |             | |       [vn1, vn2, vn3]]
     |   +-------------+ |
     |                   |
@@ -84,7 +84,7 @@ class Timeseries:
         time (AbsoluteDateArray): Contains a 1D numpy array of ephemeris times.
         data (list): List of numpy arrays. Each array can be 1D (scalar) or 2D (vector).
         headers (list): List of headers for the data arrays. For vectors, headers are nested lists.
-    
+
     """
 
     def __init__(
@@ -111,7 +111,7 @@ class Timeseries:
         if not isinstance(time, AbsoluteDateArray):
             raise TypeError("time must be an AbsoluteDateArray object.")
         for arr in data:
-            if arr.shape[0] != time.et.shape[0]:
+            if arr.shape[0] != time.ephemeris_time.shape[0]:
                 raise ValueError(
                     "Each data array must have the same number of rows as time."
                 )
@@ -152,7 +152,9 @@ class Timeseries:
                 - list: Headers of the data arrays.
         """
         new_data = []
-        original_time = self.time.et  # use underlying ephemeris times
+        original_time = (
+            self.time.ephemeris_time
+        )  # use underlying ephemeris times
         for arr in self.data:
             # If this data array is scalar
             if arr.ndim == 1:
@@ -230,7 +232,7 @@ class Timeseries:
                 - list: Data arrays with gaps removed.
                 - list: Headers of the data arrays.
         """
-        original_time = self.time.et
+        original_time = self.time.ephemeris_time
         if self.data[0].ndim == 1:
             valid = ~np.isnan(self.data[0])
         else:
@@ -302,9 +304,9 @@ class Timeseries:
         Perform arithmetic operations (e.g., addition, subtraction) between timeseries or
         with a scalar.
 
-        This method supports operations between two Timeseries objects or between a 
-        Timeseries and a scalar. When operating on two Timeseries, the `other` Timeseries 
-        is resampled onto the time grid of `self` (using the underlying ephemeris times) 
+        This method supports operations between two Timeseries objects or between a
+        Timeseries and a scalar. When operating on two Timeseries, the `other` Timeseries
+        is resampled onto the time grid of `self` (using the underlying ephemeris times)
         before performing the operation.
 
         Args:
@@ -322,8 +324,8 @@ class Timeseries:
             new_data = [op(arr, other) for arr in self.data]
             return Timeseries(self.time, new_data, self.headers)
         elif isinstance(other, Timeseries):
-            # Resample other onto self.time.et (using the underlying ephemeris times).
-            other_resamp = other._resample_data(self.time.et)[1]
+            # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
+            other_resamp = other._resample_data(self.time.ephemeris_time)[1]
             # Perform vectorized operation for each data array.
             new_data = [
                 op(arr, other_arr)

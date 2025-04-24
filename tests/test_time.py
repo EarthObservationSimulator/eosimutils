@@ -232,8 +232,8 @@ class TestAbsoluteDateArray(unittest.TestCase):
         result = abs_dates.to_dict("GREGORIAN_DATE", "UTC")
         self.assertEqual(result["time_format"], "GREGORIAN_DATE")
         self.assertEqual(result["time_scale"], "UTC")
-        self.assertEqual(result["times"][0], "2017-07-14T19:46:00.000")
-        self.assertEqual(result["times"][1], "2017-07-14T19:46:01.000")
+        self.assertEqual(result["calendar_date"][0], "2017-07-14T19:46:00.000")
+        self.assertEqual(result["calendar_date"][1], "2017-07-14T19:46:01.000")
 
     def test_to_dict_julian(self):
         et_array = np.array([553333629.183727, 553333630.183727])
@@ -241,8 +241,8 @@ class TestAbsoluteDateArray(unittest.TestCase):
         result = abs_dates.to_dict("JULIAN_DATE", "UTC")
         self.assertEqual(result["time_format"], "JULIAN_DATE")
         self.assertEqual(result["time_scale"], "UTC")
-        self.assertAlmostEqual(result["times"][0], 2457949.323611, places=6)
-        self.assertAlmostEqual(result["times"][1], 2457949.323623, places=6)
+        self.assertAlmostEqual(result["jd"][0], 2457949.323611, places=6)
+        self.assertAlmostEqual(result["jd"][1], 2457949.323623, places=6)
 
     def test_to_dict_and_from_dict(self):
         et_array = np.array([553333629.183727, 553333630.183727])
@@ -258,7 +258,9 @@ class TestAbsoluteDateArray(unittest.TestCase):
 
         # Assert that the reconstructed object matches the original
         np.testing.assert_allclose(
-            abs_dates.et, reconstructed_abs_dates.et, rtol=1e-6
+            abs_dates.ephemeris_time,
+            reconstructed_abs_dates.ephemeris_time,
+            rtol=1e-6,
         )
 
     def test_length(self):

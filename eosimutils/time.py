@@ -391,7 +391,7 @@ class AbsoluteDateArray:
             index (int or slice): Index or slice of the item(s) to retrieve.
 
         Returns:
-            AbsoluteDate or AbsoluteDateArray: Selected item(s) as AbsoluteDate 
+            AbsoluteDate or AbsoluteDateArray: Selected item(s) as AbsoluteDate
                                                 or AbsoluteDateArray.
         """
         if isinstance(index, slice):

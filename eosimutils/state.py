@@ -99,9 +99,7 @@ class Cartesian3DPosition:
         frame = (
             ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
         )
-        return cls(
-            dict_in["x"], dict_in["y"], dict_in["z"], frame
-        )
+        return cls(dict_in["x"], dict_in["y"], dict_in["z"], frame)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the Cartesian3DPosition object to a dictionary.
@@ -200,9 +198,7 @@ class Cartesian3DVelocity:
         frame = (
             ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
         )
-        return cls(
-            dict_in["vx"], dict_in["vy"], dict_in["vz"], frame
-        )
+        return cls(dict_in["vx"], dict_in["vy"], dict_in["vz"], frame)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the Cartesian3DVelocity object to a dictionary.
@@ -220,7 +216,7 @@ class Cartesian3DVelocity:
 
 class GeographicPosition:
     """Handles geographic position in the geodetic coordinate system.
-    The geodetic position is defined with respect to the 
+    The geodetic position is defined with respect to the
     World Geodetic System 1984 Geoid as defined in Skyfield.
     Reference: https://rhodesmill.org/skyfield/api-topos.html
     """
@@ -364,14 +360,18 @@ class CartesianState:
 
     @staticmethod
     def from_array(
-        array_in: Union[List[float], np.ndarray, Tuple[float, float, float]],
+        array_in: Union[
+            List[float],
+            np.ndarray,
+            Tuple[float, float, float, float, float, float],
+        ],
         time: AbsoluteDate,
         frame: Optional[Union[ReferenceFrame, str, None]] = None,
     ) -> "CartesianState":
         """Construct a CartesianState object from a list, tuple, or NumPy array.
 
         Args:
-            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]):
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float, float, float, float]]): # pylint: disable=line-too-long
                 Position and velocity coordinates in kilometers and km-per-s.
             time (AbsoluteDate): Absolute date-time object.
             frame (Union[ReferenceFrame, str, None]): Reference-frame.

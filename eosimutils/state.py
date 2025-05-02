@@ -12,7 +12,7 @@ from skyfield.positionlib import build_position as skyfield_build_position
 from skyfield.constants import AU_KM as Skyfield_AU_KM
 from skyfield.api import wgs84 as skyfield_wgs84
 
-from .base import ReferenceFrame
+from .frames import ReferenceFrame
 from .time import AbsoluteDate
 
 

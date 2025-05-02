@@ -8,7 +8,7 @@ from astropy.coordinates import EarthLocation as Astropy_EarthLocation
 import astropy.units as astropy_u
 
 from eosimutils.time import AbsoluteDate
-from eosimutils.base import ReferenceFrame
+from eosimutils.frames import ReferenceFrame
 from eosimutils.state import (
     Cartesian3DPosition,
     Cartesian3DVelocity,

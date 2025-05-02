@@ -6,7 +6,7 @@ from typing import Union
 from eosimutils.thirdpartyutils import astropy_transform
 from eosimutils.state import Cartesian3DPosition, CartesianState
 from eosimutils.time import AbsoluteDate
-from eosimutils.base import ReferenceFrame
+from eosimutils.frames import ReferenceFrame
 from eosimutils.kinematic import transform_position, transform_state
 
 

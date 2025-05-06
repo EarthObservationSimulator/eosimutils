@@ -3,201 +3,116 @@
    :synopsis: Reference frame representation..
 """
 
-from .base import EnumBase
-from scipy.spatial.transform import Rotation as R  # Import Rotation from scipy
-from collections import deque
-from typing import Callable, Dict, Union
-import numpy as np
-
-from eosimutils.time import AbsoluteDate, AbsoluteDateArray
+from typing import Dict, Union, List, Optional
 
 
-class ReferenceFrame(EnumBase):
+class ReferenceFrameMeta(type):
     """
-    Enumeration of recognized Reference frames.
-
-    Attributes:
-
-        ICRF_EC (str): Earth centered inertial frame aligned to the ICRF
-                        (International Celestial Reference Frame) .
-
-                    The alignment of the ICRF is as defined in the SPICE toolkit.
-                    This is implemented with the J2000 frame defined in the SPICE toolkit.
-                    It seems that J2000 is same as ICRF.
-                    In SPICE the center of any inertial frame is ALWAYS the solar system barycenter.
-                    See Slide 12 and 7 in
-                    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/17_frames_and_coordinate_systems.pdf
-
-        ITRF (str): International Terrestrial Reference Frame.
-                    This is implemented with the ITRF93 frame defined in the SPICE toolkit.
-
-                    Also see:
-                    https://rhodesmill.org/skyfield/api-framelib.html#skyfield.framelib.itrs
-
+    Metaclass for ReferenceFrame to allow iteration over class (enum-like behavior).
     """
 
-    ICRF_EC = "ICRF_EC"  # Geocentric Celestial Reference Frame (ECI)
-    ITRF = "ITRF"  # International Terrestrial Reference Frame (ECEF)
-    # TEME = "TEME"  # True Equator Mean Equinox
+    def __iter__(cls):
+        return iter(cls._frames.values())
 
 
-# A TransformFunc maps a single AbsoluteDate to a scipy Rotation object
-TransformFunc = Callable[[AbsoluteDate], R]
-
-# A TransformsFunc maps an AbsoluteDateArray to a scipy Rotation object containing multiple rotations
-TransformsFunc = Callable[[AbsoluteDateArray], R]
-
-
-class FrameRegistry:
+class ReferenceFrame(metaclass=ReferenceFrameMeta):
     """
-    Registry for time-varying coordinate frame transformations.
+    Enum-like class with support for dynamically added reference frames.
 
-    Underlying data structure:
-    - Frames and transforms form a graph: nodes are frame names, edges are transform functions.
-    - Adjacency list `_adj`: dict mapping each frame to a dict of neighbor-frame names → TransformFunc/TransformsFunc.
-    - Querying A->B at time t:
-    1. BFS to discover a path through intermediate frames.
-    2. At each edge, call its TransformFunc(t) or TransformsFunc(ts) to get the rotation(s).
-    3. Compose the rotations along the path to yield the composite rotation(s).
-
-    Attributes:
-        _adj (Dict[str, Dict[str, Dict[str, Union[TransformFunc, TransformsFunc]]]]):
-            Adjacency list representing the frame graph.
-            _adj[frame_i][frame_j] = {"single": f_{i->j}(t), "multiple": f_{i->j}(ts)}.
+    Behaves like an Enum:
+    - Allows class-level access to static members (e.g. ReferenceFrame.ICRF_EC)
+    - Supports ReferenceFrame.get("ICRF_EC")
+    - Supports iteration: for frame in ReferenceFrame
+    - Supports dynamic addition: ReferenceFrame.add("NEW_FRAME")
     """
 
-    def __init__(self):
+    _frames: Dict[str, "ReferenceFrame"] = {}
+
+    def __init__(self, name: str):
         """
-        Initializes an empty adjacency list for the frame graph.
-        """
-        # Initialize empty adjacency list
-        self._adj: Dict[
-            str, Dict[str, Dict[str, Union[TransformFunc, TransformsFunc]]]
-        ] = {}
-
-    def add_transform(
-        self,
-        from_frame: str,
-        to_frame: str,
-        transform_func: TransformFunc,
-        transforms_func: TransformsFunc = None,
-        set_inverse: bool = True,
-    ):
-        """
-        Registers a direct transform function from `from_frame` to `to_frame`.
-        Optionally registers the inverse for the reverse direction.
+        Initializes a reference frame with a given name.
 
         Args:
-            from_frame (str): Name of the source frame.
-            to_frame (str): Name of the target frame.
-            transform_func (TransformFunc): Function f(t: AbsoluteDate) -> scipy Rotation object
-                mapping from_frame→to_frame.
-            transforms_func (TransformsFunc, optional): Function f(ts: AbsoluteDateArray) -> scipy
-                Rotation object containing multiple rotations. Defaults to applying `transform_func`
-                to each date in the array.
-            set_inverse (bool, optional): Whether to automatically register the inverse transform.
-                Default is True.
+            name (str): Name of the reference frame.
         """
+        self._name = name.upper()
+        ReferenceFrame._frames[self._name] = self
 
-        # Default transforms_func if not provided
-        if transforms_func is None:
+    def __str__(self):
+        return self._name
 
-            def transforms_func(ts: AbsoluteDateArray):
-                return R.from_quat(
-                    [transform_func(t).as_quat() for t in ts.ephemeris_time]
-                )
+    def __repr__(self):
+        return f"ReferenceFrame('{self._name}')"
 
-        # Build inverse functions for single and multiple dates
-        def inv_func(t: AbsoluteDate, func=transform_func):
-            return func(t).inv()
+    def to_string(self) -> str:
+        return self._name
 
-        def inv_transforms_func(ts: AbsoluteDateArray, func=transforms_func):
-            return func(ts).inv()
-
-        # Store forward transform in adjacency list
-        if from_frame not in self._adj:
-            self._adj[from_frame] = {}
-        self._adj[from_frame][to_frame] = {
-            "single": transform_func,
-            "multiple": transforms_func,
-        }
-
-        # Store inverse transform if set_inverse is True
-        if set_inverse:
-            if to_frame not in self._adj:
-                self._adj[to_frame] = {}
-            self._adj[to_frame][from_frame] = {
-                "single": inv_func,
-                "multiple": inv_transforms_func,
-            }
-
-    def get_transform(
-        self,
-        from_frame: str,
-        to_frame: str,
-        t: Union[AbsoluteDate, AbsoluteDateArray],
-    ) -> R:
+    def __eq__(self, other: Union[str, "ReferenceFrame"]) -> bool:
         """
-        Computes the composed transform from `from_frame` to `to_frame` at time `t`.
+        Compares this reference frame with another.
 
         Args:
-            from_frame (str): Name of the source frame.
-            to_frame (str): Name of the target frame.
-            t (Union[AbsoluteDate, AbsoluteDateArray]): AbsoluteDate or AbsoluteDateArray
-                representing the time(s).
+            other (Union[str, ReferenceFrame]): Other reference frame or string to compare with.
 
         Returns:
-            R: scipy Rotation object representing the composite transform(s).
-
-        Raises:
-            KeyError: If no path exists.
+                bool: True if they are equal, False otherwise.
         """
-        # Determine if input is single or multiple dates
-        is_single = isinstance(t, AbsoluteDate)
+        if isinstance(other, ReferenceFrame):
+            return self._name == other._name
+        if isinstance(other, str):
+            return self._name == other.upper()
+        return False
 
-        # Identity if same frame
-        if from_frame == to_frame:
-            return (
-                R.identity() if is_single else R.identity(len(t.ephemeris_time))
-            )
+    def __hash__(self):
+        return hash(self._name)
 
-        visited = {from_frame}
-        # Prepare initial BFS queue: (frame, accumulated_rotation)
-        first_nbrs = self._adj.get(from_frame, {})
-        queue = deque(
-            [
-                (
-                    from_frame,
-                    (
-                        R.identity()
-                        if is_single
-                        else R.identity(len(t.ephemeris_time))
-                    ),
-                )
-            ]
-        )
+    @classmethod
+    def get(
+        cls,
+        key: Union[str, "ReferenceFrame", List[Union[str, "ReferenceFrame"]]],
+    ) -> Optional[Union["ReferenceFrame", List["ReferenceFrame"]]]:
+        """
+        Retrieves a reference frame by name or instance.
 
-        # BFS loop
-        while queue:
-            curr_frame, acc = queue.popleft()
-            for nbr, funcs in self._adj.get(curr_frame, {}).items():
-                if nbr in visited:
-                    continue
-                func = funcs["single"] if is_single else funcs["multiple"]
-                rot = func(t)
-                new_acc = rot * acc
-                if nbr == to_frame:
-                    return new_acc
-                visited.add(nbr)
-                queue.append((nbr, new_acc))
+        Args:
+            key (Union[str, ReferenceFrame, List[Union[str, ReferenceFrame]]]): The name or
+                instance of the reference frame.
 
-        # No path found
-        raise KeyError(
-            f"No transform path from '{from_frame}' to '{to_frame}' at time {t}"
-        )
+        Returns:
+            Optional[Union[ReferenceFrame, List[ReferenceFrame]]]: The reference frame instance
+                or a list of instances.
+        """
+        if isinstance(key, list):
+            return [cls.get(k) for k in key]
+        if isinstance(key, ReferenceFrame):
+            return key
+        if isinstance(key, str):
+            return cls._frames.get(key.upper())
+        return None
+
+    @classmethod
+    def add(cls, name: str) -> "ReferenceFrame":
+        """
+        Adds a new reference frame to the registry.
+
+        Args:
+            name (str): Name of the new reference frame.
+        Returns:
+            ReferenceFrame: The newly created reference frame instance.
+        """
+        name = name.upper()
+        return cls._frames.get(name) or cls(name)
+
+    @classmethod
+    def values(cls) -> List["ReferenceFrame"]:
+        return list(cls._frames.values())
+
+    @classmethod
+    def names(cls) -> List[str]:
+        return list(cls._frames.keys())
 
 
-# Module-level singleton
-registry = FrameRegistry()
-
-# Add spice transforms
+# Add enum-like static members
+for _name in ["ICRF_EC", "ITRF"]:
+    instance = ReferenceFrame(_name)
+    setattr(ReferenceFrame, _name, instance)

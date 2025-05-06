@@ -113,7 +113,7 @@ class Cartesian3DPosition:
             "x": self.coords[0],
             "y": self.coords[1],
             "z": self.coords[2],
-            "frame": self.frame.value if self.frame else None,
+            "frame": self.frame.to_string() if self.frame else None,
         }
 
 
@@ -214,7 +214,7 @@ class Cartesian3DVelocity:
             "vx": self.coords[0],
             "vy": self.coords[1],
             "vz": self.coords[2],
-            "frame": self.frame.value if self.frame else None,
+            "frame": self.frame.to_string() if self.frame else None,
         }
 
 
@@ -410,7 +410,7 @@ class CartesianState:
             "time": self.time.to_dict(),
             "position": self.position.to_list(),
             "velocity": self.velocity.to_list(),
-            "frame": self.frame.value,
+            "frame": self.frame.to_string(),
         }
 
     def to_numpy(self) -> np.ndarray:

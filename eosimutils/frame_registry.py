@@ -5,7 +5,7 @@
 
 from scipy.spatial.transform import Rotation as Scipy_Rotation
 from collections import deque
-from typing import Dict, Union
+from typing import Dict, Union, Any, List
 import numpy as np
 
 from .frames import ReferenceFrame
@@ -18,9 +18,8 @@ class FrameRegistry:
     Registry for time-varying coordinate frame transformations.
 
     Underlying data structure:
-    - Frames and transforms form a graph: nodes are ReferenceFrames, edges are Orientations.
-    - Adjacency list `_adj`: dict maps each frame to a dict of
-        adjacent ReferenceFrames → Orientation.
+    - Frames/transforms form a graph: nodes are ReferenceFrames/edges are Orientation instances.
+    - Adjacency list `_adj`: maps each source ReferenceFrame to a list of Orientation edges.
     - Querying A->B at time t:
         1. BFS to discover a path through intermediate frames.
         2. At each edge, call its Orientation.at(t) to get the rotation(s)/angular velocity(ies).
@@ -33,7 +32,7 @@ class FrameRegistry:
         By default, it contains transforms for ICRF_EC and ITRF frames.
         """
         # Initialize empty adjacency list
-        self._adj: Dict[ReferenceFrame, Dict[ReferenceFrame, Orientation]] = {}
+        self._adj: Dict[ReferenceFrame, List[Orientation]] = {}
 
         # Add spice transforms
         self.add_spice_transforms()
@@ -42,12 +41,12 @@ class FrameRegistry:
         """
         Adds SPICE transforms for ICRF_EC and ITRF frames.
         """
+
         # Add transforms from ICRF_EC to ITRF
         self.add_transform(
             SpiceOrientation(ReferenceFrame.ICRF_EC, ReferenceFrame.ITRF),
             False,
         )
-
         # Add transforms from ITRF to ICRF_EC
         self.add_transform(
             SpiceOrientation(ReferenceFrame.ITRF, ReferenceFrame.ICRF_EC),
@@ -69,18 +68,12 @@ class FrameRegistry:
                 Default is True.
         """
         from_frame = orientation.from_frame
-        to_frame = orientation.to_frame
-
-        # Store forward orientation in adjacency list
-        if from_frame not in self._adj:
-            self._adj[from_frame] = {}
-        self._adj[from_frame][to_frame] = orientation
-
-        # Store inverse orientation if set_inverse is True
+        # append forward edge
+        self._adj.setdefault(from_frame, []).append(orientation)
+        # optionally append inverse edge
         if set_inverse:
-            if to_frame not in self._adj:
-                self._adj[to_frame] = {}
-            self._adj[to_frame][from_frame] = orientation.inverse()
+            inv = orientation.inverse()
+            self._adj.setdefault(inv.from_frame, []).append(inv)
 
     def get_transform(
         self,
@@ -139,10 +132,11 @@ class FrameRegistry:
         # BFS loop
         while queue:
             curr_frame, acc_rot, acc_w = queue.popleft()
-            for nbr, att in self._adj.get(curr_frame, {}).items():
+            for orient in self._adj.get(curr_frame, []):
+                nbr = orient.to_frame
                 if nbr in visited:
                     continue
-                rot, w = att.at(t)
+                rot, w = orient.at(t)
                 new_rot = rot * acc_rot
                 new_w = rot.apply(acc_w) + w
                 if nbr == to_frame:
@@ -154,3 +148,37 @@ class FrameRegistry:
         raise KeyError(
             f"No transform path from '{from_frame}' to '{to_frame}' at time {t}"
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Serialize the FrameRegistry to a dictionary.
+
+        The result contains a "transforms" key which maps to a list,
+        where each entry is an orientation dict.
+
+        Returns:
+            dict: {"transforms": List[dict]} of all registered Orientation edges.
+        """
+        transforms = []
+        for edges in self._adj.values():
+            for orient in edges:
+                transforms.append(orient.to_dict())
+        return {"transforms": transforms}
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "FrameRegistry":
+        """
+        Deserialize a FrameRegistry from a dictionary.
+
+        Args:
+            data (dict): {"transforms": List[dict]} as produced by to_dict().
+
+        Returns:
+            FrameRegistry: New instance with each orientation added.
+        """
+        registry = cls()
+        registry._adj.clear()
+        for orient_data in data.get("transforms", []):
+            orientation = Orientation.from_dict(orient_data)
+            registry.add_transform(orientation, set_inverse=False)
+        return registry

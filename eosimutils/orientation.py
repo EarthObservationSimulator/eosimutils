@@ -1,8 +1,11 @@
-"""Module for handling constant and timeseries orientation data."""
+"""
+.. module:: eosimutils.orientation
+   :synopsis: Classes for representing transformations between reference frames.
+"""
 
 import spiceypy as spice
 
-from typing import Optional, Union, Dict, Any
+from typing import Optional, Union, Dict, Any, Type, Callable
 import numpy as np
 from scipy.spatial.transform import Rotation as Scipy_Rotation
 from scipy.spatial.transform import Slerp as Scipy_Slerp
@@ -20,12 +23,44 @@ class Orientation:
     Scipy Rotation objects use the scalar-last convention for quaternions. Counterclockwise
     rotations are positive.
 
+    Implements a factory pattern to create instances from a dictionary using `from_dict(data)`.
+    The dictionary must contain a "type" key to identify the subclass.
+
     Provides `transform(state, t)` to apply rotation and angular velocity to 6D state vectors.
     """
+
+    # Registry for factory pattern
+    _registry: Dict[str, Type["Orientation"]] = {}
 
     def __init__(self, from_frame: ReferenceFrame, to_frame: ReferenceFrame):
         self.from_frame = from_frame
         self.to_frame = to_frame
+
+    @classmethod
+    def register_type(
+        cls, type_name: str
+    ) -> Callable[[Type["Orientation"]], Type["Orientation"]]:
+        """
+        Decorator to register an Orientation subclass under a type name.
+        """
+
+        def decorator(subclass: Type["Orientation"]) -> Type["Orientation"]:
+            cls._registry[type_name] = subclass
+            return subclass
+
+        return decorator
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Orientation":
+        """
+        Factory method to construct an Orientation from a serialized dictionary.
+        Dispatches based on registered types.
+        """
+        orientation_type = data.get("type")
+        subclass = cls._registry.get(orientation_type)
+        if not subclass:
+            raise ValueError(f"Unknown orientation type: {orientation_type}")
+        return subclass.from_dict(data)
 
     def at(
         self, t: Union[AbsoluteDate, AbsoluteDateArray, None]
@@ -82,6 +117,7 @@ class Orientation:
         raise NotImplementedError
 
 
+@Orientation.register_type("constant")
 class ConstantOrientation(Orientation):
     """
     Represents a time-invariant orientation using a single constant rotation.
@@ -161,6 +197,7 @@ class ConstantOrientation(Orientation):
             raise ValueError(f"Unsupported rotations_type: {rotations_type}")
 
         result = {
+            "type": "constant",
             "rotations": rotations,
             "rotations_type": rotations_type,
             "from": self.from_frame.to_string(),
@@ -226,6 +263,7 @@ class ConstantOrientation(Orientation):
         )
 
 
+@Orientation.register_type("spice")
 class SpiceOrientation(Orientation):
     """
     Orientation defined using SPICE frame transformations, including angular velocity.
@@ -282,9 +320,10 @@ class SpiceOrientation(Orientation):
         Serialize to a dictionary.
 
         Returns:
-            dict: Dictionary with keys "from" and "to" (ReferenceFrame string names).
+            dict: Dictionary with keys "from" and "to" (ReferenceFrame string names) and "type".
         """
         return {
+            "type": "spice",
             "from": self.from_frame.to_string(),
             "to": self.to_frame.to_string(),
         }
@@ -314,6 +353,7 @@ class SpiceOrientation(Orientation):
         return SpiceOrientation(self.to_frame, self.from_frame)
 
 
+@Orientation.register_type("series")
 class OrientationSeries(Orientation):
     """
     Represents orientation data as a timeseries using scipy Scipy_Rotation objects.
@@ -450,6 +490,7 @@ class OrientationSeries(Orientation):
             raise ValueError(f"Unsupported rotations_type: {rotations_type}")
 
         result = {
+            "type": "series",
             "time": self.time.to_dict(),
             "rotations": rotations,
             "rotations_type": rotations_type,

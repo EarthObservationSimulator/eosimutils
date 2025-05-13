@@ -1,4 +1,4 @@
-"""Module for handling constant and timeseries attitude data."""
+"""Module for handling constant and timeseries orientation data."""
 
 import spiceypy as spice
 
@@ -12,9 +12,9 @@ from .time import AbsoluteDate, AbsoluteDateArray
 from .trajectory import StateSeries
 
 
-class Attitude:
+class Orientation:
     """
-    Base class for attitude representations.
+    Base class for orientation representations.
 
     Subclasses must implement `at(t)` to return (Scipy_Rotation, angular_velocity). Note that
     Scipy Rotation objects use the scalar-last convention for quaternions. Counterclockwise
@@ -35,7 +35,7 @@ class Attitude:
 
         The angular velocity is the angular velocity of from_frame w.r.t. to_frame.
 
-        Time can also be None for case of constant attitude.
+        Time can also be None for case of constant orientation.
 
         Args:
             t: AbsoluteDate or AbsoluteDateArray.
@@ -72,19 +72,19 @@ class Attitude:
         new_vel = rot.apply(vel) + np.cross(w, new_pos)
         return np.hstack([new_pos, new_vel])
 
-    def inverse(self) -> "Attitude":
+    def inverse(self) -> "Orientation":
         """
-        Return the inverse of the current attitude.
+        Return the inverse of the current orientation.
 
         Returns:
-            Attitude: A new Attitude object with inverted frames and rotations.
+            Orientation: A new Orientation object with inverted frames and rotations.
         """
         raise NotImplementedError
 
 
-class ConstantAttitude(Attitude):
+class ConstantOrientation(Orientation):
     """
-    Represents a time-invariant attitude using a single constant rotation.
+    Represents a time-invariant orientation using a single constant rotation.
 
     Attributes:
         rotation (Scipy_Rotation): The constant orientation.
@@ -99,7 +99,7 @@ class ConstantAttitude(Attitude):
         to_frame: ReferenceFrame,
     ):
         """
-        Initialize a ConstantAttitude.
+        Initialize a ConstantOrientation.
 
         Args:
             rotation (Scipy_Rotation): A single Scipy_Rotation object.
@@ -113,7 +113,7 @@ class ConstantAttitude(Attitude):
         self, t: Union[AbsoluteDate, AbsoluteDateArray, None]
     ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
-        Evaluate the attitude at the given time(s). Always returns the same rotation.
+        Evaluate the orientation at the given time(s). Always returns the same rotation.
 
         Args:
             t (AbsoluteDate or AbsoluteDateArray): Input time(s).
@@ -133,7 +133,7 @@ class ConstantAttitude(Attitude):
 
     def to_dict(self, rotations_type: str = "euler") -> Dict[str, Any]:
         """
-        Serialize the ConstantAttitude to a dictionary.
+        Serialize the ConstantOrientation to a dictionary.
 
         The dictionary format is as follows:
         {
@@ -151,7 +151,7 @@ class ConstantAttitude(Attitude):
             rotations_type (str): Either "quaternion" or "euler" (default: "euler").
 
         Returns:
-            dict: Serialized ConstantAttitude.
+            dict: Serialized ConstantOrientation.
         """
         if rotations_type == "quaternion":
             rotations = self.rotation.as_quat()
@@ -171,9 +171,9 @@ class ConstantAttitude(Attitude):
         return result
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ConstantAttitude":
+    def from_dict(cls, data: Dict[str, Any]) -> "ConstantOrientation":
         """
-        Construct a ConstantAttitude from a dictionary.
+        Construct a ConstantOrientation from a dictionary.
 
         The expected dictionary format is:
         {
@@ -188,10 +188,10 @@ class ConstantAttitude(Attitude):
         }
 
         Args:
-            data (dict): Serialized ConstantAttitude dictionary.
+            data (dict): Serialized ConstantOrientation dictionary.
 
         Returns:
-            ConstantAttitude: Reconstructed object.
+            ConstantOrientation: Reconstructed object.
 
         Raises:
             ValueError: If Euler angles are used but no order is specified.
@@ -214,21 +214,21 @@ class ConstantAttitude(Attitude):
         to_frame = ReferenceFrame.get(data["to"])
         return cls(rotation, from_frame, to_frame)
 
-    def inverse(self) -> "ConstantAttitude":
+    def inverse(self) -> "ConstantOrientation":
         """
-        Return the inverse of the current constant attitude.
+        Return the inverse of the current constant orientation.
 
         Returns:
-            ConstantAttitude: A new ConstantAttitude object with inverted rotation and frames.
+            ConstantOrientation: A new ConstantOrientation object with inverted rotation and frames.
         """
-        return ConstantAttitude(
+        return ConstantOrientation(
             self.rotation.inv(), self.to_frame, self.from_frame
         )
 
 
-class SpiceAttitude(Attitude):
+class SpiceOrientation(Orientation):
     """
-    Attitude defined using SPICE frame transformations, including angular velocity.
+    Orientation defined using SPICE frame transformations, including angular velocity.
 
     Attributes:
         from_frame (ReferenceFrame): Source frame for the SPICE transform.
@@ -245,7 +245,7 @@ class SpiceAttitude(Attitude):
         self, t: Union[AbsoluteDate, AbsoluteDateArray]
     ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
-        Evaluate the SPICE attitude and angular velocity at the given time(s).
+        Evaluate the SPICE orientation and angular velocity at the given time(s).
 
         Args:
             t (AbsoluteDate or AbsoluteDateArray): Time(s) for evaluation.
@@ -290,7 +290,7 @@ class SpiceAttitude(Attitude):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SpiceAttitude":
+    def from_dict(cls, data: Dict[str, Any]) -> "SpiceOrientation":
         """
         Deserialize from a dictionary.
 
@@ -298,23 +298,23 @@ class SpiceAttitude(Attitude):
             data (dict): Dictionary with "from" and "to" frame names.
 
         Returns:
-            SpiceAttitude: Constructed object.
+            SpiceOrientation: Constructed object.
         """
         from_frame = ReferenceFrame.get(data["from"])
         to_frame = ReferenceFrame.get(data["to"])
         return cls(from_frame, to_frame)
 
-    def inverse(self) -> "SpiceAttitude":
+    def inverse(self) -> "SpiceOrientation":
         """
-        Return the inverse of the current SPICE attitude.
+        Return the inverse of the current SPICE orientation.
 
         Returns:
-            SpiceAttitude: A new SpiceAttitude object with inverted frames.
+            SpiceOrientation: A new SpiceOrientation object with inverted frames.
         """
-        return SpiceAttitude(self.to_frame, self.from_frame)
+        return SpiceOrientation(self.to_frame, self.from_frame)
 
 
-class AttitudeSeries(Attitude):
+class OrientationSeries(Orientation):
     """
     Represents orientation data as a timeseries using scipy Scipy_Rotation objects.
 
@@ -335,7 +335,7 @@ class AttitudeSeries(Attitude):
         angular_velocity: Optional[np.ndarray] = None,
     ):
         """
-        Initialize an AttitudeSeries object.
+        Initialize an OrientationSeries object.
 
         Args:
             time (AbsoluteDateArray): Array of time points.
@@ -418,7 +418,7 @@ class AttitudeSeries(Attitude):
         self, rotations_type: str = "euler", euler_order: str = "xyz"
     ) -> Dict[str, Any]:
         """
-        Serialize this AttitudeSeries into a dictionary.
+        Serialize this OrientationSeries into a dictionary.
 
         The dictionary format is as follows:
         {
@@ -440,7 +440,7 @@ class AttitudeSeries(Attitude):
                 Options are "quaternion" or "euler". Defaults to "euler".
 
         Returns:
-            dict: Serialized representation of the AttitudeSeries.
+            dict: Serialized representation of the OrientationSeries.
         """
         if rotations_type == "quaternion":
             rotations = self.rotations.as_quat().tolist()
@@ -464,9 +464,9 @@ class AttitudeSeries(Attitude):
         return result
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AttitudeSeries":
+    def from_dict(cls, data: Dict[str, Any]) -> "OrientationSeries":
         """
-        Deserialize an AttitudeSeries from a dictionary.
+        Deserialize an OrientationSeries from a dictionary.
 
         The expected dictionary format is:
         {
@@ -485,10 +485,10 @@ class AttitudeSeries(Attitude):
         }
 
         Args:
-            data (dict): Serialized AttitudeSeries dictionary.
+            data (dict): Serialized OrientationSeries dictionary.
 
         Returns:
-            AttitudeSeries: Reconstructed AttitudeSeries object.
+            OrientationSeries: Reconstructed OrientationSeries object.
 
         Raises:
             ValueError: If "rotations_type" is "euler" but "euler_order" is missing.
@@ -567,20 +567,20 @@ class AttitudeSeries(Attitude):
 
         return new_rotations, new_angular_velocity
 
-    def resample(self, new_time: AbsoluteDateArray) -> "AttitudeSeries":
+    def resample(self, new_time: AbsoluteDateArray) -> "OrientationSeries":
         """
-        Resample AttitudeSeries to a new time base using spherical linear interpolation (SLERP).
+        Resample OrientationSeries to a new time base using spherical linear interpolation (SLERP).
 
         Args:
             new_time (AbsoluteDateArray): New time samples for interpolation.
 
         Returns:
-            AttitudeSeries: New AttitudeSeries interpolated at the requested times.
+            OrientationSeries: New OrientationSeries interpolated at the requested times.
         """
         new_rotations, new_angular_velocity = self._resample(
             new_time.ephemeris_time
         )
-        return AttitudeSeries(
+        return OrientationSeries(
             time=new_time,
             rotations=new_rotations,
             from_frame=self.from_frame,
@@ -597,9 +597,9 @@ class AttitudeSeries(Attitude):
         angular_velocity: np.ndarray,
         from_frame: ReferenceFrame,
         to_frame: ReferenceFrame,
-    ) -> "AttitudeSeries":
+    ) -> "OrientationSeries":
         """
-        Create an AttitudeSeries with a constant angular velocity.
+        Create an OrientationSeries with a constant angular velocity.
 
         Args:
             start_time (AbsoluteDate): The starting time of the series.
@@ -630,7 +630,7 @@ class AttitudeSeries(Attitude):
             ]
         )
 
-        # Return the new AttitudeSeries
+        # Return the new OrientationSeries
         return cls(
             time=time_array,
             rotations=rotations,
@@ -640,9 +640,9 @@ class AttitudeSeries(Attitude):
         )
 
     @classmethod
-    def get_lvlh(cls, state: StateSeries) -> "AttitudeSeries":
+    def get_lvlh(cls, state: StateSeries) -> "OrientationSeries":
         """
-        Compute an LVLH AttitudeSeries from a StateSeries in an inertial reference frame.
+        Compute an LVLH OrientationSeries from a StateSeries in an inertial reference frame.
 
         The axes are constructed as follows:
 
@@ -656,7 +656,7 @@ class AttitudeSeries(Attitude):
             state (StateSeries): Trajectory in an inertial frame.
 
         Returns:
-            AttitudeSeries: LVLH AttitudeSeries relative to state.frame.
+            OrientationSeries: LVLH OrientationSeries relative to state.frame.
 
         Raises:
             ValueError: If the state frame is not an inertial frame.
@@ -689,14 +689,14 @@ class AttitudeSeries(Attitude):
             to_frame=ReferenceFrame.LVLH,
         )
 
-    def inverse(self) -> "AttitudeSeries":
+    def inverse(self) -> "OrientationSeries":
         """
-        Return the inverse of the current attitude series.
+        Return the inverse of the current orientation series.
 
         Returns:
-            AttitudeSeries: A new AttitudeSeries object with inverted rotations and frames.
+            OrientationSeries: A new OrientationSeries object with inverted rotations and frames.
         """
-        return AttitudeSeries(
+        return OrientationSeries(
             time=self.time,
             rotations=self.rotations.inv(),
             from_frame=self.to_frame,

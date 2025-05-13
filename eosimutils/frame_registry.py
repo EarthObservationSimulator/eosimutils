@@ -10,7 +10,7 @@ import numpy as np
 
 from .frames import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
-from .attitude import Attitude, SpiceAttitude
+from .orientation import Orientation, SpiceOrientation
 
 
 class FrameRegistry:
@@ -18,11 +18,12 @@ class FrameRegistry:
     Registry for time-varying coordinate frame transformations.
 
     Underlying data structure:
-    - Frames and transforms form a graph: nodes are ReferenceFrames, edges are Attitudes.
-    - Adjacency list `_adj`: dict maps each frame to a dict of neighbor ReferenceFrames → Attitude.
+    - Frames and transforms form a graph: nodes are ReferenceFrames, edges are Orientations.
+    - Adjacency list `_adj`: dict maps each frame to a dict of
+        adjacent ReferenceFrames → Orientation.
     - Querying A->B at time t:
         1. BFS to discover a path through intermediate frames.
-        2. At each edge, call its Attitude.at(t) to get the rotation(s) and angular velocity(ies).
+        2. At each edge, call its Orientation.at(t) to get the rotation(s)/angular velocity(ies).
         3. Compose the rotations and angular velocities along the path to yield the transform.
     """
 
@@ -32,7 +33,7 @@ class FrameRegistry:
         By default, it contains transforms for ICRF_EC and ITRF frames.
         """
         # Initialize empty adjacency list
-        self._adj: Dict[ReferenceFrame, Dict[ReferenceFrame, Attitude]] = {}
+        self._adj: Dict[ReferenceFrame, Dict[ReferenceFrame, Orientation]] = {}
 
         # Add spice transforms
         self.add_spice_transforms()
@@ -43,43 +44,43 @@ class FrameRegistry:
         """
         # Add transforms from ICRF_EC to ITRF
         self.add_transform(
-            SpiceAttitude(ReferenceFrame.ICRF_EC, ReferenceFrame.ITRF),
+            SpiceOrientation(ReferenceFrame.ICRF_EC, ReferenceFrame.ITRF),
             False,
         )
 
         # Add transforms from ITRF to ICRF_EC
         self.add_transform(
-            SpiceAttitude(ReferenceFrame.ITRF, ReferenceFrame.ICRF_EC),
+            SpiceOrientation(ReferenceFrame.ITRF, ReferenceFrame.ICRF_EC),
             False,
         )
 
     def add_transform(
         self,
-        attitude: Attitude,
+        orientation: Orientation,
         set_inverse: bool = True,
     ):
         """
-        Registers a direct Attitude instance using its from_frame and to_frame attributes.
+        Registers a direct Orientation instance using its from_frame and to_frame attributes.
         Optionally registers the inverse for the reverse direction.
 
         Args:
-            attitude (Attitude): Attitude instance mapping from_frame→to_frame.
+            orientation (Orientation): Orientation instance mapping from_frame→to_frame.
             set_inverse (bool, optional): Whether to automatically register the inverse transform.
                 Default is True.
         """
-        from_frame = attitude.from_frame
-        to_frame = attitude.to_frame
+        from_frame = orientation.from_frame
+        to_frame = orientation.to_frame
 
-        # Store forward attitude in adjacency list
+        # Store forward orientation in adjacency list
         if from_frame not in self._adj:
             self._adj[from_frame] = {}
-        self._adj[from_frame][to_frame] = attitude
+        self._adj[from_frame][to_frame] = orientation
 
-        # Store inverse attitude if set_inverse is True
+        # Store inverse orientation if set_inverse is True
         if set_inverse:
             if to_frame not in self._adj:
                 self._adj[to_frame] = {}
-            self._adj[to_frame][from_frame] = attitude.inverse()
+            self._adj[to_frame][from_frame] = orientation.inverse()
 
     def get_transform(
         self,

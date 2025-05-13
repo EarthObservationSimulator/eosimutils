@@ -3,7 +3,7 @@ import numpy as np
 from eosimutils.frames import ReferenceFrame
 from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 from eosimutils.trajectory import StateSeries
-from eosimutils.attitude import AttitudeSeries
+from eosimutils.orientation import OrientationSeries
 from eosimutils.frame_registry import FrameRegistry
 
 # Build a circular orbit in ICRF_EC
@@ -36,7 +36,7 @@ state_icrf = StateSeries(
 
 # Add LVLH frame
 lvlh_frame = ReferenceFrame.add("LVLH")
-att_lvlh = AttitudeSeries.get_lvlh(state_icrf)
+att_lvlh = OrientationSeries.get_lvlh(state_icrf)
 
 registry   = FrameRegistry()
 registry.add_transform(att_lvlh)

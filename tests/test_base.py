@@ -12,7 +12,7 @@ class TestReferenceFrame(unittest.TestCase):
     def test_enum_values(self):
         # Test that all enum values are uppercase
         for frame in ReferenceFrame:
-            self.assertTrue(frame.value.isupper())
+            self.assertTrue(frame.to_string().isupper())
 
     def test_get(self):
         # Test valid input

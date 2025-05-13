@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 from eosimutils.trajectory import StateSeries, PositionSeries
 from eosimutils.time import AbsoluteDateArray, AbsoluteDate, JD_OF_J2000
-from eosimutils.base import ReferenceFrame
+from eosimutils.frames import ReferenceFrame
 from eosimutils.state import (
     CartesianState,
     Cartesian3DPosition,

@@ -79,8 +79,8 @@ class Cartesian3DPosition:
         """
         return self.coords.tolist()
 
-    @staticmethod
-    def from_dict(dict_in: Dict[str, Any]) -> "Cartesian3DPosition":
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "Cartesian3DPosition":
         """Construct a Cartesian3DPosition object from a dictionary.
 
         Args:
@@ -99,9 +99,7 @@ class Cartesian3DPosition:
         frame = (
             ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
         )
-        return Cartesian3DPosition(
-            dict_in["x"], dict_in["y"], dict_in["z"], frame
-        )
+        return cls(dict_in["x"], dict_in["y"], dict_in["z"], frame)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the Cartesian3DPosition object to a dictionary.
@@ -180,8 +178,8 @@ class Cartesian3DVelocity:
         """
         return self.coords.tolist()
 
-    @staticmethod
-    def from_dict(dict_in: Dict[str, Any]) -> "Cartesian3DVelocity":
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "Cartesian3DVelocity":
         """Construct a Cartesian3DVelocity object from a dictionary.
 
         Args:
@@ -200,9 +198,7 @@ class Cartesian3DVelocity:
         frame = (
             ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in else None
         )
-        return Cartesian3DVelocity(
-            dict_in["vx"], dict_in["vy"], dict_in["vz"], frame
-        )
+        return cls(dict_in["vx"], dict_in["vy"], dict_in["vz"], frame)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert the Cartesian3DVelocity object to a dictionary.
@@ -220,8 +216,8 @@ class Cartesian3DVelocity:
 
 class GeographicPosition:
     """Handles geographic position in the geodetic coordinate system.
-    The geodetic position is defined with respect World Geodetic System 1984 Geoid
-    as defined in Skyfield.
+    The geodetic position is defined with respect to the
+    World Geodetic System 1984 Geoid as defined in Skyfield.
     Reference: https://rhodesmill.org/skyfield/api-topos.html
     """
 
@@ -297,7 +293,7 @@ class GeographicPosition:
     @property
     def itrs_xyz(self):
         """Get the ITRS XYZ position in kilometers.
-        Covnersion is performed using Skyfield.
+        Conversion is performed using Skyfield.
         Returns:
             np.ndarray: ITRS XYZ position in kilometers.
         """
@@ -337,8 +333,8 @@ class CartesianState:
         self.velocity: Cartesian3DVelocity = velocity
         self.frame: ReferenceFrame = frame
 
-    @staticmethod
-    def from_dict(dict_in: Dict[str, Any]) -> "CartesianState":
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "CartesianState":
         """Construct a CartesianState object from a dictionary.
 
         Args:
@@ -360,18 +356,22 @@ class CartesianState:
         )
         position = Cartesian3DPosition.from_array(dict_in["position"], frame)
         velocity = Cartesian3DVelocity.from_array(dict_in["velocity"], frame)
-        return CartesianState(time, position, velocity, frame)
+        return cls(time, position, velocity, frame)
 
     @staticmethod
     def from_array(
-        array_in: Union[List[float], np.ndarray, Tuple[float, float, float]],
+        array_in: Union[
+            List[float],
+            np.ndarray,
+            Tuple[float, float, float, float, float, float],
+        ],
         time: AbsoluteDate,
         frame: Optional[Union[ReferenceFrame, str, None]] = None,
     ) -> "CartesianState":
         """Construct a CartesianState object from a list, tuple, or NumPy array.
 
         Args:
-            array_in (Union[List[float], np.ndarray, Tuple[float, float, float]]):
+            array_in (Union[List[float], np.ndarray, Tuple[float, float, float, float, float, float]]): # pylint: disable=line-too-long
                 Position and velocity coordinates in kilometers and km-per-s.
             time (AbsoluteDate): Absolute date-time object.
             frame (Union[ReferenceFrame, str, None]): Reference-frame.

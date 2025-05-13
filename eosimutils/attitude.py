@@ -4,8 +4,8 @@ import spiceypy as spice
 
 from typing import Optional, Union, Dict, Any
 import numpy as np
-from scipy.spatial.transform import Rotation
-from scipy.spatial.transform import Slerp
+from scipy.spatial.transform import Rotation as Scipy_Rotation
+from scipy.spatial.transform import Slerp as Scipy_Slerp
 
 from .frames import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
@@ -16,21 +16,31 @@ class Attitude:
     """
     Base class for attitude representations.
 
-    Subclasses must implement `at(t)` to return (Rotation, angular_velocity).
+    Subclasses must implement `at(t)` to return (Scipy_Rotation, angular_velocity). Note that
+    Scipy Rotation objects use the scalar-last convention for quaternions. Counterclockwise
+    rotations are positive.
 
     Provides `transform(state, t)` to apply rotation and angular velocity to 6D state vectors.
     """
 
+    def __init__(self, from_frame: ReferenceFrame, to_frame: ReferenceFrame):
+        self.from_frame = from_frame
+        self.to_frame = to_frame
+
     def at(
-        self, t: Union[AbsoluteDate, AbsoluteDateArray]
-    ) -> tuple[Rotation, np.ndarray]:
+        self, t: Union[AbsoluteDate, AbsoluteDateArray, None]
+    ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Return (rotation, angular_velocity) at the given time(s).
+
+        The angular velocity is the angular velocity of from_frame w.r.t. to_frame.
+
+        Time can also be None for case of constant attitude.
 
         Args:
             t: AbsoluteDate or AbsoluteDateArray.
         Returns:
-            Tuple[Rotation, np.ndarray]: Rotation and angular velocity vector(s).
+            Tuple[Scipy_Rotation, np.ndarray]: Scipy_Rotation and angular velocity vector(s).
         """
         raise NotImplementedError
 
@@ -62,30 +72,46 @@ class Attitude:
         new_vel = rot.apply(vel) + np.cross(w, new_pos)
         return np.hstack([new_pos, new_vel])
 
+    def inverse(self) -> "Attitude":
+        """
+        Return the inverse of the current attitude.
+
+        Returns:
+            Attitude: A new Attitude object with inverted frames and rotations.
+        """
+        raise NotImplementedError
+
 
 class ConstantAttitude(Attitude):
     """
     Represents a time-invariant attitude using a single constant rotation.
 
     Attributes:
-        rotation (Rotation): The constant orientation.
-        base (ReferenceFrame): The base reference frame.
+        rotation (Scipy_Rotation): The constant orientation.
+        from_frame (ReferenceFrame): Source frame for the rotation.
+        to_frame (ReferenceFrame): Target frame for the rotation.
     """
 
-    def __init__(self, rotation: Rotation, base: ReferenceFrame):
+    def __init__(
+        self,
+        rotation: Scipy_Rotation,
+        from_frame: ReferenceFrame,
+        to_frame: ReferenceFrame,
+    ):
         """
         Initialize a ConstantAttitude.
 
         Args:
-            rotation (Rotation): A single scipy Rotation object.
-            base (ReferenceFrame): The base frame of the rotation.
+            rotation (Scipy_Rotation): A single Scipy_Rotation object.
+            from_frame (ReferenceFrame): The source frame of the rotation.
+            to_frame (ReferenceFrame): The target frame of the rotation.
         """
+        super().__init__(from_frame, to_frame)
         self.rotation = rotation
-        self.base = base
 
     def at(
-        self, t: Union[AbsoluteDate, AbsoluteDateArray]
-    ) -> tuple[Rotation, np.ndarray]:
+        self, t: Union[AbsoluteDate, AbsoluteDateArray, None]
+    ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Evaluate the attitude at the given time(s). Always returns the same rotation.
 
@@ -93,15 +119,15 @@ class ConstantAttitude(Attitude):
             t (AbsoluteDate or AbsoluteDateArray): Input time(s).
 
         Returns:
-            Tuple[Rotation, np.ndarray]: The constant rotation and a zero angular velocity vector.
+            Tuple[Scipy_Rotation, np.ndarray]: The rotation and zero angular velocity vector.
         """
-        if isinstance(t, AbsoluteDate):
+        if isinstance(t, (AbsoluteDate, type(None))):
             return self.rotation, np.zeros(3)
         elif isinstance(t, AbsoluteDateArray):
             n = len(t.ephemeris_time)
-            return Rotation.from_quat([self.rotation.as_quat()] * n), np.zeros(
-                (n, 3)
-            )
+            return Scipy_Rotation.from_quat(
+                [self.rotation.as_quat()] * n
+            ), np.zeros((n, 3))
         else:
             raise TypeError("t must be AbsoluteDate or AbsoluteDateArray")
 
@@ -115,8 +141,10 @@ class ConstantAttitude(Attitude):
                 # - If "rotations_type" is "quaternion": List of 4 values [x, y, z, w]
                 # - If "rotations_type" is "euler": List of 3 values (Euler angles)
             "rotations_type": str,  # "quaternion" or "euler"
-            "euler_order": str (optional),  # Only if rotations_type is "euler", default is "xyz"
-            "base": str,  # Name of the base reference frame
+            "euler_order": str (optional),  # Order (e.g., "xyz"), if "rotations_type" is "euler".
+                Use lowercase for intrinsic rotations, otherwise extrinsic. Defaults to "xyz".
+            "from": str,  # Name of the source reference frame
+            "to": str,  # Name of the target reference frame
         }
 
         Args:
@@ -135,7 +163,8 @@ class ConstantAttitude(Attitude):
         result = {
             "rotations": rotations,
             "rotations_type": rotations_type,
-            "base": self.base.to_string(),
+            "from": self.from_frame.to_string(),
+            "to": self.to_frame.to_string(),
         }
         if rotations_type == "euler":
             result["euler_order"] = "xyz"
@@ -152,8 +181,10 @@ class ConstantAttitude(Attitude):
                 # - If "rotations_type" is "quaternion": List of 4 values [x, y, z, w]
                 # - If "rotations_type" is "euler": List of 3 values (Euler angles)
             "rotations_type": str,  # "quaternion" (default) or "euler"
-            "euler_order": str (optional),  # Required if rotations_type is "euler"
-            "base": str,  # Name of the base reference frame
+            "euler_order": str (optional),  # Order (e.g., "xyz"), if "rotations_type" is "euler".
+                Use lowercase for intrinsic rotations, otherwise extrinsic.
+            "from": str,  # Name of the source reference frame
+            "to": str,  # Name of the target reference frame
         }
 
         Args:
@@ -168,19 +199,31 @@ class ConstantAttitude(Attitude):
         rotations_type = data.get("rotations_type", "quaternion")
 
         if rotations_type == "quaternion":
-            rotation = Rotation.from_quat(data["rotations"])
+            rotation = Scipy_Rotation.from_quat(data["rotations"])
         elif rotations_type == "euler":
             order = data.get("euler_order")
             if not order:
                 raise ValueError(
                     "Missing required 'euler_order' for euler rotations."
                 )
-            rotation = Rotation.from_euler(order, data["rotations"])
+            rotation = Scipy_Rotation.from_euler(order, data["rotations"])
         else:
             raise ValueError(f"Unsupported rotations_type: {rotations_type}")
 
-        base = ReferenceFrame.get(data["base"])
-        return cls(rotation, base)
+        from_frame = ReferenceFrame.get(data["from"])
+        to_frame = ReferenceFrame.get(data["to"])
+        return cls(rotation, from_frame, to_frame)
+
+    def inverse(self) -> "ConstantAttitude":
+        """
+        Return the inverse of the current constant attitude.
+
+        Returns:
+            ConstantAttitude: A new ConstantAttitude object with inverted rotation and frames.
+        """
+        return ConstantAttitude(
+            self.rotation.inv(), self.to_frame, self.from_frame
+        )
 
 
 class SpiceAttitude(Attitude):
@@ -198,13 +241,9 @@ class SpiceAttitude(Attitude):
         ReferenceFrame.ITRF: "ITRF93",
     }
 
-    def __init__(self, from_frame: ReferenceFrame, to_frame: ReferenceFrame):
-        self.from_frame = from_frame
-        self.to_frame = to_frame
-
     def at(
         self, t: Union[AbsoluteDate, AbsoluteDateArray]
-    ) -> tuple[Rotation, np.ndarray]:
+    ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Evaluate the SPICE attitude and angular velocity at the given time(s).
 
@@ -212,7 +251,7 @@ class SpiceAttitude(Attitude):
             t (AbsoluteDate or AbsoluteDateArray): Time(s) for evaluation.
 
         Returns:
-            Tuple[Rotation, np.ndarray]: Rotation(s) and angular velocity vector(s).
+            Tuple[Scipy_Rotation, np.ndarray]: Scipy_Rotation(s) and angular velocity vector(s).
         """
         spice_from = self.spice_names[self.from_frame]
         spice_to = self.spice_names[self.to_frame]
@@ -222,7 +261,7 @@ class SpiceAttitude(Attitude):
                 spice_from, spice_to, t.to_spice_ephemeris_time()
             )
             r_mat, w = spice.xf2rav(sxform)
-            return Rotation.from_matrix(r_mat), np.array(w)
+            return Scipy_Rotation.from_matrix(r_mat), np.array(w)
         elif isinstance(t, AbsoluteDateArray):
             et_array = t.ephemeris_time
             r_list = []
@@ -232,7 +271,9 @@ class SpiceAttitude(Attitude):
                 r_mat, w = spice.xf2rav(sxform)
                 r_list.append(r_mat)
                 w_list.append(w)
-            return Rotation.from_matrix(np.array(r_list)), np.array(w_list)
+            return Scipy_Rotation.from_matrix(np.array(r_list)), np.array(
+                w_list
+            )
         else:
             raise TypeError("t must be AbsoluteDate or AbsoluteDateArray")
 
@@ -263,23 +304,34 @@ class SpiceAttitude(Attitude):
         to_frame = ReferenceFrame.get(data["to"])
         return cls(from_frame, to_frame)
 
+    def inverse(self) -> "SpiceAttitude":
+        """
+        Return the inverse of the current SPICE attitude.
+
+        Returns:
+            SpiceAttitude: A new SpiceAttitude object with inverted frames.
+        """
+        return SpiceAttitude(self.to_frame, self.from_frame)
+
 
 class AttitudeSeries(Attitude):
     """
-    Represents orientation data as a timeseries using scipy Rotation objects.
+    Represents orientation data as a timeseries using scipy Scipy_Rotation objects.
 
     Attributes:
         time (AbsoluteDateArray): Time samples.
-        rotations (Rotation): Orientation at each time sample.
-        base (ReferenceFrame): Base reference frame.
+        rotations (Scipy_Rotation): Orientation at each time sample.
+        from_frame (ReferenceFrame): Source frame for the rotations.
+        to_frame (ReferenceFrame): Target frame for the rotations.
         angular_velocity (np.ndarray): Angular velocity vectors (Nx3).
     """
 
     def __init__(
         self,
         time: AbsoluteDateArray,
-        rotations: Rotation,
-        base: ReferenceFrame,
+        rotations: Scipy_Rotation,
+        from_frame: ReferenceFrame,
+        to_frame: ReferenceFrame,
         angular_velocity: Optional[np.ndarray] = None,
     ):
         """
@@ -287,8 +339,9 @@ class AttitudeSeries(Attitude):
 
         Args:
             time (AbsoluteDateArray): Array of time points.
-            rotations (Rotation): Rotation object containing N orientations.
-            base (ReferenceFrame): Static base reference frame.
+            rotations (Scipy_Rotation): Scipy_Rotation object containing N orientations.
+            from_frame (ReferenceFrame): Source frame for the rotations.
+            to_frame (ReferenceFrame): Target frame for the rotations.
             angular_velocity (np.ndarray, optional): Angular velocity vectors (Nx3).
                 If None, computed automatically from rotations using finite difference.
 
@@ -299,9 +352,9 @@ class AttitudeSeries(Attitude):
         if len(rotations) != len(time.ephemeris_time):
             raise ValueError("rotations and time must have the same length.")
 
+        super().__init__(from_frame, to_frame)
         self.time = time
         self.rotations = rotations
-        self.base = base
 
         if angular_velocity is not None:
             if angular_velocity.shape != (len(time.ephemeris_time), 3):
@@ -361,7 +414,9 @@ class AttitudeSeries(Attitude):
 
         return omega
 
-    def to_dict(self, rotations_type: str = "euler") -> Dict[str, Any]:
+    def to_dict(
+        self, rotations_type: str = "euler", euler_order: str = "xyz"
+    ) -> Dict[str, Any]:
         """
         Serialize this AttitudeSeries into a dictionary.
 
@@ -373,8 +428,10 @@ class AttitudeSeries(Attitude):
                                 #   where each quaternion is [x, y, z, w] (scalar-last format).
                                 # - If "rotations_type" is "euler": List of Euler angles (Nx3)
             "rotations_type": str,  # Type of rotations: "quaternion" or "euler"
-            "euler_order": str (optional),  # Order (e.g., "xyz"), if "rotations_type" is "euler"
-            "base": str,  # Base reference frame as a string identifier
+            "euler_order": str (optional),  # Order (e.g., "xyz"), if "rotations_type" is "euler".
+                Use lowercase for intrinsic rotations, otherwise extrinsic.
+            "from": str,  # Source reference frame as a string identifier
+            "to": str,  # Target reference frame as a string identifier
             "angular_velocity": list  # List of angular velocity vectors (Nx3)
         }
 
@@ -388,9 +445,7 @@ class AttitudeSeries(Attitude):
         if rotations_type == "quaternion":
             rotations = self.rotations.as_quat().tolist()
         elif rotations_type == "euler":
-            rotations = self.rotations.as_euler(
-                "xyz"
-            ).tolist()  # Default to "xyz" order
+            rotations = self.rotations.as_euler(euler_order).tolist()
         else:
             raise ValueError(f"Unsupported rotations_type: {rotations_type}")
 
@@ -398,14 +453,13 @@ class AttitudeSeries(Attitude):
             "time": self.time.to_dict(),
             "rotations": rotations,
             "rotations_type": rotations_type,
-            "base": self.base.to_string(),
+            "from": self.from_frame.to_string(),
+            "to": self.to_frame.to_string(),
             "angular_velocity": self.angular_velocity.tolist(),
         }
 
         if rotations_type == "euler":
-            result["euler_order"] = (
-                "xyz"  # Include the Euler order if applicable
-            )
+            result["euler_order"] = euler_order
 
         return result
 
@@ -422,8 +476,11 @@ class AttitudeSeries(Attitude):
                                 #   where each quaternion is [x, y, z, w] (scalar-last format).
                                 # - If "rotations_type" is "euler": List of Euler angles (Nx3)
             "rotations_type": str,  # Type of rotations: "quaternion" (default) or "euler"
-            "euler_order": str (optional),  # Order (e.g., "xyz"), if "rotations_type" is "euler"
-            "base": str,  # Base reference frame as a string identifier
+            "euler_order": str (optional),  # Order (e.g., "xyz"), if "rotations_type" is "euler".
+                Use lowercase for intrinsic rotations, otherwise extrinsic.
+            If coordinate axes are lowercase, uses intrinsic rotations, otherwise extrinsic.
+            "from": str,  # Source reference frame as a string identifier
+            "to": str,  # Target reference frame as a string identifier
             "angular_velocity": list (optional)  # List of angular velocity vectors (Nx3)
         }
 
@@ -440,31 +497,32 @@ class AttitudeSeries(Attitude):
         rotations_type = data.get("rotations_type", "quaternion")
 
         if rotations_type == "quaternion":
-            rotations = Rotation.from_quat(data["rotations"])
+            rotations = Scipy_Rotation.from_quat(data["rotations"])
         elif rotations_type == "euler":
             euler_order = data.get("euler_order")
             if not euler_order:
                 raise ValueError(
                     "euler_order is required when rotations_type is 'euler'."
                 )
-            rotations = Rotation.from_euler(euler_order, data["rotations"])
+            rotations = Scipy_Rotation.from_euler(
+                euler_order, data["rotations"]
+            )
         else:
             raise ValueError(f"Unsupported rotations_type: {rotations_type}")
 
-        base = ReferenceFrame.get(
-            data["base"]
-        )  # Deserialize base as ReferenceFrame
+        from_frame = ReferenceFrame.get(data["from"])
+        to_frame = ReferenceFrame.get(data["to"])
 
         angular_velocity = (
             np.array(data["angular_velocity"])
             if "angular_velocity" in data
             else None
         )
-        return cls(time, rotations, base, angular_velocity)
+        return cls(time, rotations, from_frame, to_frame, angular_velocity)
 
     def at(
         self, t: Union[AbsoluteDate, AbsoluteDateArray]
-    ) -> tuple[Rotation, np.ndarray]:
+    ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Get the interpolated rotations and angular velocity at the specified time(s).
 
@@ -472,8 +530,8 @@ class AttitudeSeries(Attitude):
             new_dates (AbsoluteDate or AbsoluteDateArray): Time(s) at which to evaluate.
 
         Returns:
-            - If AbsoluteDate: a tuple (Rotation, angular_velocity_vector).
-            - If AbsoluteDateArray: a tuple (Rotation, ndarray of angular velocities).
+            - If AbsoluteDate: a tuple (Scipy_Rotation, angular_velocity_vector).
+            - If AbsoluteDateArray: a tuple (Scipy_Rotation, ndarray of angular velocities).
         """
         if isinstance(t, AbsoluteDate):
             new_et = np.array([t.ephemeris_time])
@@ -486,7 +544,9 @@ class AttitudeSeries(Attitude):
                 "new_dates must be an AbsoluteDate or AbsoluteDateArray."
             )
 
-    def _resample(self, new_et: np.ndarray) -> tuple[Rotation, np.ndarray]:
+    def _resample(
+        self, new_et: np.ndarray
+    ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Internal method to perform SLERP and angular velocity assignment.
 
@@ -494,9 +554,9 @@ class AttitudeSeries(Attitude):
             new_et (np.ndarray): New ephemeris times (1D array).
 
         Returns:
-            Tuple[Rotation, np.ndarray]: Interpolated rotations and angular velocity.
+            Tuple[Scipy_Rotation, np.ndarray]: Interpolated rotations and angular velocity.
         """
-        slerp = Slerp(self.time.ephemeris_time, self.rotations)
+        slerp = Scipy_Slerp(self.time.ephemeris_time, self.rotations)
         new_rotations = slerp(new_et)
 
         indices = (
@@ -523,7 +583,8 @@ class AttitudeSeries(Attitude):
         return AttitudeSeries(
             time=new_time,
             rotations=new_rotations,
-            base=self.base,
+            from_frame=self.from_frame,
+            to_frame=self.to_frame,
             angular_velocity=new_angular_velocity,
         )
 
@@ -532,9 +593,10 @@ class AttitudeSeries(Attitude):
         cls,
         start_time: "AbsoluteDate",
         duration: float,
-        initial_rotation: Rotation,
+        initial_rotation: Scipy_Rotation,
         angular_velocity: np.ndarray,
-        base: ReferenceFrame,
+        from_frame: ReferenceFrame,
+        to_frame: ReferenceFrame,
     ) -> "AttitudeSeries":
         """
         Create an AttitudeSeries with a constant angular velocity.
@@ -542,12 +604,10 @@ class AttitudeSeries(Attitude):
         Args:
             start_time (AbsoluteDate): The starting time of the series.
             duration (float): Duration of the series in seconds.
-            initial_rotation (Rotation): Initial orientation as a scipy Rotation object.
+            initial_rotation (Scipy_Rotation): Initial orientation as a scipy Scipy_Rotation object.
             angular_velocity (np.ndarray): Constant angular velocity vector (3D) in rad/s.
-            base (ReferenceFrame): Base reference frame.
-
-        Returns:
-            AttitudeSeries: A new AttitudeSeries object.
+            from_frame (ReferenceFrame): Source frame for the rotations.
+            to_frame (ReferenceFrame): Target frame for the rotations.
         """
         if angular_velocity.shape != (3,):
             raise ValueError("Angular velocity must be a 3D vector.")
@@ -562,8 +622,8 @@ class AttitudeSeries(Attitude):
         time_array = AbsoluteDateArray(time_samples)
 
         # Compute rotations at start and stop times
-        delta_rotation = Rotation.from_rotvec(angular_velocity * duration)
-        rotations = Rotation.from_quat(
+        delta_rotation = Scipy_Rotation.from_rotvec(angular_velocity * duration)
+        rotations = Scipy_Rotation.from_quat(
             [
                 initial_rotation.as_quat(),
                 (initial_rotation * delta_rotation).as_quat(),
@@ -574,7 +634,8 @@ class AttitudeSeries(Attitude):
         return cls(
             time=time_array,
             rotations=rotations,
-            base=base,
+            from_frame=from_frame,
+            to_frame=to_frame,
             angular_velocity=np.tile(angular_velocity, (2, 1)),
         )
 
@@ -582,6 +643,14 @@ class AttitudeSeries(Attitude):
     def get_lvlh(cls, state: StateSeries) -> "AttitudeSeries":
         """
         Compute an LVLH AttitudeSeries from a StateSeries in an inertial reference frame.
+
+        The axes are constructed as follows:
+
+            - Z-axis (Local Vertical): negative unit position vector (-r/|r|).
+            - Y-axis (Cross-track): negative unit angular momentum vector (-h/|h|, where h = r × v).
+            - X-axis (Local Horizontal): cross product of Y and Z axes (x = y × z).
+
+        Reference: https://sanaregistry.org/r/orbit_relative_reference_frames/ (LVLH_ROTATING)
 
         Args:
             state (StateSeries): Trajectory in an inertial frame.
@@ -601,25 +670,36 @@ class AttitudeSeries(Attitude):
         pos = state.data[0]  # shape (N,3)
         vel = state.data[1]  # shape (N,3)
 
-        # Build direction cosine matrices
         r_mats = []
         for r, v in zip(pos, vel):
             r_norm = np.linalg.norm(r)
-            if r_norm == 0:
-                raise ValueError(
-                    "Position vector has zero norm; cannot define LVLH axes"
-                )
-            x_hat = r / r_norm
+            z_hat = -r / r_norm  # Local vertical: -r/|r|
             h = np.cross(r, v)
             h_norm = np.linalg.norm(h)
-            if h_norm == 0:
-                raise ValueError(
-                    "Angular momentum vector has zero norm; cannot define LVLH axes"
-                )
-            z_hat = h / h_norm
-            y_hat = np.cross(z_hat, x_hat)
+            y_hat = -h / h_norm  # Cross-track:-h/|h|
+            x_hat = np.cross(y_hat, z_hat)  # Local horizontal: y × z
             # Rows are LVLH axes in inertial coordinates
             r_mats.append(np.vstack([x_hat, y_hat, z_hat]))
 
-        rotations = Rotation.from_matrix(np.array(r_mats))
-        return cls(time=state.time, rotations=rotations, base=state.frame)
+        rotations = Scipy_Rotation.from_matrix(np.array(r_mats))
+        return cls(
+            time=state.time,
+            rotations=rotations,
+            from_frame=state.frame,
+            to_frame=ReferenceFrame.LVLH,
+        )
+
+    def inverse(self) -> "AttitudeSeries":
+        """
+        Return the inverse of the current attitude series.
+
+        Returns:
+            AttitudeSeries: A new AttitudeSeries object with inverted rotations and frames.
+        """
+        return AttitudeSeries(
+            time=self.time,
+            rotations=self.rotations.inv(),
+            from_frame=self.to_frame,
+            to_frame=self.from_frame,
+            angular_velocity=-self.angular_velocity,
+        )

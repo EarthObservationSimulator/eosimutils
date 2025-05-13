@@ -3,7 +3,7 @@
    :synopsis: Reference frame registry..
 """
 
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation as Scipy_Rotation
 from collections import deque
 from typing import Dict, Union
 import numpy as np
@@ -11,23 +11,6 @@ import numpy as np
 from .frames import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
 from .attitude import Attitude, SpiceAttitude
-
-
-class _InverseAttitude(Attitude):
-    """
-    Internal: wraps another Attitude and inverts its rotation and angular velocity.
-    """
-
-    def __init__(self, original: Attitude):
-        self._orig = original
-
-    def at(
-        self, t: Union[AbsoluteDate, AbsoluteDateArray]
-    ) -> tuple[R, np.ndarray]:
-        rot, w = self._orig.at(t)
-        rot_inv = rot.inv()
-        w_inv = -rot_inv.apply(w)
-        return rot_inv, w_inv
 
 
 class FrameRegistry:
@@ -60,38 +43,33 @@ class FrameRegistry:
         """
         # Add transforms from ICRF_EC to ITRF
         self.add_transform(
-            ReferenceFrame.ICRF_EC,
-            ReferenceFrame.ITRF,
             SpiceAttitude(ReferenceFrame.ICRF_EC, ReferenceFrame.ITRF),
             False,
         )
 
         # Add transforms from ITRF to ICRF_EC
         self.add_transform(
-            ReferenceFrame.ITRF,
-            ReferenceFrame.ICRF_EC,
             SpiceAttitude(ReferenceFrame.ITRF, ReferenceFrame.ICRF_EC),
             False,
         )
 
     def add_transform(
         self,
-        from_frame: ReferenceFrame,
-        to_frame: ReferenceFrame,
         attitude: Attitude,
         set_inverse: bool = True,
     ):
         """
-        Registers a direct Attitude instance from `from_frame` to `to_frame`.
+        Registers a direct Attitude instance using its from_frame and to_frame attributes.
         Optionally registers the inverse for the reverse direction.
 
         Args:
-            from_frame (ReferenceFrame): Source frame.
-            to_frame (ReferenceFrame): Target frame.
             attitude (Attitude): Attitude instance mapping from_frame→to_frame.
             set_inverse (bool, optional): Whether to automatically register the inverse transform.
                 Default is True.
         """
+        from_frame = attitude.from_frame
+        to_frame = attitude.to_frame
+
         # Store forward attitude in adjacency list
         if from_frame not in self._adj:
             self._adj[from_frame] = {}
@@ -101,14 +79,14 @@ class FrameRegistry:
         if set_inverse:
             if to_frame not in self._adj:
                 self._adj[to_frame] = {}
-            self._adj[to_frame][from_frame] = _InverseAttitude(attitude)
+            self._adj[to_frame][from_frame] = attitude.inverse()
 
     def get_transform(
         self,
         from_frame: ReferenceFrame,
         to_frame: ReferenceFrame,
         t: Union[AbsoluteDate, AbsoluteDateArray],
-    ) -> tuple[R, np.ndarray]:
+    ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Computes the composed transform from `from_frame` to `to_frame` at time `t`.
 
@@ -119,7 +97,7 @@ class FrameRegistry:
                 representing the time(s).
 
         Returns:
-            tuple[R, np.ndarray]: scipy Rotation object and angular velocity vector for transform.
+            tuple[R, np.ndarray]: Scipy_Rotation object and angular velocity vector for transform.
 
         Raises:
             KeyError: If no path exists.
@@ -130,10 +108,10 @@ class FrameRegistry:
         # Identity if same frame
         if from_frame == to_frame:
             return (
-                (R.identity(), np.zeros(3))
+                (Scipy_Rotation.identity(), np.zeros(3))
                 if is_single
                 else (
-                    R.identity(len(t.ephemeris_time)),
+                    Scipy_Rotation.identity(len(t.ephemeris_time)),
                     np.zeros((len(t.ephemeris_time), 3)),
                 )
             )
@@ -148,9 +126,9 @@ class FrameRegistry:
                 (
                     from_frame,
                     (
-                        R.identity()
+                        Scipy_Rotation.identity()
                         if is_single
-                        else R.identity(len(t.ephemeris_time))
+                        else Scipy_Rotation.identity(len(t.ephemeris_time))
                     ),
                     zero_w,
                 )

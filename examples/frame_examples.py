@@ -3,10 +3,10 @@ import numpy as np
 from eosimutils.frames import ReferenceFrame
 from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 from eosimutils.trajectory import StateSeries
-from eosimutils.attitude import AttitudeSeries
+from eosimutils.orientation import OrientationSeries
 from eosimutils.frame_registry import FrameRegistry
 
-# 1) Build a circular orbit in ICRF_EC
+# Build a circular orbit in ICRF_EC
 μ = 398600.4418           # Earth's GM, km³/s²
 r0 = 7000.0               # orbital radius, km
 omega = np.sqrt(μ / r0**3)    # orbital rate, rad/s
@@ -34,19 +34,14 @@ state_icrf = StateSeries(
     frame=ReferenceFrame.ICRF_EC
 )
 
-# 2) Compute the LVLH attitude series
-att_lvlh = AttitudeSeries.get_lvlh(state_icrf)
-
-# 3) Register the LVLH frame
+# Add LVLH frame
 lvlh_frame = ReferenceFrame.add("LVLH")
-registry   = FrameRegistry()
-registry.add_transform(
-    ReferenceFrame.ICRF_EC,
-    lvlh_frame,
-    att_lvlh
-)
+att_lvlh = OrientationSeries.get_lvlh(state_icrf)
 
-# 4) Batch‐transform into LVLH
+registry   = FrameRegistry()
+registry.add_transform(att_lvlh)
+
+# Batch‐transform into LVLH
 rot_array, w_array = registry.get_transform(
     ReferenceFrame.ICRF_EC,
     lvlh_frame,
@@ -61,7 +56,7 @@ state_lvlh = StateSeries(
     frame=lvlh_frame
 )
 
-# In LVLH, position should be ~[r0,0,0], velocity ~[0,0,0]
+# In LVLH, position should be ~[0,0,-r0], velocity ~[v0,0,0]
 for t, p_l in zip(et_array, pos_lvlh):
     print(f"t={t:7.1f} s   LVLH pos ≈ {p_l.round(3)}")
 

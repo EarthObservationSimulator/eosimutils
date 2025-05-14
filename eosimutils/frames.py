@@ -93,15 +93,23 @@ class ReferenceFrame(metaclass=ReferenceFrameMeta):
     @classmethod
     def add(cls, name: str) -> "ReferenceFrame":
         """
-        Adds a new reference frame to the registry.
+        Dynamically add a new reference frame.
 
         Args:
             name (str): Name of the new reference frame.
+
         Returns:
-            ReferenceFrame: The newly created reference frame instance.
+            ReferenceFrame: The newly added reference frame.
         """
-        name = name.upper()
-        return cls._frames.get(name) or cls(name)
+        name_upper = name.upper()
+        if name_upper in cls._frames:
+            raise ValueError(f"Frame '{name}' already exists.")
+        instance = cls(name_upper)
+        cls._frames[name_upper] = instance
+        setattr(
+            cls, name_upper, instance
+        )  # Dynamically create a class-level attribute
+        return instance
 
     @classmethod
     def values(cls) -> List["ReferenceFrame"]:
@@ -114,5 +122,5 @@ class ReferenceFrame(metaclass=ReferenceFrameMeta):
 
 # Add enum-like static members
 for _name in ["ICRF_EC", "ITRF"]:
-    instance = ReferenceFrame(_name)
-    setattr(ReferenceFrame, _name, instance)
+    inst = ReferenceFrame(_name)
+    setattr(ReferenceFrame, _name, inst)

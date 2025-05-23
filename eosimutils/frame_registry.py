@@ -18,7 +18,8 @@ class FrameRegistry:
     Registry for time-varying coordinate frame transformations.
 
     Underlying data structure:
-    - Frames/transforms form a graph: nodes are ReferenceFrames/edges are Orientation instances.
+    - Frames and transforms form a graph: nodes are ReferenceFrames and edges are Orientation
+    instances.
     - Adjacency list `_adj`: maps each source ReferenceFrame to a list of Orientation edges.
     - Querying A->B at time t:
         1. BFS to discover a path through intermediate frames.
@@ -59,7 +60,10 @@ class FrameRegistry:
         set_inverse: bool = True,
     ):
         """
-        Registers a direct Orientation instance using its from_frame and to_frame attributes.
+        Registers a transformation between two reference frames using Orientation instance.
+
+        This creates a directed edge in the graph from `from_frame` to `to_frame`, which
+        are member variables of the Orientation instance.
         Optionally registers the inverse for the reverse direction.
 
         Args:

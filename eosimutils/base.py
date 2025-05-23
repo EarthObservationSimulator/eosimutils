@@ -77,3 +77,16 @@ class ReferenceFrame(EnumBase):
     ICRF_EC = "ICRF_EC"  # Geocentric Celestial Reference Frame (ECI)
     ITRF = "ITRF"  # International Terrestrial Reference Frame (ECEF)
     # TEME = "TEME"  # True Equator Mean Equinox
+
+
+class RotationsType(EnumBase):
+    """
+    Enumeration of recognized rotation types.
+
+    Attributes:
+        QUATERNION (str): Represents quaternion rotations.
+        EULER (str): Represents Euler angle rotations.
+    """
+
+    QUATERNION = "QUATERNION"
+    EULER = "EULER"

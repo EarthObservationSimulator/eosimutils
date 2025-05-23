@@ -16,6 +16,7 @@ et_array = np.linspace(0.0, 3600.0, 10)
 times = AbsoluteDateArray(et_array)
 
 # positions & velocities in ICRF_EC
+# this is a circular, prograde equatorial orbit
 pos_icrf = np.vstack([
     r0 * np.cos(omega * et_array),
     r0 * np.sin(omega * et_array),
@@ -47,6 +48,7 @@ rot_array, w_array = registry.get_transform(
     lvlh_frame,
     times
 )
+
 pos_lvlh = rot_array.apply(pos_icrf)
 vel_lvlh = rot_array.apply(vel_icrf) + np.cross(w_array, pos_lvlh)
 
@@ -56,7 +58,7 @@ state_lvlh = StateSeries(
     frame=lvlh_frame
 )
 
-# In LVLH, position should be ~[0,0,-r0], velocity ~[v0,0,0]
+# In LVLH, position should be ~[0,0,-r0], velocity ~[0,0,0]
 for t, p_l in zip(et_array, pos_lvlh):
     print(f"t={t:7.1f} s   LVLH pos ≈ {p_l.round(3)}")
 

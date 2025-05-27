@@ -10,7 +10,7 @@ import numpy as np
 
 from .frames import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
-from .orientation import Orientation, SpiceOrientation
+from .orientation import Orientation, SpiceOrientation, ConstantOrientation
 
 
 class FrameRegistry:
@@ -87,7 +87,7 @@ class FrameRegistry:
         self,
         from_frame: ReferenceFrame,
         to_frame: ReferenceFrame,
-        t: Union[AbsoluteDate, AbsoluteDateArray],
+        t: Union[AbsoluteDate, AbsoluteDateArray, None],
     ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Computes the composed transform from `from_frame` to `to_frame` at time `t`.
@@ -95,17 +95,18 @@ class FrameRegistry:
         Args:
             from_frame (ReferenceFrame): Source frame.
             to_frame (ReferenceFrame): Target frame.
-            t (Union[AbsoluteDate, AbsoluteDateArray]): AbsoluteDate or AbsoluteDateArray
-                representing the time(s).
+            t (Union[AbsoluteDate, AbsoluteDateArray, None]): AbsoluteDate, AbsoluteDateArray,
+                or None representing the time(s).
 
         Returns:
             tuple[R, np.ndarray]: Scipy_Rotation object and angular velocity vector for transform.
 
         Raises:
-            KeyError: If no path exists.
+            KeyError: If no path exists or if `t` is None and no ConstantOrientation-only path
+                exists.
         """
-        # Determine if input is single or multiple dates
-        is_single = isinstance(t, AbsoluteDate)
+        # Determine if input is single, multiple dates, or None
+        is_single = isinstance(t, (AbsoluteDate, type(None)))
 
         # Identity if same frame
         if from_frame == to_frame:
@@ -144,6 +145,11 @@ class FrameRegistry:
                 nbr = orient.to_frame
                 if nbr in visited:
                     continue
+
+                # If t is None, ensure all orientations are ConstantOrientation
+                if t is None and not isinstance(orient, ConstantOrientation):
+                    continue
+
                 rot, w = orient.at(t)
                 new_rot = rot * acc_rot
                 new_w = rot.apply(acc_w) + w

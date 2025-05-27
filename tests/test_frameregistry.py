@@ -5,9 +5,9 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 from eosimutils.frame_registry import FrameRegistry
-from eosimutils.orientation import ConstantOrientation
+from eosimutils.orientation import ConstantOrientation, OrientationSeries
 from eosimutils.frames import ReferenceFrame
-from eosimutils.time import AbsoluteDate
+from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 
 ReferenceFrame.add("A")
 ReferenceFrame.add("B")
@@ -105,6 +105,43 @@ class TestFrameRegistry(unittest.TestCase):
             rot.as_euler("xyz", degrees=True), [0, 0, 90], atol=1e-8
         )
         np.testing.assert_array_equal(omega, np.zeros(3))
+
+    def test_constant_transform_with_none_time(self):
+        """Test that get_transform works with t=None for constant orientations."""
+        rot, omega = self.registry.get_transform(
+            ReferenceFrame.get("A"), ReferenceFrame.get("B"), None
+        )
+        np.testing.assert_allclose(
+            rot.as_euler("xyz", degrees=True), [0, 0, 90], atol=1e-8
+        )
+        np.testing.assert_array_equal(omega, np.zeros(3))
+
+    def test_non_constant_transform_with_none_time(self):
+        """Test that get_transform raises KeyError for non-constant orientations when t=None."""
+        # Add a non-constant orientation to the registry
+        time = AbsoluteDateArray(np.array([0.0, 0.5, 1.0]))
+        rotations = R.from_euler(
+            "xyz", [[0, 0, 0], [0, 0, 45], [0, 0, 90]], degrees=True
+        )
+        non_constant_orientation = OrientationSeries(
+            time,
+            rotations,
+            ReferenceFrame.get("B"),
+            ReferenceFrame.get("F"),
+        )
+        self.registry.add_transform(non_constant_orientation)
+
+        with self.assertRaises(KeyError):
+            self.registry.get_transform(
+                ReferenceFrame.get("A"), ReferenceFrame.get("F"), None
+            )
+
+    def test_no_path_with_none_time(self):
+        """Test that get_transform raises KeyError when no path exists with t=None."""
+        with self.assertRaises(KeyError):
+            self.registry.get_transform(
+                ReferenceFrame.get("A"), ReferenceFrame.get("F"), None
+            )
 
 
 if __name__ == "__main__":

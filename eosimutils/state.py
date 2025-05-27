@@ -12,7 +12,7 @@ from skyfield.positionlib import build_position as skyfield_build_position
 from skyfield.constants import AU_KM as Skyfield_AU_KM
 from skyfield.api import wgs84 as skyfield_wgs84
 
-from .base import ReferenceFrame
+from .frames import ReferenceFrame
 from .time import AbsoluteDate
 
 
@@ -111,7 +111,7 @@ class Cartesian3DPosition:
             "x": self.coords[0],
             "y": self.coords[1],
             "z": self.coords[2],
-            "frame": self.frame.value if self.frame else None,
+            "frame": self.frame.to_string() if self.frame else None,
         }
 
 
@@ -210,7 +210,7 @@ class Cartesian3DVelocity:
             "vx": self.coords[0],
             "vy": self.coords[1],
             "vz": self.coords[2],
-            "frame": self.frame.value if self.frame else None,
+            "frame": self.frame.to_string() if self.frame else None,
         }
 
 
@@ -410,7 +410,7 @@ class CartesianState:
             "time": self.time.to_dict(),
             "position": self.position.to_list(),
             "velocity": self.velocity.to_list(),
-            "frame": self.frame.value,
+            "frame": self.frame.to_string(),
         }
 
     def to_numpy(self) -> np.ndarray:
@@ -437,7 +437,7 @@ class CartesianState:
         Raises:
             ValueError: If the frame is not ICRF_EC.
         """
-        if self.frame != ReferenceFrame.ICRF_EC:
+        if self.frame != ReferenceFrame.get("ICRF_EC"):
             raise ValueError(
                 "Only CartesianState object in ICRF_EC frame is supported for "
                 "conversion to Skyfield GCRF position."

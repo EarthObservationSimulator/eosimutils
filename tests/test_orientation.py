@@ -21,8 +21,8 @@ class TestConstantOrientation(unittest.TestCase):
     # using from_dict with quaternion serialization
     def setUp(self):
         # Use built-in frames
-        self.frm = ReferenceFrame.ICRF_EC
-        self.to = ReferenceFrame.ITRF
+        self.frm = ReferenceFrame.get("ICRF_EC")
+        self.to = ReferenceFrame.get("ITRF")
         # 90 deg rotation about Z axis
         self.rotation = Scipy_Rotation.from_euler(
             "xyz", [0.0, 0.0, 90.0], degrees=True
@@ -115,8 +115,8 @@ class TestOrientationSeries(unittest.TestCase):
         self.rotations = Scipy_Rotation.from_euler("xyz", euler_angles)
 
         # Use built‐in frames
-        self.frm = ReferenceFrame.ICRF_EC
-        self.to = ReferenceFrame.ITRF
+        self.frm = ReferenceFrame.get("ICRF_EC")
+        self.to = ReferenceFrame.get("ITRF")
 
         # Construct series via from_dict
         data_dict = {
@@ -205,8 +205,8 @@ class TestOrientation(unittest.TestCase):
 
     def test_constant_orientation_from_dict(self):
         # Create a ConstantOrientation and serialize it
-        frm = ReferenceFrame.ICRF_EC
-        to = ReferenceFrame.ITRF
+        frm = ReferenceFrame.get("ICRF_EC")
+        to = ReferenceFrame.get("ITRF")
         rotation = Scipy_Rotation.from_euler(
             "xyz", [0.0, 0.0, 90.0], degrees=True
         )
@@ -224,8 +224,8 @@ class TestOrientation(unittest.TestCase):
 
     def test_orientation_series_from_dict(self):
         # Create an OrientationSeries and serialize it
-        frm = ReferenceFrame.ICRF_EC
-        to = ReferenceFrame.ITRF
+        frm = ReferenceFrame.get("ICRF_EC")
+        to = ReferenceFrame.get("ITRF")
         times = AbsoluteDateArray(np.array([0.0, 1.0, 2.0]))
         rotations = Scipy_Rotation.from_euler(
             "xyz",
@@ -252,8 +252,8 @@ class TestOrientation(unittest.TestCase):
 
     def test_spice_orientation_from_dict(self):
         # Create a SpiceOrientation and serialize it
-        frm = ReferenceFrame.ICRF_EC
-        to = ReferenceFrame.ITRF
+        frm = ReferenceFrame.get("ICRF_EC")
+        to = ReferenceFrame.get("ITRF")
         spice_orientation = SpiceOrientation(frm, to)
         data = spice_orientation.to_dict()
 

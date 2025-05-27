@@ -45,12 +45,16 @@ class FrameRegistry:
 
         # Add transforms from ICRF_EC to ITRF
         self.add_transform(
-            SpiceOrientation(ReferenceFrame.ICRF_EC, ReferenceFrame.ITRF),
+            SpiceOrientation(
+                ReferenceFrame.get("ICRF_EC"), ReferenceFrame.get("ITRF")
+            ),
             False,
         )
         # Add transforms from ITRF to ICRF_EC
         self.add_transform(
-            SpiceOrientation(ReferenceFrame.ITRF, ReferenceFrame.ICRF_EC),
+            SpiceOrientation(
+                ReferenceFrame.get("ITRF"), ReferenceFrame.get("ICRF_EC")
+            ),
             False,
         )
 

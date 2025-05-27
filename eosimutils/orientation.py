@@ -299,8 +299,8 @@ class SpiceOrientation(Orientation):
 
     # Map ReferenceFrame to SPICE string names
     spice_names = {
-        ReferenceFrame.ICRF_EC: "J2000",
-        ReferenceFrame.ITRF: "ITRF93",
+        ReferenceFrame.get("ICRF_EC"): "J2000",
+        ReferenceFrame.get("ITRF"): "ITRF93",
     }
 
     def at(
@@ -747,7 +747,7 @@ class OrientationSeries(Orientation):
             ValueError: If the state frame is not an inertial frame.
         """
         # Only support ICRF_EC as inertial
-        if state.frame != ReferenceFrame.ICRF_EC:
+        if state.frame != ReferenceFrame.get("ICRF_EC"):
             raise ValueError(
                 f"LVLH only defined for inertial frames, got {state.frame}"
             )
@@ -773,7 +773,7 @@ class OrientationSeries(Orientation):
         return cls(
             time=state.time,
             rotations=rotations,
-            from_frame=ReferenceFrame.LVLH,
+            from_frame=ReferenceFrame.get("LVLH"),
             to_frame=state.frame,
             # from_frame=state.frame,
             # to_frame=ReferenceFrame.LVLH

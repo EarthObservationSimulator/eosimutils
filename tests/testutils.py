@@ -38,20 +38,20 @@ def validate_transform_position_with_astropy(
 
     # Transform using astropy
     # get the frame names in format accepted by astropy
-    if (
-        from_frame == "GCRF" or from_frame == ReferenceFrame.ICRF_EC
+    if from_frame == "GCRF" or from_frame == ReferenceFrame.get(
+        "ICRF_EC"
     ):  # Orientation of ICRF ~ orientation of GCRF
         from_frame_str = "GCRS"
-    elif from_frame == "ITRF" or from_frame == ReferenceFrame.ITRF:
+    elif from_frame == "ITRF" or from_frame == ReferenceFrame.get("ITRF"):
         from_frame_str = "ITRS"
     else:
         raise ValueError(f"Unsupported from_frame: {from_frame}")
 
-    if (
-        to_frame == "GCRF" or to_frame == ReferenceFrame.ICRF_EC
+    if to_frame == "GCRF" or to_frame == ReferenceFrame.get(
+        "ICRF_EC"
     ):  # Orientation of ICRF ~ orientation of GCRF
         to_frame_str = "GCRS"
-    elif to_frame == "ITRF" or to_frame == ReferenceFrame.ITRF:
+    elif to_frame == "ITRF" or to_frame == ReferenceFrame.get("ITRF"):
         to_frame_str = "ITRS"
     else:
         raise ValueError(f"Unsupported to_frame: {to_frame}")
@@ -104,16 +104,16 @@ def validate_transform_state_with_astropy(
     )
 
     # Get the frame names in a format accepted by astropy
-    if from_frame == "GCRF" or from_frame == ReferenceFrame.ICRF_EC:
+    if from_frame == "GCRF" or from_frame == ReferenceFrame.get("ICRF_EC"):
         from_frame_str = "GCRS"
-    elif from_frame == "ITRF" or from_frame == ReferenceFrame.ITRF:
+    elif from_frame == "ITRF" or from_frame == ReferenceFrame.get("ITRF"):
         from_frame_str = "ITRS"
     else:
         raise ValueError(f"Unsupported from_frame: {from_frame}")
 
-    if to_frame == "GCRF" or to_frame == ReferenceFrame.ICRF_EC:
+    if to_frame == "GCRF" or to_frame == ReferenceFrame.get("ICRF_EC"):
         to_frame_str = "GCRS"
-    elif to_frame == "ITRF" or to_frame == ReferenceFrame.ITRF:
+    elif to_frame == "ITRF" or to_frame == ReferenceFrame.get("ITRF"):
         to_frame_str = "ITRS"
     else:
         raise ValueError(f"Unsupported to_frame: {to_frame}")

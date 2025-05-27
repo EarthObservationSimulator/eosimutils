@@ -437,7 +437,7 @@ class CartesianState:
         Raises:
             ValueError: If the frame is not ICRF_EC.
         """
-        if self.frame != ReferenceFrame.ICRF_EC:
+        if self.frame != ReferenceFrame.get("ICRF_EC"):
             raise ValueError(
                 "Only CartesianState object in ICRF_EC frame is supported for "
                 "conversion to Skyfield GCRF position."

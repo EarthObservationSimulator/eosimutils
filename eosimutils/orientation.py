@@ -725,7 +725,9 @@ class OrientationSeries(Orientation):
         )
 
     @classmethod
-    def get_lvlh(cls, state: StateSeries) -> "OrientationSeries":
+    def get_lvlh(
+        cls, state: StateSeries, lvlh_frame: ReferenceFrame
+    ) -> "OrientationSeries":
         """
         Compute an LVLH OrientationSeries from a StateSeries in an inertial reference frame.
 
@@ -739,6 +741,7 @@ class OrientationSeries(Orientation):
 
         Args:
             state (StateSeries): Trajectory in an inertial frame.
+            frame (ReferenceFrame): The ReferenceFrame object for newly created LVLH frame.
 
         Returns:
             OrientationSeries: LVLH OrientationSeries relative to state.frame.
@@ -749,7 +752,7 @@ class OrientationSeries(Orientation):
         # Only support ICRF_EC as inertial
         if state.frame != ReferenceFrame.get("ICRF_EC"):
             raise ValueError(
-                f"LVLH only defined for inertial frames, got {state.frame}"
+                f"get_LVLH only defined for inertial frames, got {state.frame}"
             )
 
         pos = state.data[0]  # shape (N,3)
@@ -767,16 +770,13 @@ class OrientationSeries(Orientation):
             y_hat = -h / h_norm  # Cross-track:-h/|h|
             x_hat = np.cross(y_hat, z_hat)  # Local horizontal: y × z
             r_mats.append(np.column_stack([x_hat, y_hat, z_hat]))
-            # r_mats.append(np.vstack([x_hat, y_hat, z_hat]))
 
         rotations = Scipy_Rotation.from_matrix(np.array(r_mats))
         return cls(
             time=state.time,
             rotations=rotations,
-            from_frame=ReferenceFrame.get("LVLH"),
+            from_frame=lvlh_frame,
             to_frame=state.frame,
-            # from_frame=state.frame,
-            # to_frame=ReferenceFrame.LVLH
         )
 
     def inverse(self) -> "OrientationSeries":

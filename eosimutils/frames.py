@@ -97,9 +97,7 @@ class ReferenceFrame:
 
 
 # Pre-register static frames
-ReferenceFrame._registry["ICRF_EC"] = ReferenceFrame(
-    "ICRF_EC"
-)  # pylint: disable=protected-access
-ReferenceFrame._registry["ITRF"] = ReferenceFrame(
-    "ITRF"
-)  # pylint: disable=protected-access
+# pylint: disable=protected-access
+ReferenceFrame._registry["ICRF_EC"] = ReferenceFrame("ICRF_EC")
+# pylint: disable=protected-access
+ReferenceFrame._registry["ITRF"] = ReferenceFrame("ITRF")

@@ -32,12 +32,12 @@ vel_icrf = np.vstack([
 state_icrf = StateSeries(
     time=times,
     data=[pos_icrf, vel_icrf],
-    frame='ReferenceFrame.get("ICRF_EC")'
+    frame=ReferenceFrame.get("ICRF_EC")
 )
 
 # Add LVLH frame
-lvlh_frame = ReferenceFrame.get("LVLH")
-att_lvlh = OrientationSeries.get_lvlh(state_icrf)
+lvlh_frame = ReferenceFrame.add("LVLH")
+att_lvlh = OrientationSeries.get_lvlh(state_icrf,lvlh_frame)
 
 registry   = FrameRegistry()
 registry.add_transform(att_lvlh)

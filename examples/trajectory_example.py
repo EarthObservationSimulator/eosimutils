@@ -43,10 +43,10 @@ velocity1[missing_start:missing_end, :] = np.nan
 traj1 = StateSeries.from_dict({
     "time": abs_dates.to_dict(),
     "data": [position1.tolist(), velocity1.tolist()],
-    "frame": ReferenceFrame.ICRF_EC.to_string(),
+    "frame": ReferenceFrame.get("ICRF_EC").to_string(),
     "headers": [["pos_x", "pos_y", "pos_z"], ["vel_x", "vel_y", "vel_z"]]
 })
-traj1_itrf = traj1.to_frame(ReferenceFrame.ITRF)  # Convert to ITRF frame.
+traj1_itrf = traj1.to_frame(ReferenceFrame.get("ITRF"))  # Convert to ITRF frame.
 
 # Orbit 2: Nearly identical orbit with a small increase in radius.
 dR = 1.0             # km difference.
@@ -63,7 +63,7 @@ velocity2 = np.column_stack((vx2, vy2, vz2))
 traj2 = StateSeries.from_dict({
     "time": abs_dates.to_dict(),
     "data": [position2.tolist(), velocity2.tolist()],
-    "frame": ReferenceFrame.ICRF_EC.to_string(),
+    "frame": ReferenceFrame.get("ICRF_EC").to_string(),
     "headers": [["pos_x", "pos_y", "pos_z"], ["vel_x", "vel_y", "vel_z"]]
 })
 

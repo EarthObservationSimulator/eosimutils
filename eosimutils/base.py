@@ -50,32 +50,14 @@ class EnumBase(str, Enum):
         return False
 
 
-class ReferenceFrame(EnumBase):
+class RotationsType(EnumBase):
     """
-    Enumeration of recognized Reference frames.
+    Enumeration of recognized rotation types.
 
     Attributes:
-
-        ICRF_EC (str): Earth centered inertial frame aligned to the ICRF
-                        (International Celestial Reference Frame) .
-
-                    The alignment of the ICRF is as defined in the SPICE toolkit.
-                    This is implemented with the J2000 frame defined in the SPICE toolkit.
-                    It seems that J2000 is same as ICRF.
-                    In SPICE the center of any inertial frame is ALWAYS the solar system barycenter.
-                    See Slide 12 and 7 in
-                    https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/17_frames_and_coordinate_systems.pdf
-
-        ITRF (str): International Terrestrial Reference Frame.
-                    This is implemented with the ITRF93 frame defined in the SPICE toolkit.
-
-                    Also see:
-                    https://rhodesmill.org/skyfield/api-framelib.html#skyfield.framelib.itrs
-
+        QUATERNION (str): Represents quaternion rotations.
+        EULER (str): Represents Euler angle rotations.
     """
 
-    ICRF_EC = (
-        "ICRF_EC"  # Earth centered inertial frame aligned to the ICRF (ECI)
-    )
-    ITRF = "ITRF"  # International Terrestrial Reference Frame (ECEF)
-    # TEME = "TEME"  # True Equator Mean Equinox
+    QUATERNION = "QUATERNION"
+    EULER = "EULER"

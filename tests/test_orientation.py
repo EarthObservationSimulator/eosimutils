@@ -3,7 +3,12 @@
 import unittest
 import numpy as np
 from scipy.spatial.transform import Rotation as Scipy_Rotation
-from eosimutils.orientation import ConstantOrientation, OrientationSeries
+from eosimutils.orientation import (
+    ConstantOrientation,
+    OrientationSeries,
+    Orientation,
+    SpiceOrientation,
+)
 from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 from eosimutils.frames import ReferenceFrame
 
@@ -16,8 +21,8 @@ class TestConstantOrientation(unittest.TestCase):
     # using from_dict with quaternion serialization
     def setUp(self):
         # Use built-in frames
-        self.frm = ReferenceFrame.ICRF_EC
-        self.to = ReferenceFrame.ITRF
+        self.frm = ReferenceFrame.get("ICRF_EC")
+        self.to = ReferenceFrame.get("ITRF")
         # 90 deg rotation about Z axis
         self.rotation = Scipy_Rotation.from_euler(
             "xyz", [0.0, 0.0, 90.0], degrees=True
@@ -110,8 +115,8 @@ class TestOrientationSeries(unittest.TestCase):
         self.rotations = Scipy_Rotation.from_euler("xyz", euler_angles)
 
         # Use built‐in frames
-        self.frm = ReferenceFrame.ICRF_EC
-        self.to = ReferenceFrame.ITRF
+        self.frm = ReferenceFrame.get("ICRF_EC")
+        self.to = ReferenceFrame.get("ITRF")
 
         # Construct series via from_dict
         data_dict = {
@@ -193,6 +198,70 @@ class TestOrientationSeries(unittest.TestCase):
         # Frames should match
         self.assertEqual(s2.from_frame, self.frm)
         self.assertEqual(s2.to_frame, self.to)
+
+
+class TestOrientation(unittest.TestCase):
+    """Test the factory pattern for Orientation subclasses."""
+
+    def test_constant_orientation_from_dict(self):
+        # Create a ConstantOrientation and serialize it
+        frm = ReferenceFrame.get("ICRF_EC")
+        to = ReferenceFrame.get("ITRF")
+        rotation = Scipy_Rotation.from_euler(
+            "xyz", [0.0, 0.0, 90.0], degrees=True
+        )
+        co = ConstantOrientation(rotation, frm, to)
+        data = co.to_dict(rotations_type="quaternion")
+
+        # Deserialize using the factory method
+        co_from_dict = Orientation.from_dict(data)
+        self.assertIsInstance(co_from_dict, ConstantOrientation)
+        np.testing.assert_allclose(
+            co_from_dict.rotation.as_quat(), rotation.as_quat(), atol=1e-8
+        )
+        self.assertEqual(co_from_dict.from_frame, frm)
+        self.assertEqual(co_from_dict.to_frame, to)
+
+    def test_orientation_series_from_dict(self):
+        # Create an OrientationSeries and serialize it
+        frm = ReferenceFrame.get("ICRF_EC")
+        to = ReferenceFrame.get("ITRF")
+        times = AbsoluteDateArray(np.array([0.0, 1.0, 2.0]))
+        rotations = Scipy_Rotation.from_euler(
+            "xyz",
+            [[0.0, 0.0, 0.0], [0.0, 0.0, 90.0], [0.0, 0.0, 180.0]],
+            degrees=True,
+        )
+        angular_velocity = np.array([[0.0, 0.0, np.pi / 2]] * 3)
+        series = OrientationSeries(times, rotations, frm, to, angular_velocity)
+        data = series.to_dict(rotations_type="euler", euler_order="xyz")
+
+        # Deserialize using the factory method
+        series_from_dict = Orientation.from_dict(data)
+        self.assertIsInstance(series_from_dict, OrientationSeries)
+        np.testing.assert_allclose(
+            series_from_dict.rotations.as_euler("xyz"),
+            rotations.as_euler("xyz"),
+            atol=1e-8,
+        )
+        np.testing.assert_allclose(
+            series_from_dict.angular_velocity, angular_velocity, atol=1e-8
+        )
+        self.assertEqual(series_from_dict.from_frame, frm)
+        self.assertEqual(series_from_dict.to_frame, to)
+
+    def test_spice_orientation_from_dict(self):
+        # Create a SpiceOrientation and serialize it
+        frm = ReferenceFrame.get("ICRF_EC")
+        to = ReferenceFrame.get("ITRF")
+        spice_orientation = SpiceOrientation(frm, to)
+        data = spice_orientation.to_dict()
+
+        # Deserialize using the factory method
+        spice_from_dict = Orientation.from_dict(data)
+        self.assertIsInstance(spice_from_dict, SpiceOrientation)
+        self.assertEqual(spice_from_dict.from_frame, frm)
+        self.assertEqual(spice_from_dict.to_frame, to)
 
 
 if __name__ == "__main__":

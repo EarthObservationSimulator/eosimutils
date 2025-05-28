@@ -10,7 +10,7 @@ import numpy as np
 
 from .frames import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
-from .orientation import Orientation, SpiceOrientation
+from .orientation import Orientation, SpiceOrientation, ConstantOrientation
 
 
 class FrameRegistry:
@@ -18,7 +18,8 @@ class FrameRegistry:
     Registry for time-varying coordinate frame transformations.
 
     Underlying data structure:
-    - Frames/transforms form a graph: nodes are ReferenceFrames/edges are Orientation instances.
+    - Frames and transforms form a graph: nodes are ReferenceFrames and edges are Orientation
+    instances.
     - Adjacency list `_adj`: maps each source ReferenceFrame to a list of Orientation edges.
     - Querying A->B at time t:
         1. BFS to discover a path through intermediate frames.
@@ -44,12 +45,16 @@ class FrameRegistry:
 
         # Add transforms from ICRF_EC to ITRF
         self.add_transform(
-            SpiceOrientation(ReferenceFrame.ICRF_EC, ReferenceFrame.ITRF),
+            SpiceOrientation(
+                ReferenceFrame.get("ICRF_EC"), ReferenceFrame.get("ITRF")
+            ),
             False,
         )
         # Add transforms from ITRF to ICRF_EC
         self.add_transform(
-            SpiceOrientation(ReferenceFrame.ITRF, ReferenceFrame.ICRF_EC),
+            SpiceOrientation(
+                ReferenceFrame.get("ITRF"), ReferenceFrame.get("ICRF_EC")
+            ),
             False,
         )
 
@@ -59,7 +64,10 @@ class FrameRegistry:
         set_inverse: bool = True,
     ):
         """
-        Registers a direct Orientation instance using its from_frame and to_frame attributes.
+        Registers a transformation between two reference frames using Orientation instance.
+
+        This creates a directed edge in the graph from `from_frame` to `to_frame`, which
+        are member variables of the Orientation instance.
         Optionally registers the inverse for the reverse direction.
 
         Args:
@@ -79,7 +87,7 @@ class FrameRegistry:
         self,
         from_frame: ReferenceFrame,
         to_frame: ReferenceFrame,
-        t: Union[AbsoluteDate, AbsoluteDateArray],
+        t: Union[AbsoluteDate, AbsoluteDateArray, None],
     ) -> tuple[Scipy_Rotation, np.ndarray]:
         """
         Computes the composed transform from `from_frame` to `to_frame` at time `t`.
@@ -87,17 +95,18 @@ class FrameRegistry:
         Args:
             from_frame (ReferenceFrame): Source frame.
             to_frame (ReferenceFrame): Target frame.
-            t (Union[AbsoluteDate, AbsoluteDateArray]): AbsoluteDate or AbsoluteDateArray
-                representing the time(s).
+            t (Union[AbsoluteDate, AbsoluteDateArray, None]): AbsoluteDate, AbsoluteDateArray,
+                or None representing the time(s).
 
         Returns:
             tuple[R, np.ndarray]: Scipy_Rotation object and angular velocity vector for transform.
 
         Raises:
-            KeyError: If no path exists.
+            KeyError: If no path exists or if `t` is None and no ConstantOrientation-only path
+                exists.
         """
-        # Determine if input is single or multiple dates
-        is_single = isinstance(t, AbsoluteDate)
+        # Determine if input is single, multiple dates, or None
+        is_single = isinstance(t, (AbsoluteDate, type(None)))
 
         # Identity if same frame
         if from_frame == to_frame:
@@ -136,6 +145,11 @@ class FrameRegistry:
                 nbr = orient.to_frame
                 if nbr in visited:
                     continue
+
+                # If t is None, ensure all orientations are ConstantOrientation
+                if t is None and not isinstance(orient, ConstantOrientation):
+                    continue
+
                 rot, w = orient.at(t)
                 new_rot = rot * acc_rot
                 new_w = rot.apply(acc_w) + w

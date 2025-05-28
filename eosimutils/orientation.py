@@ -13,18 +13,27 @@ from scipy.spatial.transform import Slerp as Scipy_Slerp
 from .frames import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
 from .trajectory import StateSeries
+from .base import RotationsType
 
 
 class Orientation:
     """
     Base class for orientation representations.
 
+    Rotations are represented using SciPy rotation objects. A rotation object, when applied to a
+    position or state (position and velocity) in from_frame, transforms the position (state) to
+    to_frame. Rotation matrices are constructed from euler angles using the counterclockwise
+    rotation convention (i.e., R(theta) is the matrix that rotates a vector counterclockwise by
+    theta, see https://mathworld.wolfram.com/RotationMatrix.html. For instance, to construct an
+    orientation object with from_frame A and to_frame B using Euler angles, the euler angles
+    which rotate the B frame to the A frame would be provided.
+
     Subclasses must implement `at(t)` to return (Scipy_Rotation, angular_velocity). Note that
     Scipy Rotation objects use the scalar-last convention for quaternions. Counterclockwise
     rotations are positive.
 
     Implements a factory pattern to create instances from a dictionary using `from_dict(data)`.
-    The dictionary must contain a "type" key to identify the subclass.
+    The dictionary must contain a "orientation_type" key to identify the subclass.
 
     Provides `transform(state, t)` to apply rotation and angular velocity to 6D state vectors.
     """
@@ -56,7 +65,7 @@ class Orientation:
         Factory method to construct an Orientation from a serialized dictionary.
         Dispatches based on registered types.
         """
-        orientation_type = data.get("type")
+        orientation_type = data.get("orientation_type")
         subclass = cls._registry.get(orientation_type)
         if not subclass:
             raise ValueError(f"Unknown orientation type: {orientation_type}")
@@ -68,7 +77,8 @@ class Orientation:
         """
         Return (rotation, angular_velocity) at the given time(s).
 
-        The angular velocity is the angular velocity of from_frame w.r.t. to_frame.
+        The angular velocity is the angular velocity of from_frame w.r.t. to_frame,
+        expressed in to_frame coordinates.
 
         Time can also be None for case of constant orientation.
 
@@ -167,12 +177,15 @@ class ConstantOrientation(Orientation):
         else:
             raise TypeError("t must be AbsoluteDate or AbsoluteDateArray")
 
-    def to_dict(self, rotations_type: str = "euler") -> Dict[str, Any]:
+    def to_dict(
+        self, rotations_type: Union[RotationsType, str] = RotationsType.EULER
+    ) -> Dict[str, Any]:
         """
         Serialize the ConstantOrientation to a dictionary.
 
         The dictionary format is as follows:
         {
+            "orientation_type": "constant",
             "rotations": list,
                 # - If "rotations_type" is "quaternion": List of 4 values [x, y, z, w]
                 # - If "rotations_type" is "euler": List of 3 values (Euler angles)
@@ -184,26 +197,30 @@ class ConstantOrientation(Orientation):
         }
 
         Args:
-            rotations_type (str): Either "quaternion" or "euler" (default: "euler").
+            rotations_type (Union[RotationsType, str]): Either RotationsType.QUATERNION or
+                RotationsType.EULER (default: RotationsType.EULER).
 
         Returns:
             dict: Serialized ConstantOrientation.
         """
-        if rotations_type == "quaternion":
+        if isinstance(rotations_type, str):
+            rotations_type = RotationsType.get(rotations_type)
+
+        if rotations_type == RotationsType.QUATERNION:
             rotations = self.rotation.as_quat()
-        elif rotations_type == "euler":
+        elif rotations_type == RotationsType.EULER:
             rotations = self.rotation.as_euler("xyz").tolist()
         else:
             raise ValueError(f"Unsupported rotations_type: {rotations_type}")
 
         result = {
-            "type": "constant",
+            "orientation_type": "constant",
             "rotations": rotations,
-            "rotations_type": rotations_type,
+            "rotations_type": rotations_type.to_string(),
             "from": self.from_frame.to_string(),
             "to": self.to_frame.to_string(),
         }
-        if rotations_type == "euler":
+        if rotations_type == RotationsType.EULER:
             result["euler_order"] = "xyz"
         return result
 
@@ -233,11 +250,13 @@ class ConstantOrientation(Orientation):
         Raises:
             ValueError: If Euler angles are used but no order is specified.
         """
-        rotations_type = data.get("rotations_type", "quaternion")
+        rotations_type = RotationsType.get(
+            data.get("rotations_type", "quaternion")
+        )
 
-        if rotations_type == "quaternion":
+        if rotations_type == RotationsType.QUATERNION:
             rotation = Scipy_Rotation.from_quat(data["rotations"])
-        elif rotations_type == "euler":
+        elif rotations_type == RotationsType.EULER:
             order = data.get("euler_order")
             if not order:
                 raise ValueError(
@@ -268,15 +287,20 @@ class SpiceOrientation(Orientation):
     """
     Orientation defined using SPICE frame transformations, including angular velocity.
 
+    If there is no mapping from from_frame or to_frame to a spice frame name in
+    the spice_names dictionary, the frame string is used directly. Hence, if
+    the frame string is a valid spice frame name this function will work.
+
     Attributes:
         from_frame (ReferenceFrame): Source frame for the SPICE transform.
         to_frame (ReferenceFrame): Target frame for the SPICE transform.
+        spice_names (dict): Mapping of ReferenceFrame to SPICE string names.
     """
 
     # Map ReferenceFrame to SPICE string names
     spice_names = {
-        ReferenceFrame.ICRF_EC: "J2000",
-        ReferenceFrame.ITRF: "ITRF93",
+        ReferenceFrame.get("ICRF_EC"): "J2000",
+        ReferenceFrame.get("ITRF"): "ITRF93",
     }
 
     def at(
@@ -291,8 +315,16 @@ class SpiceOrientation(Orientation):
         Returns:
             Tuple[Scipy_Rotation, np.ndarray]: Scipy_Rotation(s) and angular velocity vector(s).
         """
-        spice_from = self.spice_names[self.from_frame]
-        spice_to = self.spice_names[self.to_frame]
+
+        # If from_frame or to_frame is not in the spice_names, use the frame string directly
+        # Spiceypy will throw an error if the frame string is not recognized as a
+        # valid SPICE frame name.
+        spice_from = self.spice_names.get(
+            self.from_frame, self.from_frame.to_string()
+        )
+        spice_to = self.spice_names.get(
+            self.to_frame, self.to_frame.to_string()
+        )
 
         if isinstance(t, AbsoluteDate):
             sxform = spice.sxform(
@@ -320,10 +352,11 @@ class SpiceOrientation(Orientation):
         Serialize to a dictionary.
 
         Returns:
-            dict: Dictionary with keys "from" and "to" (ReferenceFrame string names) and "type".
+            dict: Dictionary with keys "from" and "to" (ReferenceFrame string names) and
+            "orientation_type" : spice.
         """
         return {
-            "type": "spice",
+            "orientation_type": "spice",
             "from": self.from_frame.to_string(),
             "to": self.to_frame.to_string(),
         }
@@ -363,7 +396,7 @@ class OrientationSeries(Orientation):
         rotations (Scipy_Rotation): Orientation at each time sample.
         from_frame (ReferenceFrame): Source frame for the rotations.
         to_frame (ReferenceFrame): Target frame for the rotations.
-        angular_velocity (np.ndarray): Angular velocity vectors (Nx3).
+        angular_velocity (np.ndarray): Angular velocity vectors (Nx3) of from_frame wrt to_frame.
     """
 
     def __init__(
@@ -382,8 +415,9 @@ class OrientationSeries(Orientation):
             rotations (Scipy_Rotation): Scipy_Rotation object containing N orientations.
             from_frame (ReferenceFrame): Source frame for the rotations.
             to_frame (ReferenceFrame): Target frame for the rotations.
-            angular_velocity (np.ndarray, optional): Angular velocity vectors (Nx3).
-                If None, computed automatically from rotations using finite difference.
+            angular_velocity (np.ndarray, optional): Angular velocity vectors (Nx3) of from_frame
+                wrt to_frame. If None, computed automatically from rotations using finite
+                difference.
 
         Raises:
             ValueError: If rotations length does not match time array length.
@@ -426,8 +460,8 @@ class OrientationSeries(Orientation):
             ω(t_{N−1}) ≈ v_{N−1} / (t_{N−1} − t_{N−2}).
 
         Returns:
-            np.ndarray: An (N×3) array of angular velocity vectors ω(t_i), expressed
-                        in the body-fixed frame at each sample.
+            np.ndarray: An (N×3) array of angular velocity vectors ω(t_i)
+                of from_frame wrt to_frame, expressed in to_frame coordinates.
         """
 
         rotations = self.rotations
@@ -455,13 +489,16 @@ class OrientationSeries(Orientation):
         return omega
 
     def to_dict(
-        self, rotations_type: str = "euler", euler_order: str = "xyz"
+        self,
+        rotations_type: Union[RotationsType, str] = RotationsType.EULER,
+        euler_order: str = "xyz",
     ) -> Dict[str, Any]:
         """
         Serialize this OrientationSeries into a dictionary.
 
         The dictionary format is as follows:
         {
+            "orientation_type": "series",
             "time": dict,  # Serialized AbsoluteDateArray
             "rotations": list,  # List of rotations:
                                 # - If "rotations_type" is "quaternion": List of quaternions (Nx4),
@@ -476,30 +513,34 @@ class OrientationSeries(Orientation):
         }
 
         Args:
-            rotations_type (str, optional): The type of rotations to serialize.
-                Options are "quaternion" or "euler". Defaults to "euler".
+            rotations_type (Union[RotationsType, str], optional): The type of rotations to
+                serialize. Options are RotationsType.QUATERNION or RotationsType.EULER. Defaults
+                to RotationsType.EULER.
 
         Returns:
             dict: Serialized representation of the OrientationSeries.
         """
-        if rotations_type == "quaternion":
+        if isinstance(rotations_type, str):
+            rotations_type = RotationsType.get(rotations_type)
+
+        if rotations_type == RotationsType.QUATERNION:
             rotations = self.rotations.as_quat().tolist()
-        elif rotations_type == "euler":
+        elif rotations_type == RotationsType.EULER:
             rotations = self.rotations.as_euler(euler_order).tolist()
         else:
             raise ValueError(f"Unsupported rotations_type: {rotations_type}")
 
         result = {
-            "type": "series",
+            "orientation_type": "series",
             "time": self.time.to_dict(),
             "rotations": rotations,
-            "rotations_type": rotations_type,
+            "rotations_type": rotations_type.to_string(),
             "from": self.from_frame.to_string(),
             "to": self.to_frame.to_string(),
             "angular_velocity": self.angular_velocity.tolist(),
         }
 
-        if rotations_type == "euler":
+        if rotations_type == RotationsType.EULER:
             result["euler_order"] = euler_order
 
         return result
@@ -522,7 +563,8 @@ class OrientationSeries(Orientation):
             If coordinate axes are lowercase, uses intrinsic rotations, otherwise extrinsic.
             "from": str,  # Source reference frame as a string identifier
             "to": str,  # Target reference frame as a string identifier
-            "angular_velocity": list (optional)  # List of angular velocity vectors (Nx3)
+            "angular_velocity": list (optional)  # List of angular velocity vectors (Nx3) of
+                from_frame wrt to_frame
         }
 
         Args:
@@ -535,11 +577,13 @@ class OrientationSeries(Orientation):
             ValueError: If "rotations_type" is "euler" but "euler_order" is missing.
         """
         time = AbsoluteDateArray.from_dict(data["time"])
-        rotations_type = data.get("rotations_type", "quaternion")
+        rotations_type = RotationsType.get(
+            data.get("rotations_type", "quaternion")
+        )
 
-        if rotations_type == "quaternion":
+        if rotations_type == RotationsType.QUATERNION:
             rotations = Scipy_Rotation.from_quat(data["rotations"])
-        elif rotations_type == "euler":
+        elif rotations_type == RotationsType.EULER:
             euler_order = data.get("euler_order")
             if not euler_order:
                 raise ValueError(
@@ -681,7 +725,9 @@ class OrientationSeries(Orientation):
         )
 
     @classmethod
-    def get_lvlh(cls, state: StateSeries) -> "OrientationSeries":
+    def get_lvlh(
+        cls, state: StateSeries, lvlh_frame: ReferenceFrame
+    ) -> "OrientationSeries":
         """
         Compute an LVLH OrientationSeries from a StateSeries in an inertial reference frame.
 
@@ -695,6 +741,7 @@ class OrientationSeries(Orientation):
 
         Args:
             state (StateSeries): Trajectory in an inertial frame.
+            frame (ReferenceFrame): The ReferenceFrame object for newly created LVLH frame.
 
         Returns:
             OrientationSeries: LVLH OrientationSeries relative to state.frame.
@@ -703,15 +750,18 @@ class OrientationSeries(Orientation):
             ValueError: If the state frame is not an inertial frame.
         """
         # Only support ICRF_EC as inertial
-        if state.frame != ReferenceFrame.ICRF_EC:
+        if state.frame != ReferenceFrame.get("ICRF_EC"):
             raise ValueError(
-                f"LVLH only defined for inertial frames, got {state.frame}"
+                f"get_LVLH only defined for inertial frames, got {state.frame}"
             )
 
         pos = state.data[0]  # shape (N,3)
         vel = state.data[1]  # shape (N,3)
 
         r_mats = []
+        # Form the matrix where each column is a basis vector
+        # of the LVLH frame, expressed in inertial coordinates.
+        # This is the matrix which transforms vectors from the LVLH to the inertial frame.
         for r, v in zip(pos, vel):
             r_norm = np.linalg.norm(r)
             z_hat = -r / r_norm  # Local vertical: -r/|r|
@@ -719,15 +769,14 @@ class OrientationSeries(Orientation):
             h_norm = np.linalg.norm(h)
             y_hat = -h / h_norm  # Cross-track:-h/|h|
             x_hat = np.cross(y_hat, z_hat)  # Local horizontal: y × z
-            # Rows are LVLH axes in inertial coordinates
-            r_mats.append(np.vstack([x_hat, y_hat, z_hat]))
+            r_mats.append(np.column_stack([x_hat, y_hat, z_hat]))
 
         rotations = Scipy_Rotation.from_matrix(np.array(r_mats))
         return cls(
             time=state.time,
             rotations=rotations,
-            from_frame=state.frame,
-            to_frame=ReferenceFrame.LVLH,
+            from_frame=lvlh_frame,
+            to_frame=state.frame,
         )
 
     def inverse(self) -> "OrientationSeries":

@@ -235,7 +235,7 @@ class TestPositionSeries:
             }
         )
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-        frame = ReferenceFrame.ICRF_EC
+        frame = ReferenceFrame.get("ICRF_EC")
         ps = PositionSeries.from_dict(
             {
                 "time": time.to_dict("JULIAN_DATE"),
@@ -253,7 +253,7 @@ class TestPositionSeries:
             np.array([JD_OF_J2000 + t for t in [0.0, 1.0]])
         )
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-        frame = ReferenceFrame.ICRF_EC
+        frame = ReferenceFrame.get("ICRF_EC")
         ps = PositionSeries(time, data, frame)
         new_time = np.array([JD_OF_J2000 + 0.5])
         resampled_ps = ps.resample(new_time)
@@ -267,7 +267,7 @@ class TestPositionSeries:
         data = np.array(
             [[1.0, 2.0, 3.0], [np.nan, np.nan, np.nan], [4.0, 5.0, 6.0]]
         )
-        frame = ReferenceFrame.ICRF_EC
+        frame = ReferenceFrame.get("ICRF_EC")
         ps = PositionSeries(time, data, frame)
         gapless_ps = ps.remove_gaps()
         assert gapless_ps.data[0].shape == (2, 3)
@@ -278,16 +278,16 @@ class TestPositionSeries:
             np.array([JD_OF_J2000 + t for t in [0.0, 1.0]])
         )
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
-        frame = ReferenceFrame.ICRF_EC
+        frame = ReferenceFrame.get("ICRF_EC")
         ps = PositionSeries(time, data, frame)
-        converted_ps = ps.to_frame(ReferenceFrame.ITRF)
-        assert converted_ps.frame == ReferenceFrame.ITRF
+        converted_ps = ps.to_frame(ReferenceFrame.get("ITRF"))
+        assert converted_ps.frame == ReferenceFrame.get("ITRF")
 
     def test_from_list_of_cartesian_position(self):
         """Test creation of PositionSeries from a list of Cartesian3DPosition objects."""
         positions = [
-            Cartesian3DPosition(1.0, 2.0, 3.0, ReferenceFrame.ICRF_EC),
-            Cartesian3DPosition(4.0, 5.0, 6.0, ReferenceFrame.ICRF_EC),
+            Cartesian3DPosition(1.0, 2.0, 3.0, ReferenceFrame.get("ICRF_EC")),
+            Cartesian3DPosition(4.0, 5.0, 6.0, ReferenceFrame.get("ICRF_EC")),
         ]
         for pos in positions:
             pos.time = AbsoluteDateArray(
@@ -295,7 +295,7 @@ class TestPositionSeries:
             )  # Mock time attribute
         ps = PositionSeries.from_list_of_cartesian_position(positions)
         assert ps.data[0].shape == (2, 3)
-        assert ps.frame == ReferenceFrame.ICRF_EC
+        assert ps.frame == ReferenceFrame.get("ICRF_EC")
 
     def test_arithmetic_operations(self):
         """Test arithmetic operations between PositionSeries."""
@@ -304,7 +304,7 @@ class TestPositionSeries:
         )
         data1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
         data2 = np.array([[0.5, 1.5, 2.5], [3.5, 4.5, 5.5], [6.5, 7.5, 8.5]])
-        frame = ReferenceFrame.ICRF_EC
+        frame = ReferenceFrame.get("ICRF_EC")
 
         ps1 = PositionSeries(time, data1, frame)
         ps2 = PositionSeries(time, data2, frame)

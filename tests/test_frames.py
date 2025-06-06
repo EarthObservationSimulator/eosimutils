@@ -1,4 +1,4 @@
-"""Unit tests for eosimutils.base module."""
+"""Unit tests for eosimutils.frames module."""
 
 import unittest
 

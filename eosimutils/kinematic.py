@@ -14,7 +14,7 @@ from typing import Optional, Union
 
 import spiceypy as spice
 
-from .base import ReferenceFrame
+from .frames import ReferenceFrame
 from .time import AbsoluteDate
 from .state import Cartesian3DPosition, CartesianState
 
@@ -41,7 +41,9 @@ def _transform_position_vector(
         # No transformation needed, return the same position
         return position_vector
 
-    if from_frame == ReferenceFrame.ICRF_EC and to_frame == ReferenceFrame.ITRF:
+    if from_frame == ReferenceFrame.get(
+        "ICRF_EC"
+    ) and to_frame == ReferenceFrame.get("ITRF"):
         # Transform from ICRF_EC to ITRF
         if et is not None:
             rot_matrix = spice.pxform("J2000", "ITRF93", et)
@@ -49,9 +51,9 @@ def _transform_position_vector(
             raise ValueError(
                 "Ephemeris time (ET) must be provided for transformation."
             )
-    elif (
-        from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC
-    ):
+    elif from_frame == ReferenceFrame.get(
+        "ITRF"
+    ) and to_frame == ReferenceFrame.get("ICRF_EC"):
         # Transform from ITRF to ICRF_EC
         if et is not None:
             rot_matrix = spice.pxform("ITRF93", "J2000", et)
@@ -114,11 +116,13 @@ def _transform_state(
         # No transformation needed, return the same state
         return state
 
-    if from_frame == ReferenceFrame.ICRF_EC and to_frame == ReferenceFrame.ITRF:
+    if from_frame == ReferenceFrame.get(
+        "ICRF_EC"
+    ) and to_frame == ReferenceFrame.get("ITRF"):
         state_matrix = spice.sxform("J2000", "ITRF93", et)
-    elif (
-        from_frame == ReferenceFrame.ITRF and to_frame == ReferenceFrame.ICRF_EC
-    ):
+    elif from_frame == ReferenceFrame.get(
+        "ITRF"
+    ) and to_frame == ReferenceFrame.get("ICRF_EC"):
         state_matrix = spice.sxform("ITRF93", "J2000", et)
     else:
         raise NotImplementedError(

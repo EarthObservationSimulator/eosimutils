@@ -10,7 +10,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as Scipy_Rotation
 from scipy.spatial.transform import Slerp as Scipy_Slerp
 
-from .frames import ReferenceFrame
+from .base import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
 from .trajectory import StateSeries
 from .base import RotationsType

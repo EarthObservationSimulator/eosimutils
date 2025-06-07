@@ -1,6 +1,6 @@
 import numpy as np
 
-from eosimutils.frames import ReferenceFrame
+from eosimutils.base import ReferenceFrame
 from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 from eosimutils.trajectory import StateSeries
 from eosimutils.orientation import OrientationSeries

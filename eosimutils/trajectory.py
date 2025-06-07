@@ -15,7 +15,7 @@ Basic interpolation/resampling and arithmetic operations (with frame conversion)
 import numpy as np
 import spiceypy as spice
 
-from .frames import ReferenceFrame
+from .base import ReferenceFrame
 from .time import AbsoluteDateArray
 from .timeseries import Timeseries
 from .spicekernels import load_spice_kernels

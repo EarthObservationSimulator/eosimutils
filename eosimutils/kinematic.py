@@ -14,7 +14,7 @@ from typing import Optional, Union
 
 import spiceypy as spice
 
-from .frames import ReferenceFrame
+from .base import ReferenceFrame
 from .time import AbsoluteDate
 from .state import Cartesian3DPosition, CartesianState
 

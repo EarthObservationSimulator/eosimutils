@@ -1,9 +1,9 @@
-"""Unit tests for eosimutils.frames module."""
+"""Unit tests for eosimutils.base module."""
 
 import unittest
 
 
-from eosimutils.frames import ReferenceFrame
+from eosimutils.base import ReferenceFrame
 
 
 class TestReferenceFrame(unittest.TestCase):

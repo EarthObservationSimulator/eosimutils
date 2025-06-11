@@ -19,8 +19,7 @@
 from typing import Type, Dict, Any, List, Union
 import numpy as np
 
-from .base import EnumBase
-from .frames import ReferenceFrame
+from .base import EnumBase, ReferenceFrame
 
 
 class FieldOfViewType(EnumBase):

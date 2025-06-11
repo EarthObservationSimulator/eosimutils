@@ -61,14 +61,16 @@ class ReferenceFrame:
     @classmethod
     def get(cls, name: str):
         """
-        Retrieves a ReferenceFrame by name.
+        Retrieves a ReferenceFrame by name or returns the instance if already a ReferenceFrame.
 
         Args:
-            name (str): The name of the reference frame to retrieve.
+            name (str or ReferenceFrame): The name of the reference frame to retrieve, or a ReferenceFrame instance.
 
         Returns:
-            Optional[ReferenceFrame]: The reference frame if found, None otherwise.
+            ReferenceFrame or None: The reference frame if found, the instance if already a ReferenceFrame, or None if not found.
         """
+        if isinstance(name, ReferenceFrame):
+            return name
         name = name.upper()
         if name not in cls._registry:
             return None

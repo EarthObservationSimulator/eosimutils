@@ -80,7 +80,7 @@ class TestCircularFieldOfView(unittest.TestCase):
     def test_initialization(self):
         """Test initialization of CircularFieldOfView."""
         self.assertEqual(self.circular_fov.diameter, self.diameter)
-        self.assertEqual(self.circular_fov.frame.value, self.frame)
+        self.assertEqual(self.circular_fov.frame, self.frame)
         self.assertTrue((self.circular_fov.boresight == self.boresight).all())
 
     def test_from_dict(self):
@@ -92,7 +92,7 @@ class TestCircularFieldOfView(unittest.TestCase):
         }
         circular_fov = CircularFieldOfView.from_dict(specs)
         self.assertEqual(circular_fov.diameter, self.diameter)
-        self.assertEqual(circular_fov.frame.value, self.frame)
+        self.assertEqual(circular_fov.frame, self.frame)
         self.assertTrue((circular_fov.boresight == self.boresight).all())
     
     def test_default_boresight(self):
@@ -161,7 +161,7 @@ class TestRectangularFieldOfView(unittest.TestCase):
 
     def test_initialization(self):
         """Test initialization of RectangularFieldOfView."""
-        self.assertEqual(self.rectangular_fov.frame.value, self.frame)
+        self.assertEqual(self.rectangular_fov.frame, self.frame)
         self.assertTrue((self.rectangular_fov.boresight == self.boresight).all())
         self.assertTrue((self.rectangular_fov.ref_vector == self.ref_vector).all())
         self.assertEqual(self.rectangular_fov.ref_angle, self.ref_angle)
@@ -177,7 +177,7 @@ class TestRectangularFieldOfView(unittest.TestCase):
             "cross_angle": self.cross_angle,
         }
         rectangular_fov = RectangularFieldOfView.from_dict(specs)
-        self.assertEqual(rectangular_fov.frame.value, self.frame)
+        self.assertEqual(rectangular_fov.frame, self.frame)
         self.assertTrue((rectangular_fov.boresight == self.boresight).all())
         self.assertTrue((rectangular_fov.ref_vector == self.ref_vector).all())
         self.assertEqual(rectangular_fov.ref_angle, self.ref_angle)
@@ -249,7 +249,7 @@ class TestPolygonFieldOfView(unittest.TestCase):
 
     def test_initialization(self):
         """Test initialization of PolygonFieldOfView."""
-        self.assertEqual(self.polygon_fov.frame.value, self.frame)
+        self.assertEqual(self.polygon_fov.frame, self.frame)
         self.assertTrue((self.polygon_fov.boresight == self.boresight).all())
         for corner, expected_corner in zip(
             self.polygon_fov.boundary_corners, self.boundary_corners
@@ -264,7 +264,7 @@ class TestPolygonFieldOfView(unittest.TestCase):
             "boundary_corners": self.boundary_corners,
         }
         polygon_fov = PolygonFieldOfView.from_dict(specs)
-        self.assertEqual(polygon_fov.frame.value, self.frame)
+        self.assertEqual(polygon_fov.frame, self.frame)
         self.assertTrue((polygon_fov.boresight == self.boresight).all())
         for corner, expected_corner in zip(
             polygon_fov.boundary_corners, self.boundary_corners

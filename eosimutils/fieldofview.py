@@ -114,7 +114,7 @@ class CircularFieldOfView:
         if not (0 <= diameter <= 180):
             raise ValueError("diameter must be between 0 and 180 degrees.")
         self.diameter = float(diameter)
-        self.frame = ReferenceFrame(frame)
+        self.frame = ReferenceFrame.get(frame)
         self.boresight = np.array(boresight if boresight is not None else [0.0, 0.0, 1.0])
 
     @classmethod
@@ -145,7 +145,7 @@ class CircularFieldOfView:
         """
         return {
             "diameter": self.diameter,
-            "frame": self.frame.value,
+            "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
         }
 
@@ -171,7 +171,7 @@ class RectangularFieldOfView:
             cross_angle (float): Half of the total angular extent in the plane perpendicular to the reference 3d-vector.
             boresight (Union[list, np.ndarray, None]): The boresight 3d-vector of the FOV.
         """
-        self.frame = ReferenceFrame(frame)
+        self.frame = ReferenceFrame.get(frame)
         self.ref_vector = np.array(ref_vector)
         self.ref_angle = ref_angle
         self.cross_angle = cross_angle
@@ -220,7 +220,7 @@ class RectangularFieldOfView:
             Dict[str, Any]: Dictionary representation of the RectangularFieldOfView object.
         """
         return {
-            "frame": self.frame.value,
+            "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
             "ref_vector": self.ref_vector.tolist(),
             "ref_angle": self.ref_angle,
@@ -258,7 +258,7 @@ class PolygonFieldOfView:
         if len(boundary_corners) < 3:
             raise ValueError("At least 3 vectors must be defined in boundary_corners.")
                     
-        self.frame = ReferenceFrame(frame)
+        self.frame = ReferenceFrame.get(frame)
         self.boundary_corners = [np.array(corner) for corner in boundary_corners]
         self.boresight = np.array(boresight if boresight is not None else [0.0, 0.0, 1.0])
 
@@ -283,7 +283,7 @@ class PolygonFieldOfView:
             PolygonFieldOfView: An instance of the PolygonFieldOfView class.
         """
         return cls(
-            frame=ReferenceFrame(specs["frame"]),
+            frame=ReferenceFrame.get(specs["frame"]),
             boresight=specs.get("boresight", [0.0, 0.0, 1.0]),  # Default to +Z axis
             boundary_corners=specs["boundary_corners"],
         )
@@ -295,7 +295,7 @@ class PolygonFieldOfView:
             Dict[str, Any]: Dictionary representation of the PolygonFieldOfView object.
         """
         return {
-            "frame": self.frame.value,
+            "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
             "boundary_corners": [corner.tolist() for corner in self.boundary_corners],
         }

@@ -14,6 +14,7 @@ from eosimutils.state import (
     Cartesian3DVelocity,
     GeographicPosition,
     CartesianState,
+    Cartesian3DPositionArray,
 )
 
 
@@ -442,3 +443,60 @@ class TestCartesianState(unittest.TestCase):
             "Only CartesianState object in ICRF_EC frame is supported for "
             "conversion to Skyfield GCRF position." in str(context.exception)
         )
+
+class TestCartesian3DPositionArray(unittest.TestCase):
+    """Test the Cartesian3DPositionArray class."""
+
+    def setUp(self):
+        self.frame = ReferenceFrame.get("ICRF_EC")
+        self.positions_np = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        self.cartesian_positions = [
+            Cartesian3DPosition(1.0, 2.0, 3.0, self.frame),
+            Cartesian3DPosition(4.0, 5.0, 6.0, self.frame),
+        ]
+        self.geo_positions = [
+            GeographicPosition(0.0, 0.0, 0.0),
+            GeographicPosition(10.0, 20.0, 100.0),
+        ]
+
+    def test_initialization(self):
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        np.testing.assert_array_equal(arr.positions, self.positions_np)
+        self.assertEqual(arr.frame, self.frame)
+
+    def test_invalid_shape(self):
+        with self.assertRaises(ValueError):
+            Cartesian3DPositionArray(np.array([1.0, 2.0, 3.0]), self.frame)
+        with self.assertRaises(ValueError):
+            Cartesian3DPositionArray(np.array([[1.0, 2.0], [3.0, 4.0]]), self.frame)
+
+    def test_from_cartesian_positions(self):
+        arr = Cartesian3DPositionArray.from_cartesian_positions(self.cartesian_positions)
+        np.testing.assert_array_equal(arr.positions, self.positions_np)
+        self.assertEqual(arr.frame, self.frame)
+
+    def test_from_geographic_positions(self):
+        arr = Cartesian3DPositionArray.from_geographic_positions(self.geo_positions)
+        self.assertEqual(arr.positions.shape, (2, 3))
+        self.assertEqual(arr.frame, ReferenceFrame.get("ITRF"))
+
+    def test_to_numpy_and_to_list(self):
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        np.testing.assert_array_equal(arr.to_numpy(), self.positions_np)
+        self.assertEqual(arr.to_list(), self.positions_np.tolist())
+
+    def test_to_dict_and_from_dict(self):
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        dict_out = arr.to_dict()
+        self.assertEqual(dict_out["positions"], self.positions_np.tolist())
+        self.assertEqual(dict_out["frame"], self.frame.to_string())
+        arr2 = Cartesian3DPositionArray.from_dict(dict_out)
+        np.testing.assert_array_equal(arr2.positions, self.positions_np)
+        self.assertEqual(arr2.frame, self.frame)
+
+    def test_repr(self):
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        s = repr(arr)
+        self.assertIn("Cartesian3DPositionArray", s)
+        self.assertIn("positions", s)
+        self.assertIn("frame", s)

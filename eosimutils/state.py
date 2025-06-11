@@ -17,7 +17,9 @@ from .time import AbsoluteDate
 
 
 class Cartesian3DPosition:
-    """Handles 3D position information."""
+    """Handles 3D position information. 
+       Internally the position is stored in kilometers.
+    """
 
     def __init__(
         self, x: float, y: float, z: float, frame: Optional[ReferenceFrame]
@@ -116,7 +118,9 @@ class Cartesian3DPosition:
 
 
 class Cartesian3DVelocity:
-    """Handles 3D velocity information."""
+    """Handles 3D velocity information. 
+       Internally the velocity is stored in kilometers-per-second.
+    """
 
     def __init__(
         self, vx: float, vy: float, vz: float, frame: Optional[ReferenceFrame]
@@ -455,3 +459,137 @@ class CartesianState:
             center=399,  # Geocentric
             target=None,
         )
+
+class Cartesian3DPositionArray:
+    """Stores an array of 3D Cartesian positions in a specified reference frame.
+
+    The instance can be initialized from a list of Cartesian3DPosition objects
+    or from a list of GeographicPosition objects. In the GeographicPosition case,
+    latitude, longitude, and elevation are converted to Cartesian coordinates in the
+    ITRF frame using the `itrs_xyz` property.
+
+    Internally, the positions are stored as a NumPy array.
+
+    +---------------------------------------------+
+    |         Cartesian3DPositionArray            |
+    +---------------------------------------------+
+    |                                             |
+    | positions:                                  |
+    | +-----------------------------------------+ |
+    | | [[x1, y1, z1],                          | |
+    | |  [x2, y2, z2],                          | |
+    | |   ...                                   | |  --> NumPy array of shape (N, 3)
+    | |  [xN, yN, zN]]                          | |      Units are in kilometers.
+    | +-----------------------------------------+ |
+    |                                             |
+    | frame:                                      |
+    | +-----------------------------------------+ |
+    | | ReferenceFrame (e.g., ITRF, ICRF_EC)    | |  --> Reference frame for all positions
+    | +-----------------------------------------+ |
+    +---------------------------------------------+
+    """
+
+    def __init__(self, positions: np.ndarray, frame: ReferenceFrame) -> None:
+        """Initializes a Cartesian3DPositionArray from a NumPy array and a reference frame.
+
+        Args:
+            positions (np.ndarray): NumPy array of shape (N, 3) containing x, y, z points.
+            frame (ReferenceFrame): The reference frame for the positions.
+
+        Raises:
+            ValueError: If positions does not have shape (N, 3).
+        """
+        if positions.ndim != 2 or positions.shape[1] != 3:
+            raise ValueError("positions array must have shape (N, 3)")
+        self.positions = positions
+        self.frame = frame
+
+    @classmethod
+    def from_cartesian_positions(cls, positions: list) -> "Cartesian3DPositionArray":
+        """Creates a Cartesian3DPositionArray from a list of Cartesian3DPosition objects.
+
+        Args:
+            positions (list): List of Cartesian3DPosition objects.
+
+        Returns:
+            Cartesian3DPositionArray: A new Cartesian3DPositionArray object.
+
+        Raises:
+            ValueError: If the list is empty or if the frames of the positions do not match.
+        """
+        if not positions:
+            raise ValueError("The list of Cartesian3DPosition objects cannot be empty.")
+        frame = positions[0].frame
+        if any(pos.frame != frame for pos in positions):
+            raise ValueError("All Cartesian3DPosition objects must have the same reference frame.")
+        coords = np.array([pos.to_list() for pos in positions])
+        return cls(coords, frame)
+
+    @classmethod
+    def from_geographic_positions(cls, positions: list) -> "Cartesian3DPositionArray":
+        """Creates a Cartesian3DPositionArray from a list of GeographicPosition objects.
+
+        Geographic positions are converted into Cartesian coordinates in the ITRF frame
+        using the `itrs_xyz` property.
+
+        Args:
+            positions (list): List of GeographicPosition objects.
+
+        Returns:
+            Cartesian3DPositionArray: A new Cartesian3DPositionArray object.
+
+        Raises:
+            ValueError: If the list is empty.
+        """
+        if not positions:
+            raise ValueError("The list of GeographicPosition objects cannot be empty.")
+        frame = ReferenceFrame.get("ITRF")
+        coords = np.array([pos.itrs_xyz for pos in positions])
+        return cls(coords, frame)
+
+    def to_numpy(self) -> np.ndarray:
+        """Returns the internal NumPy array of positions.
+
+        Returns:
+            np.ndarray: Array of shape (N, 3) containing the positions.
+        """
+        return self.positions
+
+    def to_list(self) -> list:
+        """Returns a list of positions.
+
+        Returns:
+            list: List of [x, y, z] coordinates.
+        """
+        return self.positions.tolist()
+
+    @classmethod
+    def from_dict(cls, dict_in: dict) -> "Cartesian3DPositionArray":
+        """Deserializes a Cartesian3DPositionArray object from a dictionary.
+
+        Args:
+            dict_in (dict): The dictionary must contain the following keys:
+                - "positions": A list or array representing positions (Nx3).
+                - "frame": A string representing the reference frame.
+
+        Returns:
+            Cartesian3DPositionArray: The deserialized object.
+        """
+        positions = np.array(dict_in["positions"])
+        frame = ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in and dict_in["frame"] else None
+        return cls(positions, frame)
+
+    def to_dict(self) -> dict:
+        """Serializes the Cartesian3DPositionArray to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the Cartesian3DPositionArray object.
+        """
+        return {
+            "positions": self.to_list(),
+            "frame": self.frame.to_string() if self.frame is not None else None,
+        }
+
+    def __repr__(self) -> str:
+        """Returns the string representation of the Cartesian3DPositionArray object."""
+        return f"Cartesian3DPositionArray(positions={self.positions!r}, frame={self.frame!r})"

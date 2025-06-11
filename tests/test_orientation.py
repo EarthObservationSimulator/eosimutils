@@ -10,7 +10,7 @@ from eosimutils.orientation import (
     SpiceOrientation,
 )
 from eosimutils.time import AbsoluteDate, AbsoluteDateArray
-from eosimutils.frames import ReferenceFrame
+from eosimutils.base import ReferenceFrame
 
 
 class TestConstantOrientation(unittest.TestCase):

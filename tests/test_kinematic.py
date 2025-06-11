@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import random
 
-from eosimutils.frames import ReferenceFrame
+from eosimutils.base import ReferenceFrame
 from eosimutils.state import (
     Cartesian3DPosition,
     Cartesian3DVelocity,

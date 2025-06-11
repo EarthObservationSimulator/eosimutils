@@ -3,7 +3,7 @@
 import unittest
 
 
-from eosimutils.frames import ReferenceFrame
+from eosimutils.base import ReferenceFrame
 
 
 class TestReferenceFrame(unittest.TestCase):

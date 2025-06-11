@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation as R
 
 from eosimutils.frame_registry import FrameRegistry
 from eosimutils.orientation import ConstantOrientation, OrientationSeries
-from eosimutils.frames import ReferenceFrame
+from eosimutils.base import ReferenceFrame
 from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 
 ReferenceFrame.add("A")

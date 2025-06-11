@@ -8,7 +8,7 @@ from collections import deque
 from typing import Dict, Union, Any, List
 import numpy as np
 
-from .frames import ReferenceFrame
+from .base import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
 from .orientation import Orientation, SpiceOrientation, ConstantOrientation
 

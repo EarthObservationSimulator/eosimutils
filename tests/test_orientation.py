@@ -1,6 +1,7 @@
 """Unit tests for the eosimutils.orientation module.
 
-Tests for the `SpiceOrientation` class are located in the `test_orientation_spiceorientation` script."""
+Tests for the `SpiceOrientation` class are located in the `test_orientation_spiceorientation` script.
+"""
 
 import unittest
 import numpy as np

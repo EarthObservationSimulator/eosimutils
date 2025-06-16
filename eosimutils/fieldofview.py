@@ -94,11 +94,13 @@ class FieldOfViewFactory:
 
 
 class CircularFieldOfView:
-    """This class represents a circular field-of-view with a specified diameter.
-    """
+    """This class represents a circular field-of-view with a specified diameter."""
 
     def __init__(
-        self, diameter: float, frame: Union[ReferenceFrame, str], boresight: Union[list, np.ndarray, None] = None
+        self,
+        diameter: float,
+        frame: Union[ReferenceFrame, str],
+        boresight: Union[list, np.ndarray, None] = None,
     ):
         """Initializes the CircularFieldOfView.
 
@@ -114,7 +116,9 @@ class CircularFieldOfView:
             raise ValueError("diameter must be between 0 and 180 degrees.")
         self.diameter = float(diameter)
         self.frame = ReferenceFrame.get(frame)
-        self.boresight = np.array(boresight if boresight is not None else [0.0, 0.0, 1.0])
+        self.boresight = np.array(
+            boresight if boresight is not None else [0.0, 0.0, 1.0]
+        )
 
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "CircularFieldOfView":
@@ -133,7 +137,9 @@ class CircularFieldOfView:
         """
         diameter = specs.get("diameter")
         frame = ReferenceFrame(specs.get("frame"))
-        boresight = specs.get("boresight", [0.0, 0.0, 1.0])  # Default to +Z axis
+        boresight = specs.get(
+            "boresight", [0.0, 0.0, 1.0]
+        )  # Default to +Z axis
         return cls(diameter, frame, boresight)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -150,8 +156,7 @@ class CircularFieldOfView:
 
 
 class RectangularFieldOfView:
-    """Represents a rectangular field-of-view (FOV) with specified parameters.
-    """
+    """Represents a rectangular field-of-view (FOV) with specified parameters."""
 
     def __init__(
         self,
@@ -174,7 +179,9 @@ class RectangularFieldOfView:
         self.ref_vector = np.array(ref_vector)
         self.ref_angle = ref_angle
         self.cross_angle = cross_angle
-        self.boresight = np.array(boresight if boresight is not None else [0.0, 0.0, 1.0])
+        self.boresight = np.array(
+            boresight if boresight is not None else [0.0, 0.0, 1.0]
+        )
 
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "RectangularFieldOfView":
@@ -206,7 +213,9 @@ class RectangularFieldOfView:
 
         return cls(
             frame=ReferenceFrame(specs["frame"]),
-            boresight=specs.get("boresight", [0.0, 0.0, 1.0]),  # Default to +Z axis
+            boresight=specs.get(
+                "boresight", [0.0, 0.0, 1.0]
+            ),  # Default to +Z axis
             ref_vector=specs["ref_vector"],
             ref_angle=ref_angle,
             cross_angle=cross_angle,
@@ -228,8 +237,7 @@ class RectangularFieldOfView:
 
 
 class PolygonFieldOfView:
-    """Represents a polygonal field-of-view (FOV) with specified parameters.
-    """
+    """Represents a polygonal field-of-view (FOV) with specified parameters."""
 
     def __init__(
         self,
@@ -255,15 +263,23 @@ class PolygonFieldOfView:
             raise TypeError("Frame must be of type ReferenceFrame or str.")
 
         if len(boundary_corners) < 3:
-            raise ValueError("At least 3 vectors must be defined in boundary_corners.")
-                    
+            raise ValueError(
+                "At least 3 vectors must be defined in boundary_corners."
+            )
+
         self.frame = ReferenceFrame.get(frame)
-        self.boundary_corners = [np.array(corner) for corner in boundary_corners]
-        self.boresight = np.array(boresight if boresight is not None else [0.0, 0.0, 1.0])
+        self.boundary_corners = [
+            np.array(corner) for corner in boundary_corners
+        ]
+        self.boresight = np.array(
+            boresight if boresight is not None else [0.0, 0.0, 1.0]
+        )
 
         for corner in self.boundary_corners:
             if np.dot(corner, self.boresight) <= 0:
-                raise ValueError("All boundary_corners must be in the same hemisphere as the boresight vector.")
+                raise ValueError(
+                    "All boundary_corners must be in the same hemisphere as the boresight vector."
+                )
 
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "PolygonFieldOfView":
@@ -283,7 +299,9 @@ class PolygonFieldOfView:
         """
         return cls(
             frame=ReferenceFrame.get(specs["frame"]),
-            boresight=specs.get("boresight", [0.0, 0.0, 1.0]),  # Default to +Z axis
+            boresight=specs.get(
+                "boresight", [0.0, 0.0, 1.0]
+            ),  # Default to +Z axis
             boundary_corners=specs["boundary_corners"],
         )
 
@@ -296,5 +314,7 @@ class PolygonFieldOfView:
         return {
             "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
-            "boundary_corners": [corner.tolist() for corner in self.boundary_corners],
+            "boundary_corners": [
+                corner.tolist() for corner in self.boundary_corners
+            ],
         }

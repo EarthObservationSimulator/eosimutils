@@ -444,6 +444,7 @@ class TestCartesianState(unittest.TestCase):
             "conversion to Skyfield GCRF position." in str(context.exception)
         )
 
+
 class TestCartesian3DPositionArray(unittest.TestCase):
     """Test the Cartesian3DPositionArray class."""
 
@@ -468,15 +469,21 @@ class TestCartesian3DPositionArray(unittest.TestCase):
         with self.assertRaises(ValueError):
             Cartesian3DPositionArray(np.array([1.0, 2.0, 3.0]), self.frame)
         with self.assertRaises(ValueError):
-            Cartesian3DPositionArray(np.array([[1.0, 2.0], [3.0, 4.0]]), self.frame)
+            Cartesian3DPositionArray(
+                np.array([[1.0, 2.0], [3.0, 4.0]]), self.frame
+            )
 
     def test_from_cartesian_positions(self):
-        arr = Cartesian3DPositionArray.from_cartesian_positions(self.cartesian_positions)
+        arr = Cartesian3DPositionArray.from_cartesian_positions(
+            self.cartesian_positions
+        )
         np.testing.assert_array_equal(arr.positions, self.positions_np)
         self.assertEqual(arr.frame, self.frame)
 
     def test_from_geographic_positions(self):
-        arr = Cartesian3DPositionArray.from_geographic_positions(self.geo_positions)
+        arr = Cartesian3DPositionArray.from_geographic_positions(
+            self.geo_positions
+        )
         self.assertEqual(arr.positions.shape, (2, 3))
         self.assertEqual(arr.frame, ReferenceFrame.get("ITRF"))
 

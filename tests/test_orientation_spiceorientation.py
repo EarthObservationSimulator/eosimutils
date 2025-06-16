@@ -89,7 +89,6 @@ _TEST_STATE_EF = CartesianState(
 )
 
 
-
 class TestSpiceOrientation(unittest.TestCase):
     """Unit tests for the SpiceOrientation class."""
 
@@ -127,6 +126,7 @@ class TestSpiceOrientation(unittest.TestCase):
         self.assertIsInstance(result, tuple)
         self.assertEqual(len(result), 2)
 
+
 class TestSpiceOrientationTransformState(unittest.TestCase):
     """Unit tests for the SpiceOrientation.tranform_position function."""
 
@@ -138,8 +138,8 @@ class TestSpiceOrientationTransformState(unittest.TestCase):
         )
         transform_state = test_orientation.transform_state
         transformed_state = transform_state(
-                                state=_TEST_STATE_I,
-                            )
+            state=_TEST_STATE_I,
+        )
         np.testing.assert_array_equal(
             transformed_state.position.to_list(),
             _TEST_STATE_I.position.to_list(),
@@ -149,7 +149,7 @@ class TestSpiceOrientationTransformState(unittest.TestCase):
             _TEST_STATE_I.velocity.to_list(),
         )
         self.assertEqual(transformed_state.frame, ReferenceFrame.get("ICRF_EC"))
-        
+
     def test_transform_icrfec_to_itrf(self):
         """Test transformation from ICRF_EC to ITRF."""
         test_orientation = SpiceOrientation(
@@ -158,8 +158,8 @@ class TestSpiceOrientationTransformState(unittest.TestCase):
         )
         transform_state = test_orientation.transform_state
         transformed_state = transform_state(
-                                state=_TEST_STATE_I,
-                            )
+            state=_TEST_STATE_I,
+        )
         # Validate the transformed state
         self.assertEqual(transformed_state.frame, ReferenceFrame.get("ITRF"))
         self.assertEqual(len(transformed_state.position.to_list()), 3)
@@ -181,33 +181,32 @@ class TestSpiceOrientationTransformState(unittest.TestCase):
         """Test transformation with a non-matching frame of the input state vector."""
         ReferenceFrame.add("XYZ")
         test_orientation = SpiceOrientation(
-                    from_frame=ReferenceFrame.get("XYZ"),
-                    to_frame=ReferenceFrame.get("ITRF"),
-                )
+            from_frame=ReferenceFrame.get("XYZ"),
+            to_frame=ReferenceFrame.get("ITRF"),
+        )
         transform_state = test_orientation.transform_state
         with self.assertRaises(ValueError):
             transform_state(
                 state=_TEST_STATE_I,
             )
-    
-    @unittest.skip("reason for skipping") 
+
     def test_round_trip_transformation(self):
         """Test round-trip transformation from ICRF_EC to ITRF and back to ICRF_EC."""
         test_orientation_1 = SpiceOrientation(
-                    from_frame=ReferenceFrame.get("ICRF_EC"),
-                    to_frame=ReferenceFrame.get("ITRF"),
-                )
+            from_frame=ReferenceFrame.get("ICRF_EC"),
+            to_frame=ReferenceFrame.get("ITRF"),
+        )
         transform_state_1 = test_orientation_1.transform_state
-        
+
         # Transform state from ICRF_EC to ITRF
         transformed_to_itrf = transform_state_1(
             state=_TEST_STATE_I,
         )
 
         test_orientation_2 = SpiceOrientation(
-                    from_frame=ReferenceFrame.get("ITRF"),
-                    to_frame=ReferenceFrame.get("ICRF_EC"),
-                )
+            from_frame=ReferenceFrame.get("ITRF"),
+            to_frame=ReferenceFrame.get("ICRF_EC"),
+        )
         transform_state_2 = test_orientation_2.transform_state
 
         # Transform state back from ITRF to ICRF_EC
@@ -233,8 +232,7 @@ class TestSpiceOrientationTransformState(unittest.TestCase):
             ReferenceFrame.get("ICRF_EC"),
             "The resulting frame is not ICRF_EC after round-trip transformation.",
         )
-    
-    @unittest.skip("reason for skipping") 
+
     def test_transform_state_with_astropy(self):
         """Test transformation using astropy_transform for validation.
         Validates both position and velocity transformations."""
@@ -258,6 +256,7 @@ class TestSpiceOrientationTransformState(unittest.TestCase):
             is_valid, "Transform state validation failed for ITRF to ICRF_EC."
         )
 
+
 class TestSpiceOrientationTransformPosition(unittest.TestCase):
     """Test the SpiceOrientation.tranform_position function."""
 
@@ -269,16 +268,16 @@ class TestSpiceOrientationTransformPosition(unittest.TestCase):
         )
         transform_position = test_orientation.transform_position
         transformed_position = transform_position(
-                                position=_TEST_POSITION_I,
-                                t=_TEST_TIME,
-                            )
+            position=_TEST_POSITION_I,
+            t=_TEST_TIME,
+        )
         np.testing.assert_array_equal(
             transformed_position.to_list(), _TEST_POSITION_I.to_list()
         )
         self.assertEqual(
             transformed_position.frame, ReferenceFrame.get("ICRF_EC")
         )
-    
+
     def test_transform_icrfec_to_itrf(self):
         """Test transformation from ICRF_EC to ITRF."""
         test_orientation = SpiceOrientation(
@@ -299,29 +298,29 @@ class TestSpiceOrientationTransformPosition(unittest.TestCase):
                 for coord in transformed_position.to_list()
             )
         )
-    
+
     def test_invalid_frame(self):
         """Test transformation with invalid frames."""
         ReferenceFrame.add("ABC")
         test_orientation = SpiceOrientation(
-                    from_frame=ReferenceFrame.get("ABC"),
-                    to_frame=ReferenceFrame.get("ITRF"),
-                )
+            from_frame=ReferenceFrame.get("ABC"),
+            to_frame=ReferenceFrame.get("ITRF"),
+        )
         transform_position = test_orientation.transform_position
         with self.assertRaises(ValueError):
             transform_position(
                 position=_TEST_POSITION_I,
                 t=_TEST_TIME,
             )
-    
+
     def test_round_trip_transformation(self):
         """Test round-trip transformation from ICRF_EC to ITRF and back to ICRF_EC."""
         test_orientation_1 = SpiceOrientation(
-                    from_frame=ReferenceFrame.get("ICRF_EC"),
-                    to_frame=ReferenceFrame.get("ITRF"),
-                )
+            from_frame=ReferenceFrame.get("ICRF_EC"),
+            to_frame=ReferenceFrame.get("ITRF"),
+        )
         transform_position_1 = test_orientation_1.transform_position
-        
+
         # Transform position from ICRF_EC to ITRF
         transformed_to_itrf = transform_position_1(
             position=_TEST_POSITION_I,
@@ -329,9 +328,9 @@ class TestSpiceOrientationTransformPosition(unittest.TestCase):
         )
 
         test_orientation_2 = SpiceOrientation(
-                    from_frame=ReferenceFrame.get("ITRF"),
-                    to_frame=ReferenceFrame.get("ICRF_EC"),
-                )
+            from_frame=ReferenceFrame.get("ITRF"),
+            to_frame=ReferenceFrame.get("ICRF_EC"),
+        )
         transform_position_2 = test_orientation_2.transform_position
 
         # Transform position back from ITRF to ICRF_EC
@@ -352,7 +351,7 @@ class TestSpiceOrientationTransformPosition(unittest.TestCase):
             ReferenceFrame.get("ICRF_EC"),
             "The resulting frame is not ICRF_EC after round-trip transformation.",
         )
-    
+
     def test_transform_position_with_astropy(self):
         """Test transformation using astropy_transform for validation.
         It has been found that the results agree to about a meter accuracy.
@@ -397,9 +396,9 @@ def validate_transform_state_with_astropy(
     time = state.time
     # Use eosimutils transform_state to get the transformed state
     test_orientation = SpiceOrientation(
-                    from_frame=from_frame,
-                    to_frame=to_frame,
-                )
+        from_frame=from_frame,
+        to_frame=to_frame,
+    )
     transform_state = test_orientation.transform_state
     transformed_state = transform_state(
         state=state,
@@ -450,6 +449,7 @@ def validate_transform_state_with_astropy(
     print(transformed_state.velocity.to_numpy(), transformed_velocity_astropy)
     return position_matches and velocity_matches
 
+
 def validate_transform_position_with_astropy(
     from_frame: Union[str, ReferenceFrame],
     to_frame: Union[str, ReferenceFrame],
@@ -470,9 +470,9 @@ def validate_transform_position_with_astropy(
     """
     # Use eosimutils transform_position to get the transformed position
     test_orientation = SpiceOrientation(
-                    from_frame=from_frame,
-                    to_frame=to_frame,
-                )
+        from_frame=from_frame,
+        to_frame=to_frame,
+    )
     transform_position = test_orientation.transform_position
     transformed_position = transform_position(
         position=position,
@@ -517,6 +517,7 @@ def validate_transform_position_with_astropy(
         transformed_position_astropy,
         atol=1e-3,
     )
+
 
 if __name__ == "__main__":
     unittest.main()

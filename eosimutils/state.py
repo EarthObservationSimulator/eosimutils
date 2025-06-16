@@ -17,8 +17,8 @@ from .time import AbsoluteDate
 
 
 class Cartesian3DPosition:
-    """Handles 3D position information. 
-       Internally the position is stored in kilometers.
+    """Handles 3D position information.
+    Internally the position is stored in kilometers.
     """
 
     def __init__(
@@ -118,8 +118,8 @@ class Cartesian3DPosition:
 
 
 class Cartesian3DVelocity:
-    """Handles 3D velocity information. 
-       Internally the velocity is stored in kilometers-per-second.
+    """Handles 3D velocity information.
+    Internally the velocity is stored in kilometers-per-second.
     """
 
     def __init__(
@@ -460,6 +460,7 @@ class CartesianState:
             target=None,
         )
 
+
 class Cartesian3DPositionArray:
     """Stores an array of 3D Cartesian positions in a specified reference frame.
 
@@ -505,7 +506,9 @@ class Cartesian3DPositionArray:
         self.frame = frame
 
     @classmethod
-    def from_cartesian_positions(cls, positions: list) -> "Cartesian3DPositionArray":
+    def from_cartesian_positions(
+        cls, positions: list
+    ) -> "Cartesian3DPositionArray":
         """Creates a Cartesian3DPositionArray from a list of Cartesian3DPosition objects.
 
         Args:
@@ -518,15 +521,21 @@ class Cartesian3DPositionArray:
             ValueError: If the list is empty or if the frames of the positions do not match.
         """
         if not positions:
-            raise ValueError("The list of Cartesian3DPosition objects cannot be empty.")
+            raise ValueError(
+                "The list of Cartesian3DPosition objects cannot be empty."
+            )
         frame = positions[0].frame
         if any(pos.frame != frame for pos in positions):
-            raise ValueError("All Cartesian3DPosition objects must have the same reference frame.")
+            raise ValueError(
+                "All Cartesian3DPosition objects must have the same reference frame."
+            )
         coords = np.array([pos.to_list() for pos in positions])
         return cls(coords, frame)
 
     @classmethod
-    def from_geographic_positions(cls, positions: list) -> "Cartesian3DPositionArray":
+    def from_geographic_positions(
+        cls, positions: list
+    ) -> "Cartesian3DPositionArray":
         """Creates a Cartesian3DPositionArray from a list of GeographicPosition objects.
 
         Geographic positions are converted into Cartesian coordinates in the ITRF frame
@@ -542,7 +551,9 @@ class Cartesian3DPositionArray:
             ValueError: If the list is empty.
         """
         if not positions:
-            raise ValueError("The list of GeographicPosition objects cannot be empty.")
+            raise ValueError(
+                "The list of GeographicPosition objects cannot be empty."
+            )
         frame = ReferenceFrame.get("ITRF")
         coords = np.array([pos.itrs_xyz for pos in positions])
         return cls(coords, frame)
@@ -576,7 +587,11 @@ class Cartesian3DPositionArray:
             Cartesian3DPositionArray: The deserialized object.
         """
         positions = np.array(dict_in["positions"])
-        frame = ReferenceFrame.get(dict_in["frame"]) if "frame" in dict_in and dict_in["frame"] else None
+        frame = (
+            ReferenceFrame.get(dict_in["frame"])
+            if "frame" in dict_in and dict_in["frame"]
+            else None
+        )
         return cls(positions, frame)
 
     def to_dict(self) -> dict:

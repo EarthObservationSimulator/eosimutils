@@ -16,6 +16,7 @@ from .trajectory import StateSeries
 from .base import RotationsType
 from .state import Cartesian3DPosition, CartesianState
 
+
 class Orientation:
     """
     Base class for orientation representations.
@@ -117,9 +118,7 @@ class Orientation:
         new_vel = rot.apply(vel) + np.cross(w, new_pos)
         return np.hstack([new_pos, new_vel])
 
-    def transform_state(
-        self, state: CartesianState
-    ) -> CartesianState:
+    def transform_state(self, state: CartesianState) -> CartesianState:
         """
         Transform a state vector. The time of transformation is obtained from the state object.
 
@@ -128,7 +127,7 @@ class Orientation:
 
         Returns:
             Transformed state.
-        
+
         TODO: Extend to support list/tuple of CartesianState objects.
         """
         # Handle single CartesianState
@@ -140,11 +139,12 @@ class Orientation:
             state_array = state.to_numpy()
 
             transformed_state = self._transform_state(
-                                state=state_array,
-                                t=state.time
-                            )
-            return CartesianState.from_array(transformed_state, state.time, self.to_frame)
-            
+                state=state_array, t=state.time
+            )
+            return CartesianState.from_array(
+                transformed_state, state.time, self.to_frame
+            )
+
     def transform_position(
         self, position: Cartesian3DPosition, t: AbsoluteDate
     ) -> Cartesian3DPosition:
@@ -157,9 +157,9 @@ class Orientation:
 
         Returns:
             Transformed position or list of transformed position vectors.
-        
+
         TODO: Extend to support list/tuple of Cartesian3DPosition objects.
-        """  
+        """
         if position.frame != self.from_frame:
             raise ValueError(
                 f"Position frame {position.frame} does not match from_frame {self.from_frame}."
@@ -167,8 +167,9 @@ class Orientation:
         # Add a zero velocity vector to the position to make a state vector
         state = np.concatenate([position.to_numpy(), np.zeros(3)])
         transformed_state = self._transform_state(state, t)
-        return Cartesian3DPosition.from_array(transformed_state[:3], self.to_frame)
-
+        return Cartesian3DPosition.from_array(
+            transformed_state[:3], self.to_frame
+        )
 
     def inverse(self) -> "Orientation":
         """
@@ -384,6 +385,11 @@ class SpiceOrientation(Orientation):
                 spice_from, spice_to, t.to_spice_ephemeris_time()
             )
             r_mat, w = spice.xf2rav(sxform)
+            # Note: we want the angular velocity of from_frame w.r.t. to_frame, expressed in
+            # to_frame coordinates. The spice function returns the angular velocity of
+            # to frame w.r.t. from frame expressed in from frame coordinates. So we need to
+            # negate and transform.
+            w = r_mat @ (-w)
             return Scipy_Rotation.from_matrix(r_mat), np.array(w)
         elif isinstance(t, AbsoluteDateArray):
             et_array = t.ephemeris_time
@@ -392,6 +398,7 @@ class SpiceOrientation(Orientation):
             for et in et_array:
                 sxform = spice.sxform(spice_from, spice_to, et)
                 r_mat, w = spice.xf2rav(sxform)
+                w = r_mat @ (-w)
                 r_list.append(r_mat)
                 w_list.append(w)
             return Scipy_Rotation.from_matrix(np.array(r_list)), np.array(

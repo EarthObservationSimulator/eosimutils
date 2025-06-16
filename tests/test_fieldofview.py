@@ -29,7 +29,9 @@ class TestFieldOfViewFactory(unittest.TestCase):
         self.assertIsInstance(fov, CircularFieldOfView)
         self.assertEqual(fov.diameter, self.circular_fov_specs["diameter"])
         self.assertEqual(fov.frame, self.circular_fov_specs["frame"])
-        self.assertEqual(fov.boresight.tolist(), self.circular_fov_specs["boresight"])
+        self.assertEqual(
+            fov.boresight.tolist(), self.circular_fov_specs["boresight"]
+        )
 
     def test_get_fov_missing_type(self):
         """Test error handling for a missing fov_type key."""
@@ -94,7 +96,7 @@ class TestCircularFieldOfView(unittest.TestCase):
         self.assertEqual(circular_fov.diameter, self.diameter)
         self.assertEqual(circular_fov.frame, self.frame)
         self.assertTrue((circular_fov.boresight == self.boresight).all())
-    
+
     def test_default_boresight(self):
         """Test default boresight vector."""
         specs = {
@@ -129,7 +131,10 @@ class TestCircularFieldOfView(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as context:
             CircularFieldOfView.from_dict(specs)
-        self.assertIn("diameter must be between 0 and 180 degrees.", str(context.exception))
+        self.assertIn(
+            "diameter must be between 0 and 180 degrees.",
+            str(context.exception),
+        )
 
         specs = {
             "diameter": -1.0,  # Invalid diameter
@@ -138,7 +143,10 @@ class TestCircularFieldOfView(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as context:
             CircularFieldOfView.from_dict(specs)
-        self.assertIn("diameter must be between 0 and 180 degrees.", str(context.exception))
+        self.assertIn(
+            "diameter must be between 0 and 180 degrees.",
+            str(context.exception),
+        )
 
 
 class TestRectangularFieldOfView(unittest.TestCase):
@@ -162,8 +170,12 @@ class TestRectangularFieldOfView(unittest.TestCase):
     def test_initialization(self):
         """Test initialization of RectangularFieldOfView."""
         self.assertEqual(self.rectangular_fov.frame, self.frame)
-        self.assertTrue((self.rectangular_fov.boresight == self.boresight).all())
-        self.assertTrue((self.rectangular_fov.ref_vector == self.ref_vector).all())
+        self.assertTrue(
+            (self.rectangular_fov.boresight == self.boresight).all()
+        )
+        self.assertTrue(
+            (self.rectangular_fov.ref_vector == self.ref_vector).all()
+        )
         self.assertEqual(self.rectangular_fov.ref_angle, self.ref_angle)
         self.assertEqual(self.rectangular_fov.cross_angle, self.cross_angle)
 
@@ -214,7 +226,10 @@ class TestRectangularFieldOfView(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as context:
             RectangularFieldOfView.from_dict(specs_invalid_ref_angle)
-        self.assertIn("ref_angle must be between 0 and 90 degrees.", str(context.exception))
+        self.assertIn(
+            "ref_angle must be between 0 and 90 degrees.",
+            str(context.exception),
+        )
 
         specs_invalid_cross_angle = {
             "frame": self.frame,
@@ -225,7 +240,10 @@ class TestRectangularFieldOfView(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as context:
             RectangularFieldOfView.from_dict(specs_invalid_cross_angle)
-        self.assertIn("cross_angle must be between 0 and 90 degrees.", str(context.exception))
+        self.assertIn(
+            "cross_angle must be between 0 and 90 degrees.",
+            str(context.exception),
+        )
 
 
 class TestPolygonFieldOfView(unittest.TestCase):
@@ -304,7 +322,7 @@ class TestPolygonFieldOfView(unittest.TestCase):
             "At least 3 vectors must be defined in boundary_corners.",
             str(context.exception),
         )
-    
+
     def test_invalid_boundary_corners_hemisphere(self):
         """Test that an error is raised if a boundary corner is not in the same hemisphere as the boresight."""
         invalid_corners = [

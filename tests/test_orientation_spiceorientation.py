@@ -129,7 +129,7 @@ class TestSpiceOrientation(unittest.TestCase):
 
 
 class TestSpiceOrientationTransformState(unittest.TestCase):
-    """Unit tests for the SpiceOrientation.tranform_position function."""
+    """Unit tests for the SpiceOrientation.transform_position function."""
 
     def test_no_transformation(self):
         """Test no transformation when from_frame and to_frame are the same."""

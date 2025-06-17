@@ -146,5 +146,5 @@ def validate_transform_position_with_astropy(
     return np.allclose(
         transformed_position.to_numpy(),
         transformed_position_astropy,
-        atol=1e-3,
+        atol=1e-6,
     )

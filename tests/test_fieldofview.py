@@ -324,7 +324,8 @@ class TestPolygonFieldOfView(unittest.TestCase):
         )
 
     def test_invalid_boundary_corners_hemisphere(self):
-        """Test that an error is raised if a boundary corner is not in the same hemisphere as the boresight."""
+        """Test that an error is raised if a boundary corner is not in the same 
+            hemisphere as the boresight."""
         invalid_corners = [
             [1.0, 0.0, -0.5],  # This vector is in the -Z hemisphere
             [0.0, 1.0, 0.5],

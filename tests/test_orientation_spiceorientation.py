@@ -3,7 +3,6 @@
 import unittest
 import numpy as np
 import random
-from typing import Union
 
 from eosimutils.base import ReferenceFrame
 from eosimutils.state import (
@@ -376,9 +375,6 @@ class TestSpiceOrientationTransformPosition(unittest.TestCase):
             time=_TEST_TIME,
         )
         self.assertTrue(is_valid, "Transform position validation failed.")
-
-
-
 
 
 if __name__ == "__main__":

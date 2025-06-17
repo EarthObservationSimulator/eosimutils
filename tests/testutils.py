@@ -16,7 +16,8 @@ def validate_transform_state_with_astropy(
     state: CartesianState,
 ) -> bool:
     """
-    Validate the `eosimutils.orientation.SpiceOrientation.transform_state` function using astropy_transform.
+    Validate the `eosimutils.orientation.SpiceOrientation.transform_state` 
+    function using astropy_transform.
 
     Args:
         from_frame (Union[str, ReferenceFrame]): The reference frame of the input state.
@@ -86,7 +87,8 @@ def validate_transform_position_with_astropy(
     time: AbsoluteDate,
 ) -> bool:
     """
-    Validate the `eosimutils.orientation.SpiceOrientation.transform_position` function using astropy_transform..
+    Validate the `eosimutils.orientation.SpiceOrientation.transform_position` 
+    function using astropy_transform..
 
     Args:
         from_frame (Union[str, ReferenceFrame]): The reference frame of the input position.

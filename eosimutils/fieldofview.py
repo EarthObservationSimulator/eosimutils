@@ -12,7 +12,7 @@
 
    References:
     - https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/getfov_c.html
-    - https://naif.jpl.nasa.gov/naif/Ancillary_Data_Production_for_Cubesats_and_Lunar_Exploration_v2.pdf
+    - https://naif.jpl.nasa.gov/naif/Ancillary_Data_Production_for_Cubesats_and_Lunar_Exploration_v2.pdf # pylint: disable=line-too-long
 
 """
 
@@ -112,7 +112,7 @@ class CircularFieldOfView:
         Raises:
             ValueError: If the diameter is not between 0 and 180 degrees.
         """
-        if not (0 <= diameter <= 180):
+        if not 0 <= diameter <= 180:
             raise ValueError("diameter must be between 0 and 180 degrees.")
         self.diameter = float(diameter)
         self.frame = ReferenceFrame.get(frame)
@@ -170,9 +170,12 @@ class RectangularFieldOfView:
 
         Args:
             frame (Union[ReferenceFrame, str]): The reference frame in which the FOV is defined.
-            ref_vector (Union[list, np.ndarray]): The reference 3d-vector defining the plane for the reference angle.
-            ref_angle (float): Half of the total angular extent in the plane defined by the boresight and reference 3d-vector.
-            cross_angle (float): Half of the total angular extent in the plane perpendicular to the reference 3d-vector.
+            ref_vector (Union[list, np.ndarray]): The reference 3d-vector defining the plane for 
+                                                    the reference angle.
+            ref_angle (float): Half of the total angular extent in the plane defined by the 
+                               boresight and reference 3d-vector.
+            cross_angle (float): Half of the total angular extent in the plane perpendicular to 
+                                the reference 3d-vector.
             boresight (Union[list, np.ndarray, None]): The boresight 3d-vector of the FOV.
         """
         self.frame = ReferenceFrame.get(frame)
@@ -191,11 +194,15 @@ class RectangularFieldOfView:
             specs (Dict[str, Any]): Dictionary containing the FOV specifications.
                 Expected keys:
                 - "frame" (str): The reference frame in which the FOV is defined.
-                - "boresight" (Union[list, np.ndarray], optional): The boresight 3d-vector of the FOV.
-                                                        Default is [0.0, 0.0, 1.0] (pointing in the +Z direction).
-                - "ref_vector" (Union[list, np.ndarray]): The reference 3d-vector defining the plane for the reference angle.
-                - "ref_angle" (float): Half of the total angular extent in the plane defined by the boresight and reference 3d-vector.
-                - "cross_angle" (float): Half of the total angular extent in the plane perpendicular to the reference 3d-vector.
+                - "boresight" (Union[list, np.ndarray], optional): The boresight 3d-vector
+                                                of the FOV. Default is [0.0, 0.0, 1.0] 
+                                                (pointing in the +Z direction).
+                - "ref_vector" (Union[list, np.ndarray]): The reference 3d-vector defining 
+                                                        the plane for the reference angle.
+                - "ref_angle" (float): Half of the total angular extent in the plane defined 
+                                        by the boresight and reference 3d-vector.
+                - "cross_angle" (float): Half of the total angular extent in the plane 
+                                        perpendicular to the reference 3d-vector.
 
         Returns:
             RectangularFieldOfView: An instance of the RectangularFieldOfView class.
@@ -206,9 +213,9 @@ class RectangularFieldOfView:
         ref_angle = specs["ref_angle"]
         cross_angle = specs["cross_angle"]
 
-        if not (0 <= ref_angle <= 90):
+        if not 0 <= ref_angle <= 90:
             raise ValueError("ref_angle must be between 0 and 90 degrees.")
-        if not (0 <= cross_angle <= 90):
+        if not 0 <= cross_angle <= 90:
             raise ValueError("cross_angle must be between 0 and 90 degrees.")
 
         return cls(
@@ -249,8 +256,9 @@ class PolygonFieldOfView:
 
         Args:
             frame (Union[ReferenceFrame, str]): The reference frame in which the FOV is defined.
-            boundary_corners (List[Union[list, np.ndarray]]): A list of vectors defining the corners of the FOV.
-                                    The vectors should be listed in either clockwise or counterclockwise order.
+            boundary_corners (List[Union[list, np.ndarray]]): A list of vectors defining the 
+                                    corners of the FOV. The vectors should be listed in either
+                                    clockwise or counterclockwise order.
             boresight (Union[list, np.ndarray, None]): The boresight 3d-vector of the FOV.
                                 Defaults to [0.0, 0.0, 1.0] (pointing in the +Z direction).
 
@@ -291,8 +299,9 @@ class PolygonFieldOfView:
                 - "frame" (str): The reference frame.
                 - "boresight" (Union[list, np.ndarray]): The boresight vector.
                         Default is [0.0, 0.0, 1.0] (pointing in the +Z direction).
-                - "boundary_corners" (List[Union[list, np.ndarray]]): A list of vectors defining the corners of the FOV.
-                    The vectors should be listed in either clockwise or counterclockwise order.
+                - "boundary_corners" (List[Union[list, np.ndarray]]): A list of vectors 
+                            defining the corners of the FOV. The vectors should be listed
+                            in either clockwise or counterclockwise order.
 
         Returns:
             PolygonFieldOfView: An instance of the PolygonFieldOfView class.

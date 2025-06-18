@@ -11,6 +11,8 @@ import numpy as np
 from .base import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
 from .orientation import Orientation, SpiceOrientation, ConstantOrientation
+from .state import Cartesian3DPosition
+from .trajectory import PositionSeries
 
 
 class FrameRegistry:
@@ -32,8 +34,13 @@ class FrameRegistry:
         Initializes an adjacency list for frame transformations.
         By default, it contains transforms for ICRF_EC and ITRF frames.
         """
-        # Initialize empty adjacency list
+        # Initialize empty adjacency list for orientation transforms
         self._adj: Dict[ReferenceFrame, List[Orientation]] = {}
+        # Initialize empty adjacency list for position transforms
+        self._pos_adj: Dict[
+            ReferenceFrame,
+            Dict[ReferenceFrame, Union[Cartesian3DPosition, PositionSeries]],
+        ] = {}
 
         # Add spice transforms
         self.add_spice_transforms()
@@ -82,6 +89,65 @@ class FrameRegistry:
         if set_inverse:
             inv = orientation.inverse()
             self._adj.setdefault(inv.from_frame, []).append(inv)
+
+    def add_pos_transform(
+        self,
+        from_frame: ReferenceFrame,
+        to_frame: ReferenceFrame,
+        position: Union[Cartesian3DPosition, PositionSeries],
+        set_inverse: bool = True,
+    ):
+        """
+        Registers a translation between from_frame and to_frame.
+
+        Args:
+            from_frame (ReferenceFrame): Source frame.
+            to_frame (ReferenceFrame): Target frame.
+            position (Cartesian3DPosition or PositionSeries): Translation vector from
+                `from_frame` origin to `to_frame` origin, expressed in from_frame coordinates.
+                That is, if O_A and O_B are the origins of A and B, and v is the vector from
+                O_A to O_B expressed in A, then v = O_B - O_A (in frame A). position.frame must
+                be from_frame.
+            set_inverse (bool, optional): Whether to automatically register the inverse transform.
+            If set to true, the orientation transformation from `from_frame` to `to_frame`
+            must already be registered in the FrameRegistry, or get_transform will raise an error.
+        """
+        if not isinstance(position, (Cartesian3DPosition, PositionSeries)):
+            raise TypeError(
+                "Position must be a Cartesian3DPosition or PositionSeries instance"
+            )
+        if position.frame != from_frame:
+            raise ValueError(
+                "Position object must be expressed in from_frame coordinates."
+            )
+        if from_frame == to_frame:
+            raise ValueError("from_frame and to_frame must be different")
+
+        # Add transform to the adjacency list
+        self._pos_adj.setdefault(from_frame, {})[to_frame] = position
+
+        # Add inverse transform
+        if set_inverse:
+            if isinstance(position, Cartesian3DPosition):
+                # Get orientation transformation from from_frame to to_frame
+                rot, _ = self.get_transform(from_frame, to_frame, None)
+                # Get the position transformation v_inv from to_frame to from_frame,
+                # expressed in to_frame coordinates
+                v_inv = -rot.apply(position.to_numpy())
+                inv_position = Cartesian3DPosition(
+                    v_inv[0], v_inv[1], v_inv[2], to_frame
+                )
+            else:  # PositionSeries
+                # Position as numpy array, shape (N, 3)
+                v = position.data[0]
+                # Get orientation transformation from from_frame to to_frame
+                rot, _ = self.get_transform(from_frame, to_frame, position.time)
+                # Get the position transformation v_inv from to_frame to from_frame,
+                # expressed in to_frame coordinates
+                v_inv = -rot.apply(v)
+                inv_position = PositionSeries(position.time, v_inv, to_frame)
+            # Add inverse transform to adjacency list
+            self._pos_adj.setdefault(to_frame, {})[from_frame] = inv_position
 
     def get_transform(
         self,
@@ -163,21 +229,141 @@ class FrameRegistry:
             f"No transform path from '{from_frame}' to '{to_frame}' at time {t}"
         )
 
+    def get_pos_transform(
+        self,
+        from_frame: ReferenceFrame,
+        to_frame: ReferenceFrame,
+        t: Union[AbsoluteDate, AbsoluteDateArray, None],
+    ) -> np.ndarray:
+        """
+        Computes the translation from `from_frame` origin to `to_frame` origin at time `t`.
+
+        Args:
+            from_frame (ReferenceFrame): Source frame.
+            to_frame (ReferenceFrame): Target frame.
+            t (AbsoluteDate, AbsoluteDateArray, or None): Time(s) of interest.
+
+        Returns:
+            np.ndarray: Array of shape (3,) or (N, 3) of position vectors in `from_frame`
+            coordinates.
+
+        Raises:
+            KeyError: If no valid translation path exists.
+        """
+        # Determine single vs multiple times
+        is_single = isinstance(t, (AbsoluteDate, type(None)))
+        # Identity if same frame
+        if from_frame == to_frame:
+            return (
+                np.zeros(3)
+                if is_single
+                else np.zeros((len(t.ephemeris_time), 3))
+            )
+
+        # BFS queue: (current_frame, pos_from_to_curr, rot_curr_to_from), where:
+        # current_frame: ReferenceFrame of node being processed
+        # pos_from_to_curr: np.ndarray from from_frame to current_frame (in from_frame coordinates)
+        # rot_curr_to_from: Scipy_Rotation that transforms from current_frame to from_frame
+        initial_offset = (
+            np.zeros(3) if is_single else np.zeros((len(t.ephemeris_time), 3))
+        )
+        initial_rot = (
+            Scipy_Rotation.identity()
+            if is_single
+            else Scipy_Rotation.identity(len(t.ephemeris_time))
+        )
+        queue = deque([(from_frame, initial_offset, initial_rot)])
+        visited = set([from_frame])
+
+        while queue:
+            curr_frame, pos_from_to_curr, rot_curr_to_from = queue.popleft()
+            # items() function returns an iterable of (tuple) key-value pairs
+            # where key is the neighbor ReferenceFrame being processed and value is the
+            # PositionSeries or Cartesian3DPosition
+            for nbr_frame, pos_obj in self._pos_adj.get(curr_frame, {}).items():
+
+                if nbr_frame in visited:
+                    continue
+
+                # If t is None, object cannot be a position series (which is time-varying)
+                if t is None and isinstance(pos_obj, PositionSeries):
+                    continue
+
+                # Get the translation vector from curr_frame to nbr_frame, expressed in
+                # curr_frame coordinates.
+                if isinstance(pos_obj, Cartesian3DPosition):
+                    pos_curr_to_nbr = pos_obj.to_numpy()
+                else:
+                    pos_curr_to_nbr = pos_obj.at(t)
+
+                # Express pos_curr_to_nbr vector in from_frame coordinates:
+                pos_curr_to_nbr = rot_curr_to_from.apply(pos_curr_to_nbr)
+                pos_from_to_nbr = pos_from_to_curr + pos_curr_to_nbr
+
+                # If we've reached the target frame, return the result
+                if nbr_frame == to_frame:
+                    return pos_from_to_nbr
+
+                # Compute new accumulated rotation
+                rot_nbr_to_curr, _ = self.get_transform(
+                    nbr_frame, curr_frame, t
+                )
+                rot_nbr_to_from = rot_curr_to_from * rot_nbr_to_curr
+                visited.add(nbr_frame)
+                queue.append((nbr_frame, pos_from_to_nbr, rot_nbr_to_from))
+
+        raise KeyError(
+            f"No position path from '{from_frame}' to '{to_frame}' at time {t}"
+        )
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Serialize the FrameRegistry to a dictionary.
 
-        The result contains a "transforms" key which maps to a list,
-        where each entry is an orientation dict.
+        The result contains:
+            - "transforms": a list of Orientation object dictionaries (see Orientation.to_dict())
+            - "pos_transforms": a list of position transforms, each as a dict with:
+                - "from_frame": string name of the source ReferenceFrame,
+                - "to_frame": string name of the target ReferenceFrame,
+                - "position": dict representation of the position object (with a "type" key).
 
         Returns:
-            dict: {"transforms": List[dict]} of all registered Orientation edges.
+            dict: {
+                "transforms": List[dict],      # orientation transforms
+                "pos_transforms": List[dict],  # position transforms
+            }
         """
         transforms = []
         for edges in self._adj.values():
             for orient in edges:
                 transforms.append(orient.to_dict())
-        return {"transforms": transforms}
+
+        pos_transforms = []
+        for from_frame, nbrs in self._pos_adj.items():
+            for to_frame, pos_obj in nbrs.items():
+                # Determine type and serialize accordingly
+                pos_dict = pos_obj.to_dict()
+                if pos_obj.__class__.__name__ == "Cartesian3DPosition":
+                    pos_type = "Cartesian3DPosition"
+                elif pos_obj.__class__.__name__ == "PositionSeries":
+                    pos_type = "PositionSeries"
+                else:
+                    raise ValueError(
+                        f"Unknown position type: {pos_obj.__class__.__name__}"
+                    )
+                pos_dict["type"] = pos_type
+                pos_transforms.append(
+                    {
+                        "from_frame": from_frame.to_string(),
+                        "to_frame": to_frame.to_string(),
+                        "position": pos_dict,
+                    }
+                )
+
+        return {
+            "transforms": transforms,
+            "pos_transforms": pos_transforms,
+        }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "FrameRegistry":
@@ -185,14 +371,41 @@ class FrameRegistry:
         Deserialize a FrameRegistry from a dictionary.
 
         Args:
-            data (dict): {"transforms": List[dict]} as produced by to_dict().
+            data (dict): Dictionary with the following keys:
+                - "transforms": List of orientation transform dicts (see Orientation.from_dict()).
+                - "pos_transforms": List of position transform dicts, each with:
+                    - "from_frame": string name of the source ReferenceFrame,
+                    - "to_frame": string name of the target ReferenceFrame,
+                    - "position": dict with a "type" key and serialized position data.
 
         Returns:
-            FrameRegistry: New instance with each orientation added.
+            FrameRegistry: New instance with all orientation and position transforms added.
         """
         registry = cls()
         registry._adj.clear()
+        registry._pos_adj.clear()
+
+        # Add orientation transforms
         for orient_data in data.get("transforms", []):
             orientation = Orientation.from_dict(orient_data)
             registry.add_transform(orientation, set_inverse=False)
+
+        # Add position transforms
+        for pos_data in data.get("pos_transforms", []):
+            from_frame = ReferenceFrame.get(pos_data["from_frame"])
+            to_frame = ReferenceFrame.get(pos_data["to_frame"])
+            pos_dict = pos_data["position"]
+            pos_type = pos_dict.get("type")
+            # Remove the type key before passing to from_dict
+            pos_dict = {k: v for k, v in pos_dict.items() if k != "type"}
+            if pos_type == "Cartesian3DPosition":
+                position = Cartesian3DPosition.from_dict(pos_dict)
+            elif pos_type == "PositionSeries":
+                position = PositionSeries.from_dict(pos_dict)
+            else:
+                raise ValueError(f"Unknown position type: {pos_type}")
+            registry.add_pos_transform(
+                from_frame, to_frame, position, set_inverse=False
+            )
+
         return registry

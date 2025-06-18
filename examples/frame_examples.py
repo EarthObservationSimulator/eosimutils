@@ -5,6 +5,7 @@ from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 from eosimutils.trajectory import StateSeries
 from eosimutils.orientation import OrientationSeries
 from eosimutils.frame_registry import FrameRegistry
+from eosimutils.standardframes import get_lvlh
 
 # Build a circular orbit in ICRF_EC
 μ = 398600.4418           # Earth's GM, km³/s²
@@ -37,10 +38,13 @@ state_icrf = StateSeries(
 
 # Add LVLH frame
 lvlh_frame = ReferenceFrame.add("LVLH")
-att_lvlh = OrientationSeries.get_lvlh(state_icrf,lvlh_frame)
+att_lvlh, pos_lvlh = get_lvlh(state_icrf,lvlh_frame)
 
 registry   = FrameRegistry()
 registry.add_transform(att_lvlh)
+from_frame = ReferenceFrame.get("ICRF_EC")
+to_frame = ReferenceFrame.get("LVLH")
+registry.add_pos_transform(from_frame,to_frame, pos_lvlh)
 
 # Batch‐transform into LVLH
 rot_array, w_array = registry.get_transform(
@@ -64,4 +68,22 @@ for t, p_l in zip(et_array, pos_lvlh):
 
 for t, v_l in zip(et_array, vel_lvlh):
     print(f"t={t:7.1f} s   LVLH vel ≈ {v_l.round(3)}")
-    
+
+# Get position of LVLH frame center in inertial coordinates using the registry.
+pos_lvlh_registry = registry.get_pos_transform(
+    from_frame=from_frame,
+    to_frame=to_frame,
+    t=times)
+
+# Output should be zero (position of LVLH frame center obtained from the registry should
+# match the one we manually computed)
+print(pos_lvlh_registry - pos_icrf)
+
+# Get position of Inertial frame center in LVLH coordinates using the registry.
+pos_inertial = registry.get_pos_transform(
+    from_frame=to_frame,
+    to_frame=from_frame,
+    t=times)
+
+# Result should be [0,0,r0] in LVLH coordinates
+print(pos_inertial)

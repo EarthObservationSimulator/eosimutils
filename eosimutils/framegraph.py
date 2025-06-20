@@ -15,7 +15,7 @@ from .state import Cartesian3DPosition
 from .trajectory import PositionSeries
 
 
-class FrameRegistry:
+class FrameGraph:
     """
     Registry for time-varying coordinate frame transformations.
 
@@ -110,7 +110,7 @@ class FrameRegistry:
                 be from_frame.
             set_inverse (bool, optional): Whether to automatically register the inverse transform.
             If set to true, the orientation transformation from `from_frame` to `to_frame`
-            must already be registered in the FrameRegistry, or get_transform will raise an error.
+            must already be registered in the FrameGraph, or get_transform will raise an error.
         """
         if not isinstance(position, (Cartesian3DPosition, PositionSeries)):
             raise TypeError(
@@ -318,7 +318,7 @@ class FrameRegistry:
 
     def to_dict(self) -> Dict[str, Any]:
         """
-        Serialize the FrameRegistry to a dictionary.
+        Serialize the FrameGraph to a dictionary.
 
         The result contains:
             - "transforms": a list of Orientation object dictionaries (see Orientation.to_dict())
@@ -366,9 +366,9 @@ class FrameRegistry:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "FrameRegistry":
+    def from_dict(cls, data: Dict[str, Any]) -> "FrameGraph":
         """
-        Deserialize a FrameRegistry from a dictionary.
+        Deserialize a FrameGraph from a dictionary.
 
         Args:
             data (dict): Dictionary with the following keys:
@@ -379,7 +379,7 @@ class FrameRegistry:
                     - "position": dict with a "type" key and serialized position data.
 
         Returns:
-            FrameRegistry: New instance with all orientation and position transforms added.
+            FrameGraph: New instance with all orientation and position transforms added.
         """
         registry = cls()
         registry._adj.clear()

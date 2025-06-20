@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from eosimutils.frame_registry import FrameRegistry
+from eosimutils.framegraph import FrameGraph
 from eosimutils.orientation import ConstantOrientation, OrientationSeries
 from eosimutils.base import ReferenceFrame
 from eosimutils.time import AbsoluteDate, AbsoluteDateArray
@@ -18,11 +18,11 @@ ReferenceFrame.add("E")
 ReferenceFrame.add("F")
 
 
-class TestFrameRegistry(unittest.TestCase):
-    """Tests for graph-based frame lookups in FrameRegistry."""
+class TestFrameGraph(unittest.TestCase):
+    """Tests for graph-based frame lookups in FrameGraph."""
 
     def setUp(self):
-        self.registry = FrameRegistry()
+        self.registry = FrameGraph()
 
         # Define 90 deg rotations about Z for edges
         rot90 = R.from_euler("xyz", [0, 0, 90], degrees=True)
@@ -85,7 +85,7 @@ class TestFrameRegistry(unittest.TestCase):
         # Round-trip the registry to ensure it can be serialized and deserialized
         # Comment these lines to test without serialization
         registry_dict = self.registry.to_dict()
-        self.registry = FrameRegistry.from_dict(registry_dict)
+        self.registry = FrameGraph.from_dict(registry_dict)
 
     def test_direct_transform(self):
         """A single edge A->B should produce a 90 deg rotation about Z."""

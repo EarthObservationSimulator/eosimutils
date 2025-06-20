@@ -27,6 +27,10 @@ class FrameGraph:
         1. BFS to discover a path through intermediate frames.
         2. At each edge, call its Orientation.at(t) to get the rotation(s)/angular velocity(ies).
         3. Compose the rotations and angular velocities along the path to yield the transform.
+
+    Likewise, position transforms are stored in a separate adjacency list `_pos_adj`:
+    - Maps each source ReferenceFrame to a dictionary of target ReferenceFrames and their
+        corresponding position transforms (either Cartesian3DPosition or PositionSeries).
     """
 
     def __init__(self):
@@ -105,9 +109,6 @@ class FrameGraph:
             to_frame (ReferenceFrame): Target frame.
             position (Cartesian3DPosition or PositionSeries): Translation vector from
                 `from_frame` origin to `to_frame` origin, expressed in from_frame coordinates.
-                That is, if O_A and O_B are the origins of A and B, and v is the vector from
-                O_A to O_B expressed in A, then v = O_B - O_A (in frame A). position.frame must
-                be from_frame.
             set_inverse (bool, optional): Whether to automatically register the inverse transform.
             If set to true, the orientation transformation from `from_frame` to `to_frame`
             must already be registered in the FrameGraph, or get_transform will raise an error.

@@ -1,6 +1,6 @@
 """Unit tests for the eosimutils.orientation module.
 
-Tests for the `SpiceOrientation` class are located in the 
+Tests for the `SpiceOrientation` class are located in the
 `test_orientation_spiceorientation` script.
 """
 

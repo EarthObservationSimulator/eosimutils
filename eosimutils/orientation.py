@@ -145,9 +145,7 @@ class Orientation:
                 transformed_state, state.time, self.to_frame
             )
         else:
-            raise TypeError(
-                "state must be a CartesianState object."
-            )
+            raise TypeError("state must be a CartesianState object.")
 
     def transform_position(
         self, position: Cartesian3DPosition, t: AbsoluteDate

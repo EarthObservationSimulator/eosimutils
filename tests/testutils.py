@@ -16,7 +16,7 @@ def validate_transform_state_with_astropy(
     state: CartesianState,
 ) -> bool:
     """
-    Validate the `eosimutils.orientation.SpiceOrientation.transform_state` 
+    Validate the `eosimutils.orientation.SpiceOrientation.transform_state`
     function using astropy_transform.
 
     Args:
@@ -87,7 +87,7 @@ def validate_transform_position_with_astropy(
     time: AbsoluteDate,
 ) -> bool:
     """
-    Validate the `eosimutils.orientation.SpiceOrientation.transform_position` 
+    Validate the `eosimutils.orientation.SpiceOrientation.transform_position`
     function using astropy_transform..
 
     Args:

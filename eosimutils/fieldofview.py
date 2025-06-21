@@ -170,11 +170,11 @@ class RectangularFieldOfView:
 
         Args:
             frame (Union[ReferenceFrame, str]): The reference frame in which the FOV is defined.
-            ref_vector (Union[list, np.ndarray]): The reference 3d-vector defining the plane for 
+            ref_vector (Union[list, np.ndarray]): The reference 3d-vector defining the plane for
                                                     the reference angle.
-            ref_angle (float): Half of the total angular extent in the plane defined by the 
+            ref_angle (float): Half of the total angular extent in the plane defined by the
                                boresight and reference 3d-vector.
-            cross_angle (float): Half of the total angular extent in the plane perpendicular to 
+            cross_angle (float): Half of the total angular extent in the plane perpendicular to
                                 the reference 3d-vector.
             boresight (Union[list, np.ndarray, None]): The boresight 3d-vector of the FOV.
         """
@@ -195,13 +195,13 @@ class RectangularFieldOfView:
                 Expected keys:
                 - "frame" (str): The reference frame in which the FOV is defined.
                 - "boresight" (Union[list, np.ndarray], optional): The boresight 3d-vector
-                                                of the FOV. Default is [0.0, 0.0, 1.0] 
+                                                of the FOV. Default is [0.0, 0.0, 1.0]
                                                 (pointing in the +Z direction).
-                - "ref_vector" (Union[list, np.ndarray]): The reference 3d-vector defining 
+                - "ref_vector" (Union[list, np.ndarray]): The reference 3d-vector defining
                                                         the plane for the reference angle.
-                - "ref_angle" (float): Half of the total angular extent in the plane defined 
+                - "ref_angle" (float): Half of the total angular extent in the plane defined
                                         by the boresight and reference 3d-vector.
-                - "cross_angle" (float): Half of the total angular extent in the plane 
+                - "cross_angle" (float): Half of the total angular extent in the plane
                                         perpendicular to the reference 3d-vector.
 
         Returns:
@@ -256,7 +256,7 @@ class PolygonFieldOfView:
 
         Args:
             frame (Union[ReferenceFrame, str]): The reference frame in which the FOV is defined.
-            boundary_corners (List[Union[list, np.ndarray]]): A list of vectors defining the 
+            boundary_corners (List[Union[list, np.ndarray]]): A list of vectors defining the
                                     corners of the FOV. The vectors should be listed in either
                                     clockwise or counterclockwise order.
             boresight (Union[list, np.ndarray, None]): The boresight 3d-vector of the FOV.
@@ -299,7 +299,7 @@ class PolygonFieldOfView:
                 - "frame" (str): The reference frame.
                 - "boresight" (Union[list, np.ndarray]): The boresight vector.
                         Default is [0.0, 0.0, 1.0] (pointing in the +Z direction).
-                - "boundary_corners" (List[Union[list, np.ndarray]]): A list of vectors 
+                - "boundary_corners" (List[Union[list, np.ndarray]]): A list of vectors
                             defining the corners of the FOV. The vectors should be listed
                             in either clockwise or counterclockwise order.
 

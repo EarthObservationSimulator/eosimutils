@@ -127,11 +127,11 @@ class ReferenceFrame:
         Retrieves a ReferenceFrame by name or returns the instance if already a ReferenceFrame.
 
         Args:
-            name (str or ReferenceFrame): The name of the reference frame to retrieve, 
+            name (str or ReferenceFrame): The name of the reference frame to retrieve,
                                             or a ReferenceFrame instance.
 
         Returns:
-            ReferenceFrame or None: The reference frame if found, the instance 
+            ReferenceFrame or None: The reference frame if found, the instance
                                     if already a ReferenceFrame, or None if not found.
         """
         if isinstance(name, ReferenceFrame):

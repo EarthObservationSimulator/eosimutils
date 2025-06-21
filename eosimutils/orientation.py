@@ -13,6 +13,7 @@ from scipy.spatial.transform import Slerp as Scipy_Slerp
 from .base import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
 from .base import RotationsType
+from .state import Cartesian3DPosition, CartesianState
 
 
 class Orientation:
@@ -88,7 +89,7 @@ class Orientation:
         """
         raise NotImplementedError
 
-    def transform(
+    def _transform_state(
         self, state: np.ndarray, t: Union[AbsoluteDate, AbsoluteDateArray]
     ) -> np.ndarray:
         """
@@ -115,6 +116,61 @@ class Orientation:
         new_pos = rot.apply(pos)
         new_vel = rot.apply(vel) + np.cross(w, new_pos)
         return np.hstack([new_pos, new_vel])
+
+    def transform_state(self, state: CartesianState) -> CartesianState:
+        """
+        Transform a state vector. The time of transformation is obtained from the state object.
+
+        Args:
+            state: State to be transformed as a CartesianState object.
+
+        Returns:
+            Transformed state.
+
+        TODO: Extend to support list/tuple of CartesianState objects.
+        """
+        # Handle single CartesianState
+        if isinstance(state, CartesianState):
+            if state.frame != self.from_frame:
+                raise ValueError(
+                    f"State frame {state.frame} does not match from_frame {self.from_frame}."
+                )
+            state_array = state.to_numpy()
+
+            transformed_state = self._transform_state(
+                state=state_array, t=state.time
+            )
+            return CartesianState.from_array(
+                transformed_state, state.time, self.to_frame
+            )
+        else:
+            raise TypeError("state must be a CartesianState object.")
+
+    def transform_position(
+        self, position: Cartesian3DPosition, t: AbsoluteDate
+    ) -> Cartesian3DPosition:
+        """
+        Transform a position vector at a given time.
+
+        Args:
+            position: Position to be transformed as a Cartesian3DPosition object.
+            t: Time of transformation as a AbsoluteDate object.
+
+        Returns:
+            Transformed position or list of transformed position vectors.
+
+        TODO: Extend to support list/tuple of Cartesian3DPosition objects.
+        """
+        if position.frame != self.from_frame:
+            raise ValueError(
+                f"Position frame {position.frame} does not match from_frame {self.from_frame}."
+            )
+        # Add a zero velocity vector to the position to make a state vector
+        state = np.concatenate([position.to_numpy(), np.zeros(3)])
+        transformed_state = self._transform_state(state, t)
+        return Cartesian3DPosition.from_array(
+            transformed_state[:3], self.to_frame
+        )
 
     def inverse(self) -> "Orientation":
         """
@@ -330,6 +386,11 @@ class SpiceOrientation(Orientation):
                 spice_from, spice_to, t.to_spice_ephemeris_time()
             )
             r_mat, w = spice.xf2rav(sxform)
+            # Note: we want the angular velocity of from_frame w.r.t. to_frame, expressed in
+            # to_frame coordinates. The spice function returns the angular velocity of
+            # to frame w.r.t. from frame expressed in from frame coordinates. So we need to
+            # negate and transform.
+            w = r_mat @ (-w)
             return Scipy_Rotation.from_matrix(r_mat), np.array(w)
         elif isinstance(t, AbsoluteDateArray):
             et_array = t.ephemeris_time
@@ -338,6 +399,7 @@ class SpiceOrientation(Orientation):
             for et in et_array:
                 sxform = spice.sxform(spice_from, spice_to, et)
                 r_mat, w = spice.xf2rav(sxform)
+                w = r_mat @ (-w)
                 r_list.append(r_mat)
                 w_list.append(w)
             return Scipy_Rotation.from_matrix(np.array(r_list)), np.array(

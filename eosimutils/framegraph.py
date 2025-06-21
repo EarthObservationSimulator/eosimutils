@@ -22,7 +22,7 @@ class FrameGraph:
     Underlying data structure:
     - Frames and transforms form a graph: nodes are ReferenceFrames and edges are Orientation
     instances.
-    - Adjacency list `_adj`: maps each source ReferenceFrame to a list of Orientation edges.
+    - Adjacency list `_orientation_adj`: maps each source ReferenceFrame to a list of Orientation edges.
     - Querying A->B at time t:
         1. BFS to discover a path through intermediate frames.
         2. At each edge, call its Orientation.at(t) to get the rotation(s)/angular velocity(ies).
@@ -39,7 +39,7 @@ class FrameGraph:
         By default, it contains transforms for ICRF_EC and ITRF frames.
         """
         # Initialize empty adjacency list for orientation transforms
-        self._adj: Dict[ReferenceFrame, List[Orientation]] = {}
+        self._orientation_adj: Dict[ReferenceFrame, List[Orientation]] = {}
         # Initialize empty adjacency list for position transforms
         self._pos_adj: Dict[
             ReferenceFrame,
@@ -55,21 +55,21 @@ class FrameGraph:
         """
 
         # Add transforms from ICRF_EC to ITRF
-        self.add_transform(
+        self.add_orientation_transform(
             SpiceOrientation(
                 ReferenceFrame.get("ICRF_EC"), ReferenceFrame.get("ITRF")
             ),
             False,
         )
         # Add transforms from ITRF to ICRF_EC
-        self.add_transform(
+        self.add_orientation_transform(
             SpiceOrientation(
                 ReferenceFrame.get("ITRF"), ReferenceFrame.get("ICRF_EC")
             ),
             False,
         )
 
-    def add_transform(
+    def add_orientation_transform(
         self,
         orientation: Orientation,
         set_inverse: bool = True,
@@ -88,11 +88,11 @@ class FrameGraph:
         """
         from_frame = orientation.from_frame
         # append forward edge
-        self._adj.setdefault(from_frame, []).append(orientation)
+        self._orientation_adj.setdefault(from_frame, []).append(orientation)
         # optionally append inverse edge
         if set_inverse:
             inv = orientation.inverse()
-            self._adj.setdefault(inv.from_frame, []).append(inv)
+            self._orientation_adj.setdefault(inv.from_frame, []).append(inv)
 
     def add_pos_transform(
         self,
@@ -111,7 +111,7 @@ class FrameGraph:
                 `from_frame` origin to `to_frame` origin, expressed in from_frame coordinates.
             set_inverse (bool, optional): Whether to automatically register the inverse transform.
             If set to true, the orientation transformation from `from_frame` to `to_frame`
-            must already be registered in the FrameGraph, or get_transform will raise an error.
+            must already be registered in the FrameGraph, or get_orientation_transform will raise an error.
         """
         if not isinstance(position, (Cartesian3DPosition, PositionSeries)):
             raise TypeError(
@@ -131,7 +131,9 @@ class FrameGraph:
         if set_inverse:
             if isinstance(position, Cartesian3DPosition):
                 # Get orientation transformation from from_frame to to_frame
-                rot, _ = self.get_transform(from_frame, to_frame, None)
+                rot, _ = self.get_orientation_transform(
+                    from_frame, to_frame, None
+                )
                 # Get the position transformation v_inv from to_frame to from_frame,
                 # expressed in to_frame coordinates
                 v_inv = -rot.apply(position.to_numpy())
@@ -142,7 +144,9 @@ class FrameGraph:
                 # Position as numpy array, shape (N, 3)
                 v = position.data[0]
                 # Get orientation transformation from from_frame to to_frame
-                rot, _ = self.get_transform(from_frame, to_frame, position.time)
+                rot, _ = self.get_orientation_transform(
+                    from_frame, to_frame, position.time
+                )
                 # Get the position transformation v_inv from to_frame to from_frame,
                 # expressed in to_frame coordinates
                 v_inv = -rot.apply(v)
@@ -150,7 +154,7 @@ class FrameGraph:
             # Add inverse transform to adjacency list
             self._pos_adj.setdefault(to_frame, {})[from_frame] = inv_position
 
-    def get_transform(
+    def get_orientation_transform(
         self,
         from_frame: ReferenceFrame,
         to_frame: ReferenceFrame,
@@ -208,7 +212,7 @@ class FrameGraph:
         # BFS loop
         while queue:
             curr_frame, acc_rot, acc_w = queue.popleft()
-            for orient in self._adj.get(curr_frame, []):
+            for orient in self._orientation_adj.get(curr_frame, []):
                 nbr = orient.to_frame
                 if nbr in visited:
                     continue
@@ -306,7 +310,7 @@ class FrameGraph:
                     return pos_from_to_nbr
 
                 # Compute new accumulated rotation
-                rot_nbr_to_curr, _ = self.get_transform(
+                rot_nbr_to_curr, _ = self.get_orientation_transform(
                     nbr_frame, curr_frame, t
                 )
                 rot_nbr_to_from = rot_curr_to_from * rot_nbr_to_curr
@@ -335,7 +339,7 @@ class FrameGraph:
             }
         """
         transforms = []
-        for edges in self._adj.values():
+        for edges in self._orientation_adj.values():
             for orient in edges:
                 transforms.append(orient.to_dict())
 
@@ -383,13 +387,13 @@ class FrameGraph:
             FrameGraph: New instance with all orientation and position transforms added.
         """
         registry = cls()
-        registry._adj.clear()
+        registry._orientation_adj.clear()
         registry._pos_adj.clear()
 
         # Add orientation transforms
         for orient_data in data.get("transforms", []):
             orientation = Orientation.from_dict(orient_data)
-            registry.add_transform(orientation, set_inverse=False)
+            registry.add_orientation_transform(orientation, set_inverse=False)
 
         # Add position transforms
         for pos_data in data.get("pos_transforms", []):

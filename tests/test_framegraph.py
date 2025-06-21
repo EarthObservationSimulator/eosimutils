@@ -31,30 +31,30 @@ class TestFrameGraph(unittest.TestCase):
         self.ab = ConstantOrientation(
             rot90, ReferenceFrame.get("A"), ReferenceFrame.get("B")
         )
-        self.registry.add_transform(self.ab)
+        self.registry.add_orientation_transform(self.ab)
         self.bc = ConstantOrientation(
             rot90, ReferenceFrame.get("B"), ReferenceFrame.get("C")
         )
-        self.registry.add_transform(self.bc)
+        self.registry.add_orientation_transform(self.bc)
         self.cd = ConstantOrientation(
             rot90, ReferenceFrame.get("C"), ReferenceFrame.get("D")
         )
-        self.registry.add_transform(self.cd)
+        self.registry.add_orientation_transform(self.cd)
         self.da = ConstantOrientation(
             rot90, ReferenceFrame.get("D"), ReferenceFrame.get("A")
         )
-        self.registry.add_transform(self.da)
+        self.registry.add_orientation_transform(self.da)
 
         # Create a direct edge from A->C
         self.ac = ConstantOrientation(
             rot90, ReferenceFrame.get("A"), ReferenceFrame.get("C")
         )
-        self.registry.add_transform(self.ac)
+        self.registry.add_orientation_transform(self.ac)
 
         self.ae = ConstantOrientation(
             rot90, ReferenceFrame.get("A"), ReferenceFrame.get("E")
         )
-        self.registry.add_transform(self.ae)
+        self.registry.add_orientation_transform(self.ae)
 
         # Position transforms for the same edges as orientation transforms
         self.p_ab = Cartesian3DPosition(1, 0, 0, ReferenceFrame.get("A"))
@@ -89,7 +89,7 @@ class TestFrameGraph(unittest.TestCase):
 
     def test_direct_transform(self):
         """A single edge A->B should produce a 90 deg rotation about Z."""
-        rot, omega = self.registry.get_transform(
+        rot, omega = self.registry.get_orientation_transform(
             ReferenceFrame.get("A"), ReferenceFrame.get("B"), AbsoluteDate(0.0)
         )
         np.testing.assert_allclose(
@@ -99,7 +99,7 @@ class TestFrameGraph(unittest.TestCase):
 
     def test_inverse_transform(self):
         """Requesting B->A uses the auto-registered inverse, yielding −90 deg about Z."""
-        rot, omega = self.registry.get_transform(
+        rot, omega = self.registry.get_orientation_transform(
             ReferenceFrame.get("B"), ReferenceFrame.get("A"), AbsoluteDate(0.0)
         )
         np.testing.assert_allclose(
@@ -109,7 +109,7 @@ class TestFrameGraph(unittest.TestCase):
 
     def test_two_step_transform(self):
         """Two‐step path B→D (B→A→D) yields a -180 deg rotation about Z."""
-        rot, omega = self.registry.get_transform(
+        rot, omega = self.registry.get_orientation_transform(
             ReferenceFrame.get("B"), ReferenceFrame.get("D"), AbsoluteDate(0.0)
         )
         np.testing.assert_allclose(
@@ -120,7 +120,7 @@ class TestFrameGraph(unittest.TestCase):
     def test_missing_path_raises(self):
         """Asking for a non-connected path (A->F) raises KeyError."""
         with self.assertRaises(KeyError):
-            self.registry.get_transform(
+            self.registry.get_orientation_transform(
                 ReferenceFrame.get("A"),
                 ReferenceFrame.get("F"),
                 AbsoluteDate(0.0),
@@ -129,7 +129,7 @@ class TestFrameGraph(unittest.TestCase):
     def test_closest_path(self):
         """Asking for a transform from (A->C) should return shortest (direct) path.
         which is the 90 deg rotation."""
-        rot, omega = self.registry.get_transform(
+        rot, omega = self.registry.get_orientation_transform(
             ReferenceFrame.get("A"), ReferenceFrame.get("C"), AbsoluteDate(0.0)
         )
         np.testing.assert_allclose(
@@ -138,8 +138,8 @@ class TestFrameGraph(unittest.TestCase):
         np.testing.assert_array_equal(omega, np.zeros(3))
 
     def test_constant_transform_with_none_time(self):
-        """Test that get_transform works with t=None for constant orientations."""
-        rot, omega = self.registry.get_transform(
+        """Test that get_orientation_transform works with t=None for constant orientations."""
+        rot, omega = self.registry.get_orientation_transform(
             ReferenceFrame.get("A"), ReferenceFrame.get("B"), None
         )
         np.testing.assert_allclose(
@@ -148,7 +148,7 @@ class TestFrameGraph(unittest.TestCase):
         np.testing.assert_array_equal(omega, np.zeros(3))
 
     def test_non_constant_transform_with_none_time(self):
-        """Test that get_transform raises KeyError for non-constant orientations when t=None."""
+        """Test that get_orientation_transform raises KeyError for non-constant orientations when t=None."""
         # Add a non-constant orientation to the registry
         time = AbsoluteDateArray(np.array([0.0, 0.5, 1.0]))
         rotations = R.from_euler(
@@ -160,17 +160,17 @@ class TestFrameGraph(unittest.TestCase):
             ReferenceFrame.get("B"),
             ReferenceFrame.get("F"),
         )
-        self.registry.add_transform(non_constant_orientation)
+        self.registry.add_orientation_transform(non_constant_orientation)
 
         with self.assertRaises(KeyError):
-            self.registry.get_transform(
+            self.registry.get_orientation_transform(
                 ReferenceFrame.get("A"), ReferenceFrame.get("F"), None
             )
 
     def test_no_path_with_none_time(self):
-        """Test that get_transform raises KeyError when no path exists with t=None."""
+        """Test that get_orientation_transform raises KeyError when no path exists with t=None."""
         with self.assertRaises(KeyError):
-            self.registry.get_transform(
+            self.registry.get_orientation_transform(
                 ReferenceFrame.get("A"), ReferenceFrame.get("F"), None
             )
 

@@ -41,13 +41,13 @@ lvlh_frame = ReferenceFrame.add("LVLH")
 att_lvlh, pos_lvlh = get_lvlh(state_icrf,lvlh_frame)
 
 registry   = FrameGraph()
-registry.add_transform(att_lvlh)
+registry.add_orientation_transform(att_lvlh)
 from_frame = ReferenceFrame.get("ICRF_EC")
 to_frame = ReferenceFrame.get("LVLH")
 registry.add_pos_transform(from_frame,to_frame, pos_lvlh)
 
 # Batch‐transform into LVLH
-rot_array, w_array = registry.get_transform(
+rot_array, w_array = registry.get_orientation_transform(
     ReferenceFrame.get("ICRF_EC"),
     lvlh_frame,
     times

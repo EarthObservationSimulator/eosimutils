@@ -14,9 +14,10 @@ Basic interpolation/resampling and arithmetic operations (with frame conversion)
 
 import numpy as np
 import spiceypy as spice
+from typing import Union
 
 from .base import ReferenceFrame
-from .time import AbsoluteDateArray
+from .time import AbsoluteDate, AbsoluteDateArray
 from .timeseries import Timeseries
 from .spicekernels import load_spice_kernels
 
@@ -816,3 +817,30 @@ class PositionSeries(Timeseries):
             PositionSeries: A new PositionSeries object with the result of the division.
         """
         return self._arithmetic_op(other, lambda a, b: a / b)
+
+    def at(self, t: Union["AbsoluteDate", "AbsoluteDateArray"]) -> np.ndarray:
+        """
+        Returns the position(s) at the given time(s) by interpolation.
+
+        Args:
+            t (AbsoluteDate or AbsoluteDateArray): The time(s) at which to evaluate the position.
+
+        Returns:
+            np.ndarray: Interpolated position(s). Shape (3,) for AbsoluteDate, (N,3) for
+            AbsoluteDateArray.
+        """
+        if isinstance(t, AbsoluteDate):
+            query_times = np.array([t.ephemeris_time])
+            single = True
+        elif isinstance(t, AbsoluteDateArray):
+            query_times = t.ephemeris_time
+            single = False
+        else:
+            raise TypeError("Input must be AbsoluteDate or AbsoluteDateArray.")
+
+        # Use internal _resample_data for interpolation
+        _, new_data, _ = self._resample_data(query_times, method="linear")
+        positions = new_data[0]
+        if single:
+            return positions[0]
+        return positions

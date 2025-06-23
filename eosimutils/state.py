@@ -110,9 +110,9 @@ class Cartesian3DPosition:
             dict: Dictionary with the position information.
         """
         return {
-            "x": self.coords[0],
-            "y": self.coords[1],
-            "z": self.coords[2],
+            "x": float(self.coords[0]),
+            "y": float(self.coords[1]),
+            "z": float(self.coords[2]),
             "frame": self.frame.to_string() if self.frame else None,
         }
 

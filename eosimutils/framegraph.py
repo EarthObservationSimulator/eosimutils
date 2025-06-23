@@ -1,6 +1,6 @@
 """
-.. module:: eosimutils.frame_registry
-   :synopsis: Reference frame registry..
+.. module:: eosimutils.framegraph
+   :synopsis: Reference frame graph.
 """
 
 from scipy.spatial.transform import Rotation as Scipy_Rotation

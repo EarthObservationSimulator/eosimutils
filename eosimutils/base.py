@@ -6,7 +6,7 @@ Collection of basic utility classes and functions.
 """
 
 from enum import Enum
-
+import json
 
 class EnumBase(str, Enum):
     """Enumeration of recognized types.
@@ -49,6 +49,22 @@ class EnumBase(str, Enum):
             return self.value == other.upper()
         return False
 
+class JsonSerializer:
+    """Class for handling JSON serialization and deserialization.
+    """
+    
+    @staticmethod
+    def load_from_json(other_cls, file_path):
+        """Load an object from a JSON file."""
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        return other_cls.from_dict(data)
+
+    @staticmethod
+    def save_to_json(obj, file_path):
+        """Save the object to a JSON file."""
+        with open(file_path, 'w') as f:
+            json.dump(obj.to_dict(), f, indent=4)
 
 class RotationsType(EnumBase):
     """

@@ -251,7 +251,7 @@ class Timeseries:
             self.headers,
         )
 
-    def to_dict(self):
+    def to_dict(self, time_format="GREGORIAN_DATE", time_scale="UTC"):
         """
         Serialize the Timeseries instance into a dictionary.
 
@@ -259,11 +259,17 @@ class Timeseries:
         transforms each numpy data array to a native Python list for JSON compatibility,
         and retains the headers as provided.
 
+        Args:
+            time_format (str, optional): The format in which to serialize the time values.
+                Defaults to "GREGORIAN_DATE".
+            time_scale (str, optional): The time scale to use for serialization.
+                Defaults to "UTC".
+
         Returns:
             dict: A dictionary representation of this Timeseries instance.
         """
         # Serialize the time attribute using AbsoluteDateArray.to_dict.
-        serialized_time = self.time.to_dict()
+        serialized_time = self.time.to_dict(time_format=time_format, time_scale=time_scale)
         # Convert each numpy array in 'data' to a list using ndarray.tolist() for portability.
         serialized_data = [arr.tolist() for arr in self.data]
         return {
@@ -382,3 +388,4 @@ class Timeseries:
             Timeseries: A new Timeseries object with the result of the division.
         """
         return self._arithmetic_op(other, lambda a, b: a / b)
+    

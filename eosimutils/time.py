@@ -1,11 +1,28 @@
 """
 .. module:: eosimutils.time
-   :synopsis: Time information.
+    :synopsis: Collection of classes and functions for handling time information.
 
-Collection of classes and functions for handling time information.
+The time module provides classes and functions for representing, converting, and manipulating time data.
 
-Constants:
-    JD_OF_J2000 (float): Julian Date of the J2000 epoch (2451545.0).
+**Internal Representation**:
+The module maintains time internally in the SPICE Ephemeris Time (ET) format, which corresponds to Barycentric Dynamical Time (TDB). 
+
+**Time Formats**:
+Time formats define how time is represented. The module supports:
+- **Gregorian Date**
+- **Julian Date**
+
+**Time Scales**:
+Time scales define the method for measuring time. The module currently supports:
+- **UTC (Coordinated Universal Time)**
+
+**Key Features**:
+- The module provides methods to convert between Gregorian Date, Julian Date (UTC time scale).
+- It can convert from the eosimutils time objects to SPICE ET, Astropy and Skyfield time objects.
+- The AbsoluteDateArray class allows efficient handling of multiple time points using NumPy arrays.
+
+**Constants**:
+- `JD_OF_J2000 (float)`: Julian Date of the J2000 epoch (2451545.0).
 """
 
 from typing import Dict, Any, Union
@@ -96,7 +113,7 @@ class AbsoluteDate:
             elif time_format == TimeFormat.JULIAN_DATE:
                 # Convert Julian Date UTC to ET
                 jd: float = dict_in["jd"]
-                time_string = f"jd {jd}"  # Format as Julian Date string
+                time_string = f"{jd} JDUTC"  # Format as Julian Date string
                 spice_ephemeris_time = spice.str2et(time_string)
 
             else:
@@ -341,6 +358,15 @@ class AbsoluteDateArray:
             seconds.append(s)
         return ts.utc(years, months, days, hours, minutes, seconds)
 
+    def to_spice_ephemeris_time(self) -> float:
+        """Convert the AbsoluteDateArray object to a SPICE Ephemeris Time (ET).
+        In the SPICE toolkit, ET Means TDB.
+
+        Returns:
+            np.ndarray: 1D numpy float array of Ephemeris Times (ET).
+        """
+        return self.ephemeris_time
+    
     def to_dict(
         self,
         time_format: Union[str, EnumBase] = "GREGORIAN_DATE",

@@ -304,6 +304,16 @@ class TestAbsoluteDateArray(unittest.TestCase):
         self.assertTrue(abs_dates1 == abs_dates2)
         self.assertFalse(abs_dates1 == abs_dates3)
 
+    def test_to_spice_ephemeris_time(self):
+        """Test the to_spice_ephemeris_time method for AbsoluteDateArray."""
+        et_array = np.array([553333629.183727, 553333630.183727])
+        abs_dates = AbsoluteDateArray(et_array)
+
+        spice_ephemeris_times = abs_dates.to_spice_ephemeris_time()
+
+        # Assert that the returned array matches the input ephemeris times
+        np.testing.assert_allclose(spice_ephemeris_times, et_array, rtol=1e-6)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,27 +2,46 @@
 .. module:: eosimutils.time
     :synopsis: Collection of classes and functions for handling time information.
 
-The time module provides classes and functions for representing, converting, and manipulating time data.
+The time module provides classes and functions for representing, converting, 
+and manipulating time data.
 
 **Internal Representation**:
-The module maintains time internally in the SPICE Ephemeris Time (ET) format, which corresponds to Barycentric Dynamical Time (TDB). 
+The module maintains time internally in the SPICE Ephemeris Time (ET) format, which 
+corresponds to Barycentric Dynamical Time (TDB). 
 
-**Time Formats**:
+**Time Formats:**
 Time formats define how time is represented. The module supports:
 - **Gregorian Date**
 - **Julian Date**
 
-**Time Scales**:
+**Time Scales:**
 Time scales define the method for measuring time. The module currently supports:
 - **UTC (Coordinated Universal Time)**
 
-**Key Features**:
+**Key Features:**
 - The module provides methods to convert between Gregorian Date, Julian Date (UTC time scale).
 - It can convert from the eosimutils time objects to SPICE ET, Astropy and Skyfield time objects.
 - The AbsoluteDateArray class allows efficient handling of multiple time points using NumPy arrays.
 
-**Constants**:
+**Constants:**
 - `JD_OF_J2000 (float)`: Julian Date of the J2000 epoch (2451545.0).
+
+**Example dictionary representations:**
+
+AbsoluteDate
+{
+    "time_format": "Gregorian_Date",
+    "calendar_date": "2017-07-14T19:46:00.0",
+    "time_scale": "utc",
+}
+
+AbsoluteDateArray
+{
+    "time_format": "JULIAN_DATE",
+    "jd": [2457949.323622, 2457949.3236278, 2457950.323622],
+    "time_scale": "UTC"
+}
+
 """
 
 from typing import Dict, Any, Union
@@ -366,7 +385,7 @@ class AbsoluteDateArray:
             np.ndarray: 1D numpy float array of Ephemeris Times (ET).
         """
         return self.ephemeris_time
-    
+
     def to_dict(
         self,
         time_format: Union[str, EnumBase] = "GREGORIAN_DATE",

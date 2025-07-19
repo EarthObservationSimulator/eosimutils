@@ -50,6 +50,21 @@ class EnumBase(str, Enum):
         return False
 
 
+class SurfaceType(EnumBase):
+    """
+    Enumeration of recognized planetary surface types.
+
+    Attributes:
+        WGS84 (str): Represents the WGS84 ellipsoidal surface.
+        SPHERE (str): Represents a spherical surface.
+        NONE (str): Represents no surface.
+    """
+
+    WGS84 = "WGS84"
+    SPHERE = "SPHERE"
+    NONE = "NONE"
+
+
 class RotationsType(EnumBase):
     """
     Enumeration of recognized rotation types.
@@ -168,3 +183,8 @@ class ReferenceFrame:
 ReferenceFrame._registry["ICRF_EC"] = ReferenceFrame("ICRF_EC")
 # pylint: disable=protected-access
 ReferenceFrame._registry["ITRF"] = ReferenceFrame("ITRF")
+
+# See: https://en.wikipedia.org/wiki/World_Geodetic_System
+EARTH_RADIUS = 6378.137
+EARTH_FLATTENING = 1.0 / 298.257223563
+EARTH_POLAR_RADIUS = EARTH_RADIUS * (1.0 - EARTH_FLATTENING)

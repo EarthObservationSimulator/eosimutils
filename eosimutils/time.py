@@ -23,6 +23,12 @@ Time scales define the method for measuring time. The module currently supports:
 - It can convert from the eosimutils time objects to SPICE ET, Astropy and Skyfield time objects.
 - The AbsoluteDateArray class allows efficient handling of multiple time points using NumPy arrays.
 
+**Example Applications:**
+- Defining mission/ orbit epochs.
+- Defining orbit states at specific times.
+- Defining array of time points for simulations.
+- Converting between different time representations for analysis.
+
 **Constants:**
 - `JD_OF_J2000 (float)`: Julian Date of the J2000 epoch (2451545.0).
 

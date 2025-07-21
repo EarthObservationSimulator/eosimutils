@@ -52,18 +52,17 @@ class EnumBase(str, Enum):
 class JsonSerializer:
     """Class for handling JSON serialization and deserialization.
     """
-    
     @staticmethod
     def load_from_json(other_cls, file_path):
         """Load an object from a JSON file."""
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             data = json.load(f)
         return other_cls.from_dict(data)
 
     @staticmethod
     def save_to_json(obj, file_path):
         """Save the object to a JSON file."""
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             json.dump(obj.to_dict(), f, indent=4)
 
 class RotationsType(EnumBase):
@@ -82,8 +81,37 @@ class RotationsType(EnumBase):
 class ReferenceFrame:
     """Reference frame registry with static and dynamic support.
 
+    The ReferenceFrame class is a registry for managing reference frames. 
+    It allows for the creation, retrieval, and management of reference frames globally across the application.
+
     Reference frames are stored in a (class-variable) dictionary providing lookup by name.
-    Hence, there is only one ReferenceFrame registry shared globally across the application.
+    Hence, there can be only one ReferenceFrame registry shared globally across the application.
+
+    **Key Features:**
+    - Global Registry: Reference frames are stored in a class-level dictionary (`_registry`), enabling global access and lookup by name.
+    - Dynamic Addition: New reference frames can be dynamically added using the `add` method.
+    - Pre-Registered Frames: `eosimutils` builtin frames (`ICRF_EC` and `ITRF`) are pre-registered.
+    - String Representation: Frames can be converted to strings using the `to_string` method or via `__str__` method.
+    - Equality and Hashing: Frames can be compared using `__eq__` and are hashable via `__hash__`.
+    - Retrieval: Frames can be retrieved by name using the `get` method. The `values` method returns all registered frames, 
+                while the `names` method provides a list of their names.
+
+    **Description of the pre-registered frames:**
+    ICRF_EC:    Earth centered inertial frame aligned to the ICRF (International Celestial Reference Frame) . 
+
+                The alignment of the ICRF is as defined in the SPICE toolkit.
+                This is implemented with the J2000 frame defined in the SPICE toolkit.
+                It seems that J2000 is same as ICRF. 
+                In SPICE the center of any inertial frame is ALWAYS the solar system barycenter.
+                See Slide 12 and 7 in
+                https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/Tutorials/pdf/individual_docs/17_frames_and_coordinate_systems.pdf
+
+    ITRF: International Terrestrial Reference Frame. 
+                This is implemented with the ITRF93 frame defined in the SPICE toolkit.
+                
+                Also see:
+                https://rhodesmill.org/skyfield/api-framelib.html#skyfield.framelib.itrs
+
     """
 
     _registry = {}

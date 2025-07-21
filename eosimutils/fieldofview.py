@@ -2,17 +2,100 @@
 .. module:: eosimutils.fieldofview
    :synopsis: Field-of-view (FOV) related classes and functions.
 
-   Field-of-view (FOV) related classes and functions.
-   Three main types of FOV are supported:
-   (1) Circular, (2) Rectangular, and (3) Polygonal
+    The module provides classes and utilities for representing and managing different types of 
+    fields-of-view (FOV)
+    Three main types of FOV are supported:
+    (1) Circular, (2) Rectangular, and (3) Polygonal
 
-   Each FOV type is associated with its own set of parameters and methods.
-   The FieldOfViewFactory class is responsible for creating instances of the
-   appropriate FOV class based on the provided specifications.
+    Each FOV type is associated with its own set of parameters and methods.
+    The reference frame for each FOV needs to be specified.
+    The FieldOfViewFactory class is responsible for creating instances of the
+    appropriate FOV class based on the provided specifications.
 
-   References:
-    - https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/getfov_c.html
-    - https://naif.jpl.nasa.gov/naif/Ancillary_Data_Production_for_Cubesats_and_Lunar_Exploration_v2.pdf # pylint: disable=line-too-long
+    References:
+        - https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/getfov_c.html
+        - https://naif.jpl.nasa.gov/naif/Ancillary_Data_Production_for_Cubesats_and_Lunar_Exploration_v2.pdf # pylint: disable=line-too-long
+        
+    **Key Features**
+
+    Field-of-View Representation:
+    - **CircularFieldOfView**: Represents a circular FOV defined by its angular diameter, reference frame, and boresight vector.
+    - **RectangularFieldOfView**: Represents a rectangular FOV defined by its reference frame, boresight vector, reference vector, and angular extents (reference angle and cross angle).
+    - **PolygonFieldOfView**: Represents a polygonal FOV defined by its reference frame, boresight vector, and a list of boundary corner vectors.
+
+    Factory Pattern:
+    - **FieldOfViewFactory**: A factory class for creating instances of the appropriate FOV type based on a dictionary of specifications. 
+                             It supports dynamic registration of custom FOV types.
+
+    **Example Applications**
+
+    - Modeling the field-of-view of spacecraft sensors, ground-stations.
+    - Defining custom FOV shapes for specialized instruments.
+
+    **Example Dictionary Representations**
+
+    **CircularFieldOfView**:
+    ```python
+    {
+        "fov_type": "CIRCULAR",
+        "diameter": 60.0,  # Angular diameter in degrees
+        "frame": "ICRF_EC",  # Reference frame
+        "boresight": [0.0, 0.0, 1.0]  # Optional boresight vector (default: +Z axis)
+    }
+    ```
+
+    **RectangularFieldOfView**:
+    ```python
+    {
+        "fov_type": "RECTANGULAR",
+        "frame": "ICRF_EC",  # Reference frame
+        "boresight": [0.0, 0.0, 1.0],  # Optional boresight vector (default: +Z axis)
+        "ref_vector": [1.0, 0.0, 0.0],  # Reference vector defining the plane
+        "ref_angle": 45.0,  # Half angular extent in the reference plane (degrees)
+        "cross_angle": 30.0  # Half angular extent in the perpendicular plane (degrees)
+    }
+    ```
+
+    **PolygonFieldOfView**:
+    ```python
+    {
+        "fov_type": "POLYGON",
+        "frame": "ICRF_EC",  # Reference frame
+        "boresight": [0.0, 0.0, 1.0],  # Optional boresight vector (default: +Z axis)
+        "boundary_corners": [  # List of vectors defining the polygon corners
+            [0.5, 0.5, 0.707],
+            [0.1, 0.2, 0.979],
+            [0.3, 0.4, 0.866],
+            [0.6, 0.0, 0.8]
+        ]
+    }
+    ```
+
+---
+
+### **Error Handling**
+- **CircularFieldOfView**: Ensures the diameter is between 0 and 180 degrees.
+- **RectangularFieldOfView**: Validates that reference and cross angles are between 0 and 90 degrees.
+- **PolygonFieldOfView**: Ensures at least three boundary corners are provided and that all corners lie in the same hemisphere as the boresight vector.
+- **FieldOfViewFactory**: Raises errors for missing or unregistered FOV types.
+
+---
+
+### **Example Usage**
+```python
+from eosimutils.fieldofview import FieldOfViewFactory
+
+# Create a factory and retrieve a circular FOV
+factory = FieldOfViewFactory()
+specs = {
+    "fov_type": "CIRCULAR",
+    "diameter": 60.0,
+    "frame": "ICRF_EC",
+    "boresight": [0.0, 0.0, 1.0]
+}
+circular_fov = factory.get_fov(specs)
+print(circular_fov.to_dict())
+```
 
 """
 

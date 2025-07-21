@@ -67,6 +67,18 @@ eosimutils.trajectory
     - convert_frame_position (function)
 ```
 
+- **Orientation (Attitude)**  
+  Flexible orientation representations for modeling frame-to-frame transformations with consideration of rotating frames.
+  Transforming positions and states between reference frames, including support for SPICE-based transformations.
+
+```
+eosimutils.orientation
+    - Orientation
+        - ConstantOrientation
+        - SpiceOrientation
+        - OrientationSeries
+```
+
 - **Reference Frame Management**
   Define, register, and manage reference frames using the `ReferenceFrame` class and the `FrameRegistry`.
 
@@ -81,24 +93,12 @@ eosimutils.base
     - ReferenceFrame
 ```
 
-- **Orientation (Attitude)**  
-  Flexible orientation representations for modeling frame-to-frame transformations with consideration of rotating frames.
-  Transforming positions and states between reference frames, including support for SPICE-based transformations.
-
-```
-eosimutils.orientation
-    - Orientation
-        - ConstantOrientation
-        - SpiceOrientation
-        - OrientationSeries
-```
-
 - **Field-of-View Modeling**  
   Classes for circular, rectangular, and polygonal field-of-view geometries, with a factory for easy instantiation.
 
 ```
 eosimutils.fieldofview
-    - FieldOfViewType
+    - FieldOfViewType (enum)
     - FieldOfViewFactory
     - CircularFieldOfView
     - RectangularFieldOfView

@@ -5,25 +5,34 @@
 The state module provides classes and functions for handling state vector information, 
 including positions, velocities, and geodetic coordinates.
 
-Key Features:
+**Key Features:**
 
-**Position Handling:**
+Position Handling:
 - Cartesian3DPosition: Represents 3D positions in Cartesian coordinates within a
                     specified reference frame, stored internally in kilometers.
 - GeographicPosition: Represents geodetic positions (latitude, longitude, elevation) 
                     based on the WGS84 geoid.
 
-**Velocity Handling:**
+Velocity Handling:
 - Cartesian3DVelocity: Represents 3D velocities in Cartesian coordinates within a
                     specified reference frame, stored internally in kilometers per second.
 
-**State Representation:**
+State Representation:
 - CartesianState: Combines position, velocity, and time information into a single object for 
                     comprehensive state representation.
 
-**Array of points:**
+Array of points:
 - Cartesian3DPositionArray: Stores and manipulates arrays of Cartesian positions within a 
-                            specified reference frame.
+                            specified reference frame. Can be initialized from a list of
+                            Cartesian3DPosition or GeographicPosition objects.
+
+**Example Applications:**
+- Position and velocity of satellites (Cartesian3DPosition, Cartesian3DVelocity).
+- Position of center of reference frames (Cartesian3DPosition).
+- State vectors of satellite orbit (CartesianState).
+- Position on surface of Earth (GeographicPosition) for target observation locations and ground stations.
+- Array of positions for multiple points (Cartesian3DPositionArray).
+
 
 **Example dictionary representations:**
 - Cartesian3DPosition: {"x": 1.0, "y": 2.0, "z": 3.0, "frame": "ICRF_EC" }

@@ -1,6 +1,94 @@
 """
 .. module:: eosimutils.orientation
    :synopsis: Classes for representing transformations between reference frames.
+
+The `orientation` module offers classes and functions for representing and manipulating orientations 
+as transformations between reference frames. The orientation information between two frames is represented 
+using SciPy's rotation objects and angular velocity vector.
+It includes utilities for transforming position and state vectors across reference frames. 
+
+
+**Key Features**
+
+Orientation Representation:
+- `Orientation`: Base class for orientation representations supporting transformations between reference frames and position/state vectors.
+- `ConstantOrientation`: Represents a time-invariant orientation using a single constant rotation and zero angular velocity.
+- `SpiceOrientation`: Represents orientations defined using SPICE frame transformations, including angular velocity.
+- `OrientationSeries`: Represents orientation data as a time series using SciPy rotation objects and angular velocity.
+
+Frame Conversion:
+- Transformations between reference frames using rotation matrices, quaternions, or Euler angles.
+- Support for SPICE-based frame transformations.
+
+Interpolation and Resampling:
+- Resampling of time-series orientation data to new time bases using spherical linear interpolation (SLERP).
+
+Factory Pattern:
+- Factory methods for creating orientation objects from serialized dictionaries, 
+    supporting both quaternion and Euler angle rotation representations.
+
+Automatic computations:
+- Automatic computation of angular velocity from rotation time series.
+- Automatic computation of a constant angular velocity orientation series.
+- Inversion of orientations to compute transformations in the opposite direction.
+
+**Example Applications**
+- Representing spacecraft attitude using constant or time-varying orientations.
+- Performing transformations between inertial and Earth-fixed reference frames.
+- Interpolating orientation data for simulation or visualization purposes.
+
+**Example Dictionary Representations**
+
+**ConstantOrientation**:
+```
+{
+    "orientation_type": "constant",
+    "rotations": [0.0, 0.0, 0.0],
+    "rotations_type": "euler",
+    "from": "ICRF_EC",
+    "to": "ITRF",
+    "euler_order": "xyz"
+}
+```
+
+**SpiceOrientation**:
+```
+{
+    "orientation_type": "spice",
+    "from": "ICRF_EC",
+    "to": "ITRF"
+}
+```
+
+**OrientationSeries**:
+```
+{
+    "orientation_type": "series",
+    "time": {
+        "time_format": "GREGORIAN_DATE",
+        "calendar_date": [
+            "2000-01-01T11:58:55.816",
+            "2000-01-01T11:58:56.816",
+            "2000-01-01T11:58:57.816"
+        ],
+        "time_scale": "UTC"
+    },
+    "rotations": [
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.5707963267948966],
+        [0.0, 0.0, 3.141592653589793]
+    ],
+    "rotations_type": "EULER",
+    "euler_order": "xyz",
+    "from": "ICRF_EC",
+    "to": "ITRF",
+    "angular_velocity": [
+        [0.0, 0.0, 1.5707963267948966],
+        [0.0, 0.0, 1.5707963267948966],
+        [0.0, 0.0, 1.5707963267948966]
+    ]
+}
+```
 """
 
 import spiceypy as spice

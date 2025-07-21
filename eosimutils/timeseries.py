@@ -1,6 +1,42 @@
-"""Module for handling timeseries data."""
+"""
+.. module:: eosimutils.trajectory
+   :synopsis: Module for handling timeseries data.
+   
+The timeseries module provides functionality for handling time-varying data, represented as arrays associated with time points.
 
-# pylint: disable=protected-access
+**Key features:**
+
+- Support for scalar and vector data.
+- Interpolation and resampling of data.
+- Arithmetic operations between timeseries or with scalars.
+- Handling of gaps (NaN values) in data.
+- Serialization and deserialization to/from dictionaries.
+
+**Example Applications:**
+- Representing spacecraft ephemeris data.
+
+**Example dictionary representations:**
+- Timeseries
+    {
+        'time': {   'time_format': 'JULIAN_DATE', 
+                    'jd': [2451545.0, 2451546.0, 2451547.0, 2451548.0], 
+                    'time_scale': 'UTC'
+                }, 
+        'data': [   [   1,  2,  3,  4  ],
+                    [
+                        [4.0, 2.0, 0.5], 
+                        [1.0, nan, 5.0],
+                        [0.0, 1.0, 2.0],
+                        [2.0, 3.5, 5.0]
+                    ]
+                ], 
+        'headers': [    ['index'], 
+                        ['x', 'y', 'z']
+                ], 
+        'interpolator': 'linear'
+    }
+
+"""
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -58,7 +94,7 @@ class Timeseries:
     |                   |
     |   time            |
     |   +-------------+ |
-    |   | et (1D)     | |  --> [t1, t2, t3, ..., tn]  (Ephemeris times)
+    |   | time (1D)   | |  --> [t1, t2, t3, ..., tn]  (AbsoluteDateArray)
     |   +-------------+ |
     |                   |
     |   data            |
@@ -81,7 +117,7 @@ class Timeseries:
     +-------------------+
 
     Attributes:
-        time (AbsoluteDateArray): Contains a 1D numpy array of ephemeris times.
+        time (AbsoluteDateArray): Contains a 1D numpy array of AbsoluteDateArray time objects.
         data (list): List of numpy arrays. Each array can be 1D (scalar) or 2D (vector).
         headers (list): List of headers for the data arrays. For vectors, headers are nested lists.
 
@@ -388,4 +424,4 @@ class Timeseries:
             Timeseries: A new Timeseries object with the result of the division.
         """
         return self._arithmetic_op(other, lambda a, b: a / b)
-    
+     

@@ -383,8 +383,8 @@ class AbsoluteDateArray:
             seconds.append(s)
         return ts.utc(years, months, days, hours, minutes, seconds)
 
-    def to_spice_ephemeris_time(self) -> float:
-        """Convert the AbsoluteDateArray object to a SPICE Ephemeris Time (ET).
+    def to_spice_ephemeris_time(self) -> np.ndarray:
+        """Convert the AbsoluteDateArray object to an array of SPICE Ephemeris Time(s) (ET).
         In the SPICE toolkit, ET Means TDB.
 
         Returns:

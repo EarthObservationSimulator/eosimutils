@@ -1,5 +1,5 @@
 """
-.. module:: eosimutils.trajectory
+.. module:: eosimutils.timeseries
    :synopsis: Module for handling timeseries data.
 
 The timeseries module provides functionality for handling time-varying data, 

@@ -2,7 +2,7 @@
 .. module:: eosimutils.state
     :synopsis: Collection of classes and functions for handling state vector information.
 
-The state module provides classes and functions for handling state vector information, 
+The state module provides classes and functions for handling state vector information,
 including positions, velocities, and geodetic coordinates.
 
 **Key Features:**
@@ -10,7 +10,7 @@ including positions, velocities, and geodetic coordinates.
 Position Handling:
 - Cartesian3DPosition: Represents 3D positions in Cartesian coordinates within a
                     specified reference frame, stored internally in kilometers.
-- GeographicPosition: Represents geodetic positions (latitude, longitude, elevation) 
+- GeographicPosition: Represents geodetic positions (latitude, longitude, elevation)
                     based on the WGS84 geoid.
 
 Velocity Handling:
@@ -18,11 +18,11 @@ Velocity Handling:
                     specified reference frame, stored internally in kilometers per second.
 
 State Representation:
-- CartesianState: Combines position, velocity, and time information into a single object for 
+- CartesianState: Combines position, velocity, and time information into a single object for
                     comprehensive state representation.
 
 Array of points:
-- Cartesian3DPositionArray: Stores and manipulates arrays of Cartesian positions within a 
+- Cartesian3DPositionArray: Stores and manipulates arrays of Cartesian positions within a
                             specified reference frame. Can be initialized from a list of
                             Cartesian3DPosition or GeographicPosition objects.
 
@@ -30,7 +30,8 @@ Array of points:
 - Position and velocity of satellites (Cartesian3DPosition, Cartesian3DVelocity).
 - Position of center of reference frames (Cartesian3DPosition).
 - State vectors of satellite orbit (CartesianState).
-- Position on surface of Earth (GeographicPosition) for target observation locations and ground stations.
+- Position on surface of Earth (GeographicPosition) for target observation locations and 
+    ground stations.
 - Array of positions for multiple points (Cartesian3DPositionArray).
 
 

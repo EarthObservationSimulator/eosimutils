@@ -2,7 +2,7 @@
 .. module:: eosimutils.fieldofview
    :synopsis: Field-of-view (FOV) related classes and functions.
 
-    The module provides classes and utilities for representing and managing different types of 
+    The module provides classes and utilities for representing and managing different types of
     fields-of-view (FOV)
     Three main types of FOV are supported:
     (1) Circular, (2) Rectangular, and (3) Polygonal
@@ -15,7 +15,7 @@
     References:
         - https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/getfov_c.html
         - https://naif.jpl.nasa.gov/naif/Ancillary_Data_Production_for_Cubesats_and_Lunar_Exploration_v2.pdf # pylint: disable=line-too-long
-        
+
     **Key Features**
 
     Field-of-View Representation:
@@ -24,7 +24,7 @@
     - **PolygonFieldOfView**: Represents a polygonal FOV defined by its reference frame, boresight vector, and a list of boundary corner vectors.
 
     Factory Pattern:
-    - **FieldOfViewFactory**: A factory class for creating instances of the appropriate FOV type based on a dictionary of specifications. 
+    - **FieldOfViewFactory**: A factory class for creating instances of the appropriate FOV type based on a dictionary of specifications.
                              It supports dynamic registration of custom FOV types.
 
     **Example Applications**

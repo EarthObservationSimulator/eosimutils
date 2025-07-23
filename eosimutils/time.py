@@ -2,12 +2,12 @@
 .. module:: eosimutils.time
     :synopsis: Collection of classes and functions for handling time information.
 
-The time module provides classes and functions for representing, converting, 
+The time module provides classes and functions for representing, converting,
 and manipulating time data.
 
 **Internal Representation**:
-The module maintains time internally in the SPICE Ephemeris Time (ET) format, which 
-corresponds to Barycentric Dynamical Time (TDB). 
+The module maintains time internally in the SPICE Ephemeris Time (ET) format, which
+corresponds to Barycentric Dynamical Time (TDB).
 
 **Time Formats:**
 Time formats define how time is represented. The module supports:

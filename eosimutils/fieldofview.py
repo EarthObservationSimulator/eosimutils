@@ -244,25 +244,29 @@ class RectangularFieldOfView:
     def __init__(
         self,
         frame: Union[ReferenceFrame, str],
-        ref_vector: Union[list, np.ndarray],
-        ref_angle: float,
-        cross_angle: float,
+        ref_vector: Union[list, np.ndarray, None] = None,
+        ref_angle: float = None,
+        cross_angle: float = None,
         boresight: Union[list, np.ndarray, None] = None,
     ) -> None:
         """Initializes the RectangularFieldOfView object.
 
         Args:
             frame (Union[ReferenceFrame, str]): The reference frame in which the FOV is defined.
-            ref_vector (Union[list, np.ndarray]): The reference 3d-vector defining the plane for
-                                                    the reference angle.
+            ref_vector (Union[list, np.ndarray, None]): The reference 3d-vector defining the plane for
+                                                        the reference angle. Defaults to [1.0, 0.0, 0.0]
+                                                        (pointing in the +X direction).
             ref_angle (float): Half of the total angular extent in the plane defined by the
                                boresight and reference 3d-vector.
             cross_angle (float): Half of the total angular extent in the plane perpendicular to
                                 the reference 3d-vector.
             boresight (Union[list, np.ndarray, None]): The boresight 3d-vector of the FOV.
+                                Defaults to [0.0, 0.0, 1.0] (pointing in the +Z direction).
         """
         self.frame = ReferenceFrame.get(frame)
-        self.ref_vector = np.array(ref_vector)
+        self.ref_vector = np.array(
+            ref_vector if ref_vector is not None else [1.0, 0.0, 0.0]
+        )
         self.ref_angle = ref_angle
         self.cross_angle = cross_angle
         self.boresight = np.array(
@@ -280,8 +284,9 @@ class RectangularFieldOfView:
                 - "boresight" (Union[list, np.ndarray], optional): The boresight 3d-vector
                                                 of the FOV. Default is [0.0, 0.0, 1.0]
                                                 (pointing in the +Z direction).
-                - "ref_vector" (Union[list, np.ndarray]): The reference 3d-vector defining
+                - "ref_vector" (Union[list, np.ndarray], optional): The reference 3d-vector defining
                                                         the plane for the reference angle.
+                                                        Default is [1.0, 0.0, 0.0] (pointing in the +X direction).
                 - "ref_angle" (float): Half of the total angular extent in the plane defined
                                         by the boresight and reference 3d-vector.
                 - "cross_angle" (float): Half of the total angular extent in the plane
@@ -306,7 +311,9 @@ class RectangularFieldOfView:
             boresight=specs.get(
                 "boresight", [0.0, 0.0, 1.0]
             ),  # Default to +Z axis
-            ref_vector=specs["ref_vector"],
+            ref_vector=specs.get(
+                "ref_vector", [1.0, 0.0, 0.0]
+            ),  # Default to +X axis
             ref_angle=ref_angle,
             cross_angle=cross_angle,
         )

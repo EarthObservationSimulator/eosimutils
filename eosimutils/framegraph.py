@@ -183,6 +183,21 @@ class FrameGraph:
             False,
         )
 
+        # Add position transforms from ICRF_EC to ITRF
+        self.add_pos_transform(
+            ReferenceFrame.get("ICRF_EC"),
+            ReferenceFrame.get("ITRF"),
+            Cartesian3DPosition(0.0, 0.0, 0.0, ReferenceFrame.get("ICRF_EC")),
+            False,
+        )
+
+        self.add_pos_transform(
+            ReferenceFrame.get("ITRF"),
+            ReferenceFrame.get("ICRF_EC"),
+            Cartesian3DPosition(0.0, 0.0, 0.0, ReferenceFrame.get("ITRF")),
+            False,
+        )
+
     def add_orientation_transform(
         self,
         orientation: Orientation,

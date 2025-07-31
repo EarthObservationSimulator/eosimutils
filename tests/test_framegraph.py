@@ -148,7 +148,8 @@ class TestFrameGraph(unittest.TestCase):
         np.testing.assert_array_equal(omega, np.zeros(3))
 
     def test_non_constant_transform_with_none_time(self):
-        """Test that get_orientation_transform raises KeyError for non-constant orientations when t=None."""
+        """Test that get_orientation_transform raises KeyError for non-constant 
+            orientations when t=None."""
         # Add a non-constant orientation to the registry
         time = AbsoluteDateArray(np.array([0.0, 0.5, 1.0]))
         rotations = R.from_euler(

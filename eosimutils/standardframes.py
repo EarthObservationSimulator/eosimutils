@@ -1,6 +1,6 @@
 """
 .. module:: eosimutils.standardframes
-   :synopsis: Functions to compute commonly used reference frames..
+   :synopsis: Functions to compute commonly used reference frames.
 """
 
 from scipy.spatial.transform import Rotation as Scipy_Rotation
@@ -15,13 +15,25 @@ def get_lvlh(
     state: StateSeries, lvlh_frame: ReferenceFrame
 ) -> tuple["OrientationSeries", "PositionSeries"]:
     """
-    Compute an LVLH OrientationSeries and PositionSeries from a satellite's StateSeries.
+    Compute an LVLH OrientationSeries and PositionSeries from a 
+    satellite's StateSeries (in inertial frame).
 
     The axes are constructed as follows:
 
         - Z-axis (Local Vertical): negative unit position vector (-r/|r|).
         - Y-axis (Cross-track): negative unit angular momentum vector (-h/|h|, where h = r × v).
         - X-axis (Local Horizontal): cross product of Y and Z axes (x = y × z).
+
+                   Z (Local Vertical)
+               ^
+               |
+               |   -r/|r|
+               |
+               +-------> X (Local Horizontal)
+             /
+            /
+           Y (Cross-track)
+          -h/|h|; h = r × v
 
     Reference: https://sanaregistry.org/r/orbit_relative_reference_frames/ (LVLH_ROTATING)
 

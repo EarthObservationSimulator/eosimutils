@@ -2,12 +2,74 @@
 .. module:: eosimutils.trajectory
    :synopsis: Trajectory data representation.
 
-This module provides a StateSeries class that stores a vector of times and separate numpy arrays
-for position (km) and velocity (km/s), and a PositionSeries class that stores a vector of times
-and a single numpy array for position (km). The time is represented as an AbsoluteDateArray object.
-Missing data (gaps) are represented by NaN values.
+The `trajectory` module provides classes and functions for handling trajectory data, 
+including positions, velocities, and reference frame conversions. It is designed to 
+represent spacecraft trajectories and perform operations such as interpolation, 
+resampling, and arithmetic.
 
-Basic interpolation/resampling and arithmetic operations (with frame conversion) are supported.
+**Key Features**
+
+Trajectory Representation:
+- `StateSeries`: Represents trajectory data with separate (3D) arrays for position (km) 
+    and velocity (km/s), associated with a vector of times.
+- `PositionSeries`: Represents position data with a single (3D) array for position (km), 
+    associated with a vector of times.
+
+Frame Conversion:
+- Functions for converting positions and velocities between reference frames (e.g., ITRF to ICRF).
+
+Interpolation and Resampling:
+- Resampling of trajectory data to new time bases.
+- Handling of gaps (NaN values) in data.
+
+Arithmetic Operations:
+- Addition, subtraction, multiplication, and division between trajectories or with scalars.
+
+Constant Trajectories:
+- constant_position: Creates a trajectory with a fixed position and zero velocity over a 
+                        specified time range.
+- constant_velocity: Creates a trajectory with constant velocity and linearly varying 
+                        position over a specified time range.
+
+**Example Applications**
+- Spacecraft trajectory representation (`StateSeries`) for representing spacecraft propagation data.
+- Position-only trajectory representation (`PositionSeries`) for cases where only 
+    position data is needed.
+
+
+**Example Dictionary Representations**
+
+**StateSeries**:
+```
+{
+    "time": {
+        "time_format": "Julian_Date",
+        "jd": [2451545.0, 2451546.0],
+        "time_scale": "UTC"
+    },
+    "data": [
+        [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],  // Positions
+        [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]   // Velocities
+    ],
+    "frame": "ICRF_EC",
+    "headers": [["pos_x", "pos_y", "pos_z"], ["vel_x", "vel_y", "vel_z"]]
+}
+```
+
+**PositionSeries**:
+```
+{
+    "time": {
+        "time_format": "Julian_Date",
+        "jd": [2451545.0, 2451546.0],
+        "time_scale": "UTC"
+    },
+    "data": [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],  // Positions
+    "frame": "ICRF_EC",
+    "headers": ["pos_x", "pos_y", "pos_z"]
+}
+```
+
 """
 
 # pylint: disable=protected-access

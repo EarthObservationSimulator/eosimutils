@@ -7,6 +7,8 @@ import numpy as np
 from astropy.coordinates import EarthLocation as Astropy_EarthLocation
 import astropy.units as astropy_u
 
+import spiceypy as spice
+
 from eosimutils.time import AbsoluteDate
 from eosimutils.base import ReferenceFrame
 from eosimutils.state import (
@@ -220,6 +222,23 @@ class TestGeographicPosition(unittest.TestCase):
         for coord, expected in zip(itrs_xyz, expected_xyz):
             self.assertAlmostEqual(coord, expected, places=3)
 
+    def test_to_cartesian3d_position(self):
+        """Test conversion from GeographicPosition to Cartesian3DPosition."""
+        geo_pos = GeographicPosition(
+            self.latitude_degrees, self.longitude_degrees, self.elevation_m
+        )
+        cartesian_pos = geo_pos.to_cartesian3d_position()
+
+        # Validate the Cartesian3DPosition object
+        self.assertIsInstance(cartesian_pos, Cartesian3DPosition)
+        self.assertEqual(cartesian_pos.frame, ReferenceFrame.get("ITRF"))
+
+        # Validate the coordinates
+        expected_xyz = geo_pos.itrs_xyz
+        np.testing.assert_array_almost_equal(
+            cartesian_pos.coords, expected_xyz, decimal=6
+        )
+
     def test_itrs_xyz_astropy_validation(self):
         def geodetic_to_itrf(lat_deg: float, lon_deg: float, height_m: float):
             """
@@ -255,6 +274,29 @@ class TestGeographicPosition(unittest.TestCase):
         )
         for coord, expected in zip(itrs_xyz, expected_xyz):
             self.assertAlmostEqual(coord, expected, places=3)
+
+    def test_spice_validation(self):
+        """Validate GeographicPosition to Cartesian coordinates conversion using spiceypy."""
+        # Create a GeographicPosition object
+        geo_pos = GeographicPosition(
+            self.latitude_degrees, self.longitude_degrees, self.elevation_m
+        )
+
+        # Convert to Cartesian3DPosition
+        cartesian_pos = geo_pos.to_cartesian3d_position()
+
+        # Use spiceypy to perform the same conversion
+        spice_xyz = spice.georec(
+            geo_pos.longitude * spice.rpd(),
+            geo_pos.latitude * spice.rpd(),
+            geo_pos.elevation / 1000.0,  # Convert elevation to kilometers
+            6378.1370, 1/298.257223563  # WGS84 parameters from Skyfield: https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49  pylint: disable=line-too-long
+        )
+
+        # Validate the Cartesian coordinates
+        np.testing.assert_array_almost_equal(
+            cartesian_pos.coords, spice_xyz, decimal=9
+        )
 
 
 class TestCartesianState(unittest.TestCase):

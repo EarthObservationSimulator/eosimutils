@@ -1,8 +1,58 @@
 """
 .. module:: eosimutils.state
-   :synopsis: State vector information.
+    :synopsis: Collection of classes and functions for handling state vector information.
 
-Collection of classes and functions for handling state vector information.
+The state module provides classes and functions for handling state vector information,
+including positions, velocities, and geodetic coordinates.
+
+**Key Features:**
+
+Position Handling:
+- Cartesian3DPosition: Represents 3D positions in Cartesian coordinates within a
+                    specified reference frame, stored internally in kilometers.
+- GeographicPosition: Represents geodetic positions (latitude, longitude, elevation)
+                    based on the WGS84 geoid.
+
+Velocity Handling:
+- Cartesian3DVelocity: Represents 3D velocities in Cartesian coordinates within a
+                    specified reference frame, stored internally in kilometers per second.
+
+State Representation:
+- CartesianState: Combines position, velocity, and time information into a single object for
+                    comprehensive state representation.
+
+Array of points:
+- Cartesian3DPositionArray: Stores and manipulates arrays of Cartesian positions within a
+                            specified reference frame. Can be initialized from a list of
+                            Cartesian3DPosition or GeographicPosition objects.
+
+**Example Applications:**
+- Position and velocity of satellites (Cartesian3DPosition, Cartesian3DVelocity).
+- Position of center of reference frames (Cartesian3DPosition).
+- State vectors of satellite orbit (CartesianState).
+- Position on surface of Earth (GeographicPosition) for target observation locations and 
+    ground stations.
+- Array of positions for multiple points (Cartesian3DPositionArray).
+
+
+**Example dictionary representations:**
+- Cartesian3DPosition: {"x": 1.0, "y": 2.0, "z": 3.0, "frame": "ICRF_EC" }
+- Cartesian3DVelocity: {"vx": 0.1, "vy": 0.2, "vz": 0.3, "frame": "ICRF_EC" }
+- CartesianState: {
+                        "time": {
+                            "time_format": "Gregorian_Date",
+                            "calendar_date": "2025-03-10T14:30:00.0",
+                            "time_scale": "utc"
+                        },
+                        "position": [1234.56, -789.01, 456.78],
+                        "velocity": [7.89, -1.23, 4.56],
+                        "frame": "ICRF_EC"
+                    }
+- GeographicPosition: { "latitude": 37.7749, "longitude": -122.4194, "elevation": 30.0}
+- Cartesian3DPositionArray: {
+                    "positions": [[1234.56, -789.01, 456.78], [2345.67, -890.12, 567.89]],
+                    "frame": "ITRF"
+                    }
 """
 
 import numpy as np
@@ -308,6 +358,15 @@ class GeographicPosition:
         )
         itrs_xyz = skyfield_geo_position.itrs_xyz.km
         return itrs_xyz
+
+    def to_cartesian3d_position(self) -> Cartesian3DPosition:
+        """Convert the geographic position to a Cartesian3DPosition.
+
+        Returns:
+            Cartesian3DPosition: The corresponding Cartesian3DPosition object.
+        """
+        itrs_xyz = self.itrs_xyz
+        return Cartesian3DPosition.from_array(itrs_xyz, frame=ReferenceFrame.get("ITRF"))
 
 
 class CartesianState:

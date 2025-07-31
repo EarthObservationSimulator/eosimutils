@@ -11,7 +11,7 @@ Common utilities for packages and scripts within the EarthObservationSimulator o
 
 Requires: Unix-like operating system, `python 3.13`, `pip`
 
-Create a conda environment:
+(If using conda), create a conda environment:
 ```
 conda create -n eosim-revised python=3.13
 conda activate eosim-revised
@@ -34,8 +34,8 @@ make install
   
 ```
 eosimutils.time
-    - TimeFormat
-    - TimeScale
+    - TimeFormat (Enum)
+    - TimeScale (Enum)
     - AbsoluteDate
     - AbsoluteDateArray
 ```
@@ -67,17 +67,6 @@ eosimutils.trajectory
     - convert_frame_position (function)
 ```
 
-- **Reference Frame Management**  
-  Define, register, and manage reference frames using the `ReferenceFrame` class and the `FrameRegistry`.
-
-```
-eosimutils.frame_registry
-    - FrameRegistry
-
-eosimutils.base
-    - ReferenceFrame
-```
-
 - **Orientation (Attitude)**  
   Flexible orientation representations for modeling frame-to-frame transformations with consideration of rotating frames.
   Transforming positions and states between reference frames, including support for SPICE-based transformations.
@@ -90,12 +79,26 @@ eosimutils.orientation
         - OrientationSeries
 ```
 
+- **Reference Frame Management**
+  Define, register, and manage reference frames using the `ReferenceFrame` class and the `FrameRegistry`.
+
+```
+eosimutils.framegraph
+    - FrameGraph
+
+eosimutils.standardframes
+    - get_lvlh
+
+eosimutils.base
+    - ReferenceFrame
+```
+
 - **Field-of-View Modeling**  
   Classes for circular, rectangular, and polygonal field-of-view geometries, with a factory for easy instantiation.
 
 ```
 eosimutils.fieldofview
-    - FieldOfViewType
+    - FieldOfViewType (enum)
     - FieldOfViewFactory
     - CircularFieldOfView
     - RectangularFieldOfView
@@ -103,7 +106,7 @@ eosimutils.fieldofview
 ```
 
 - **SPICE Kernel Management**  
-  Utilities for downloading and loading SPICE kernels required for time and frame conversions.
+  Utilities for downloading and loading SPICE kernels required for time and frame conversions. SPICE kernels are data files used by NASA's SPICE toolkit to provide accurate information about spacecraft trajectories, planetary positions, and other space mission data.
 
 ```
 eosimutils.spicekernels
@@ -136,11 +139,4 @@ eosimutils.base
     - RotationsType
     - ReferenceFrame
 ```
-
-```
-eosimutils.kinematic
-- transform_position (function)
-- transform_state (function)
-```
-
 

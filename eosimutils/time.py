@@ -50,7 +50,7 @@ AbsoluteDateArray
 
 """
 
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Tuple
 
 import numpy as np
 import spiceypy as spice
@@ -105,9 +105,10 @@ class AbsoluteDate:
         Args:
             dict_in (dict): Dictionary with the date-time information.
                 The dictionary should contain the following key-value pairs:
-                - "time_format" (str): The date-time format, either
+                - "time_format" (str): The date-time format, e.g.,
                                        "Gregorian_Date" or "Julian_Date"
                                        (case-insensitive).
+                                       See :class:`eosimutils.time.TimeFormat` for options.
                 - "time_scale" (str): The time scale, e.g., "UTC"
                                       (case-insensitive).
                                       See :class:`eosimutils.time.TimeScale` for options.
@@ -304,9 +305,10 @@ class AbsoluteDateArray:
         Args:
             dict_in (dict): Dictionary with the time information.
                 The dictionary should contain the following key-value pairs:
-                - "time_format" (str): The date-time format, either
+                - "time_format" (str): The date-time format, e.g.,
                                        "Gregorian_Date" or "Julian_Date"
                                        (case-insensitive).
+                                       See :class:`eosimutils.time.TimeFormat` for options.
                 - "time_scale" (str): The time scale, e.g., "UTC"
                                       (case-insensitive).
                                       See :class:`eosimutils.time.TimeScale` for options.
@@ -398,13 +400,12 @@ class AbsoluteDateArray:
         time_scale: Union[str, EnumBase] = "UTC",
     ) -> Dict[str, Any]:
         """
-        Convert the AbsoluteDateArray object to a dictionary. For each ephemeris time,
-        an ISO UTC string is generated (if Gregorian) or a Julian Date is computed.
+        Convert the AbsoluteDateArray object to a dictionary.
 
         Args:
-            time_format (str or EnumBase): The desired time format. Options are "GREGORIAN_DATE"
-                                           or "JULIAN_DATE". Default is "GREGORIAN_DATE".
-            time_scale (str or EnumBase): The time scale to use (e.g., "UTC"). Default is "UTC".
+            time_format (str): The desired time format. Options are "GREGORIAN_DATE"
+                                or "JULIAN_DATE". Default is "GREGORIAN_DATE".
+            time_scale (str): The time scale to use (e.g., "UTC"). Default is "UTC".
 
         Returns:
             dict: Dictionary with keys:
@@ -468,3 +469,110 @@ class AbsoluteDateArray:
     def __repr__(self):
         """Return a string representation of the AbsoluteDateArray."""
         return f"AbsoluteDateArray({self.ephemeris_time})"
+
+class AbsoluteDateIntervalArray:
+    """
+    Representation of time intervals in Ephemeris Time (ET).
+
+    This class stores a set of time intervals as two AbsoluteDateArray objects (start and stop times in Ephemeris Time, ET).
+    It provides methods to convert to other time representations, such as Astropy Time objects
+    and Skyfield Time objects, as well as importing/exporting time interval information from/to a dictionary.
+
+    Attributes:
+        start_times (AbsoluteDateArray): AbsoluteDateArray of start times in Ephemeris Time (ET).
+        stop_times (AbsoluteDateArray): AbsoluteDateArray of stop times in Ephemeris Time (ET).
+    """
+
+    def __init__(self, start_times: AbsoluteDateArray, stop_times: AbsoluteDateArray) -> None:
+        """
+        Constructor for the AbsoluteDateIntervalArray class.
+
+        Args:
+            start_times (AbsoluteDateArray): AbsoluteDateArray of start times in Ephemeris Time (ET).
+            stop_times (AbsoluteDateArray): AbsoluteDateArray of stop times in Ephemeris Time (ET).
+        """
+        if not isinstance(start_times, AbsoluteDateArray) or not isinstance(stop_times, AbsoluteDateArray):
+            raise TypeError("start_times and stop_times must be AbsoluteDateArray objects")
+        if len(start_times) != len(stop_times):
+            raise ValueError("start_times and stop_times must have the same length")
+        if not np.all(start_times.ephemeris_time <= stop_times.ephemeris_time):
+            raise ValueError("Each start time must be less than or equal to its corresponding stop time")
+
+        self.start_times = start_times
+        self.stop_times = stop_times
+
+    @classmethod
+    def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDateIntervalArray":
+        """
+        Construct an AbsoluteDateIntervalArray object from a dictionary.
+
+        Args:
+            dict_in (dict): Dictionary with the time interval information.
+                The dictionary should contain the following key-value pairs:
+                - "start_times": Dictionary for AbsoluteDateArray.from_dict.
+                - "stop_times": Dictionary for AbsoluteDateArray.from_dict.
+
+        Returns:
+            AbsoluteDateIntervalArray: AbsoluteDateIntervalArray object.
+        """
+        start_times = AbsoluteDateArray.from_dict(dict_in["start_times"])
+        stop_times = AbsoluteDateArray.from_dict(dict_in["stop_times"])
+        return cls(start_times=start_times, stop_times=stop_times)
+
+    def to_dict(
+        self,
+        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
+        time_scale: Union[str, EnumBase] = "UTC",
+    ) -> Dict[str, Any]:
+        """
+        Convert the AbsoluteDateIntervalArray object to a dictionary.
+
+        Args:
+            time_format (str): The desired time format. Options are "GREGORIAN_DATE"
+                               or "JULIAN_DATE". Default is "GREGORIAN_DATE".
+            time_scale (str): The time scale to use (e.g., "UTC"). Default is "UTC".
+
+        Returns:
+            dict: Dictionary with keys:
+                - "start_times": Dictionary representation of start_times.
+                - "stop_times": Dictionary representation of stop_times.
+        """
+        return {
+            "start_times": self.start_times.to_dict(time_format, time_scale),
+            "stop_times": self.stop_times.to_dict(time_format, time_scale),
+        }
+
+    def to_spice_ephemeris_time(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Convert the AbsoluteDateIntervalArray object to SPICE Ephemeris Time (ET).
+
+        Returns:
+            tuple: A tuple containing two 1D numpy arrays:
+                - First array: Start times in ET.
+                - Second array: Stop times in ET.
+        """
+        return self.start_times.to_spice_ephemeris_time(), self.stop_times.to_spice_ephemeris_time()
+
+    def __len__(self):
+        """Return the number of intervals in the AbsoluteDateIntervalArray."""
+        return len(self.start_times)
+
+    def __getitem__(self, index):
+        """Get an interval or a slice of intervals from the AbsoluteDateIntervalArray.
+
+        Args:
+            index (int or slice): Index or slice of the interval(s) to retrieve.
+
+        Returns:
+            AbsoluteDateIntervalArray: Selected interval(s) as AbsoluteDateIntervalArray.
+        """
+        if not isinstance(index, slice):
+            index = slice(index, index + 1)  # Convert single index to slice
+        return AbsoluteDateIntervalArray(
+            AbsoluteDateArray(self.start_times.ephemeris_time[index]),
+            AbsoluteDateArray(self.stop_times.ephemeris_time[index])
+        )
+
+    def __repr__(self):
+        """Return a string representation of the AbsoluteDateIntervalArray."""
+        return f"AbsoluteDateIntervalArray(start_times={self.start_times}, stop_times={self.stop_times})"

@@ -6,7 +6,7 @@ import copy
 
 from astropy.time import Time as Astropy_Time
 
-from eosimutils.time import AbsoluteDate, AbsoluteDateArray
+from eosimutils.time import AbsoluteDate, AbsoluteDateArray, AbsoluteDateIntervalArray
 
 
 class TestAbsoluteDate(unittest.TestCase):
@@ -314,6 +314,128 @@ class TestAbsoluteDateArray(unittest.TestCase):
         # Assert that the returned array matches the input ephemeris times
         np.testing.assert_allclose(spice_ephemeris_times, et_array, rtol=1e-6)
 
+class TestAbsoluteDateIntervalArray(unittest.TestCase):
+    """Test the AbsoluteDateIntervalArray class."""
+
+    def setUp(self):
+        """Set up test data for the tests."""
+        self.start_times = AbsoluteDateArray(
+            np.array([553333629.183727, 553333630.183727])
+        )
+        self.stop_times = AbsoluteDateArray(
+            np.array([553333639.183727, 553333640.183727])
+        )
+        self.interval_array = AbsoluteDateIntervalArray(
+            start_times=self.start_times, stop_times=self.stop_times
+        )
+
+    def test_initialization(self):
+        """Test initialization of AbsoluteDateIntervalArray."""
+        self.assertEqual(len(self.interval_array), 2)
+        np.testing.assert_allclose(
+            self.interval_array.start_times.ephemeris_time,
+            self.start_times.ephemeris_time,
+        )
+        np.testing.assert_allclose(
+            self.interval_array.stop_times.ephemeris_time,
+            self.stop_times.ephemeris_time,
+        )
+
+    def test_invalid_initialization(self):
+        """Test invalid initialization of AbsoluteDateIntervalArray."""
+        with self.assertRaises(TypeError):
+            AbsoluteDateIntervalArray(start_times=[1, 2], stop_times=self.stop_times)
+        with self.assertRaises(ValueError):
+            AbsoluteDateIntervalArray(
+                start_times=self.start_times,
+                stop_times=AbsoluteDateArray(
+                    np.array([553333620.183727, 553333610.183727])
+                ),
+            )
+        with self.assertRaises(ValueError):
+            AbsoluteDateIntervalArray(
+                start_times=self.start_times,
+                stop_times=AbsoluteDateArray(
+                    np.array([553333639.183727])
+                ),  # Mismatched lengths
+            )
+
+    def test_from_dict(self):
+        """Test the from_dict method."""
+        dict_in = {
+            "start_times": {
+                "time_format": "GREGORIAN_DATE",
+                "calendar_date": ["2017-07-14T19:46:00.000", "2017-07-14T19:46:01.000"],
+                "time_scale": "UTC",
+            },
+            "stop_times": {
+                "time_format": "GREGORIAN_DATE",
+                "calendar_date": ["2017-07-14T19:46:10.000", "2017-07-14T19:46:11.000"],
+                "time_scale": "UTC",
+            },
+        }
+        interval_array = AbsoluteDateIntervalArray.from_dict(dict_in)
+        self.assertEqual(len(interval_array), 2)
+        self.assertAlmostEqual(
+            interval_array.start_times.ephemeris_time[0], 553333629.183727, places=6
+        )
+        self.assertAlmostEqual(
+            interval_array.stop_times.ephemeris_time[1], 553333640.183727, places=6
+        )
+
+    def test_to_dict(self):
+        """Test the to_dict method."""
+        dict_out = self.interval_array.to_dict("GREGORIAN_DATE", "UTC")
+        expected_dict = {
+            "start_times": {
+                "time_format": "GREGORIAN_DATE",
+                "calendar_date": ["2017-07-14T19:46:00.000", "2017-07-14T19:46:01.000"],
+                "time_scale": "UTC",
+            },
+            "stop_times": {
+                "time_format": "GREGORIAN_DATE",
+                "calendar_date": ["2017-07-14T19:46:10.000", "2017-07-14T19:46:11.000"],
+                "time_scale": "UTC",
+            },
+        }
+        self.assertEqual(dict_out, expected_dict)
+
+    def test_to_spice_ephemeris_time(self):
+        """Test the to_spice_ephemeris_time method."""
+        start_et, stop_et = self.interval_array.to_spice_ephemeris_time()
+        np.testing.assert_allclose(start_et, self.start_times.ephemeris_time)
+        np.testing.assert_allclose(stop_et, self.stop_times.ephemeris_time)
+
+    def test_length(self):
+        """Test the length of the AbsoluteDateIntervalArray."""
+        self.assertEqual(len(self.interval_array), 2)
+
+    def test_get_item(self):
+        """Test the __getitem__ method for AbsoluteDateIntervalArray."""
+        # Test getting a single interval
+        interval = self.interval_array[0]
+        print(interval)
+        self.assertIsInstance(interval, AbsoluteDateIntervalArray)
+        self.assertEqual(len(interval), 1)
+        np.testing.assert_allclose(
+            interval.start_times.ephemeris_time, [self.start_times.ephemeris_time[0]]
+        )
+        np.testing.assert_allclose(
+            interval.stop_times.ephemeris_time, [self.stop_times.ephemeris_time[0]]
+        )
+
+        # Test slicing
+        sliced_intervals = self.interval_array[:1]
+        self.assertIsInstance(sliced_intervals, AbsoluteDateIntervalArray)
+        self.assertEqual(len(sliced_intervals), 1)
+        np.testing.assert_allclose(
+            sliced_intervals.start_times.ephemeris_time,
+            [self.start_times.ephemeris_time[0]],
+        )
+        np.testing.assert_allclose(
+            sliced_intervals.stop_times.ephemeris_time,
+            [self.stop_times.ephemeris_time[0]],
+        )
 
 if __name__ == "__main__":
     unittest.main()

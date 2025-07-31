@@ -359,6 +359,15 @@ class GeographicPosition:
         itrs_xyz = skyfield_geo_position.itrs_xyz.km
         return itrs_xyz
 
+    def to_cartesian3d_position(self) -> Cartesian3DPosition:
+        """Convert the geographic position to a Cartesian3DPosition.
+
+        Returns:
+            Cartesian3DPosition: The corresponding Cartesian3DPosition object.
+        """
+        itrs_xyz = self.itrs_xyz
+        return Cartesian3DPosition.from_array(itrs_xyz, frame=ReferenceFrame.get("ITRF"))
+
 
 class CartesianState:
     """Handles Cartesian state information."""

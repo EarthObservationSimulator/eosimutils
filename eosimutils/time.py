@@ -350,7 +350,7 @@ class AbsoluteDateArray:
                     ephemeris_times.append(spice.str2et(calendar_date_str))
             elif time_format == TimeFormat.JULIAN_DATE:
                 for jd in dict_in["jd"]:
-                    time_string = f"jd {jd}"  # Format as Julian Date string
+                    time_string = f"{jd} JDUTC"  # Format as Julian Date string
                     ephemeris_times.append(spice.str2et(time_string))
             else:
                 raise ValueError(f"Unsupported date-time format: {time_format}")

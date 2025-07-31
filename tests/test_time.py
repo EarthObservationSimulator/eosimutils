@@ -414,7 +414,6 @@ class TestAbsoluteDateIntervalArray(unittest.TestCase):
         """Test the __getitem__ method for AbsoluteDateIntervalArray."""
         # Test getting a single interval
         interval = self.interval_array[0]
-        print(interval)
         self.assertIsInstance(interval, AbsoluteDateIntervalArray)
         self.assertEqual(len(interval), 1)
         np.testing.assert_allclose(

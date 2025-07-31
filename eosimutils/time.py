@@ -28,6 +28,7 @@ Time scales define the method for measuring time. The module currently supports:
 - Defining orbit states at specific times.
 - Defining array of time points for simulations.
 - Converting between different time representations for analysis.
+- Time intervals for representing observation windows or ground station contact windows.
 
 **Constants:**
 - `JD_OF_J2000 (float)`: Julian Date of the J2000 epoch (2451545.0).
@@ -48,6 +49,19 @@ AbsoluteDateArray
     "time_scale": "UTC"
 }
 
+AbsoluteDateIntervalArray
+{
+    "start_times": {
+        "time_format": "GREGORIAN_DATE",
+        "calendar_date": ["2025-03-10T14:30:00.000", "2025-03-11T14:30:00.000"],
+        "time_scale": "UTC"
+    },
+    "stop_times": {
+        "time_format": "GREGORIAN_DATE",
+        "calendar_date": ["2025-03-10T15:30:00.000", "2025-03-11T15:30:00.000"],
+        "time_scale": "UTC"
+    }
+}
 """
 
 from typing import Dict, Any, Union, Tuple

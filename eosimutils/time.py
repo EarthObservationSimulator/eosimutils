@@ -429,22 +429,24 @@ class AbsoluteDateArray:
         """
         # Convert each ephemeris time using AbsoluteDate.to_dict for consistency.
         times_list = []
-        upper_format = str(time_format).upper()
+        time_format = TimeFormat.get(time_format)
+        time_scale = TimeScale.get(time_scale)
         for t in self.ephemeris_time:
             ad_dict = AbsoluteDate(t).to_dict(time_format, time_scale)
-            if upper_format == "GREGORIAN_DATE":
+            if time_format == TimeFormat.GREGORIAN_DATE:
                 times_list.append(ad_dict["calendar_date"])
-            elif upper_format == "JULIAN_DATE":
+            elif time_format == TimeFormat.JULIAN_DATE:
                 times_list.append(ad_dict["jd"])
             else:
                 raise ValueError(f"Unsupported time_format: {time_format}")
         return {
-            "time_format": str(time_format),
+            "time_format": time_format.to_string(),
             (
-                "calendar_date" if upper_format == "GREGORIAN_DATE" else "jd"
+                "calendar_date" if time_format == TimeFormat.GREGORIAN_DATE else "jd"
             ): times_list,
-            "time_scale": str(time_scale),
+            "time_scale": time_scale.to_string(),
         }
+    
 
     def __len__(self):
         """Return the length of the AbsoluteDateArray."""

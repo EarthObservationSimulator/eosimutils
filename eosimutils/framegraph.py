@@ -1,6 +1,119 @@
 """
 .. module:: eosimutils.framegraph
-   :synopsis: Reference frame graph.
+   :synopsis: Registry for managing transformations between reference frames.
+
+The `framegraph` module provides a graph-based registry for managing and querying 
+transformations between reference frames. It supports both orientation and position 
+transformations and enables seamless composition of transformations across multiple frames.
+
+**Key Features**
+
+Graph-Based Structure:
+- Frames are represented as nodes, and transformations (orientations and/or positions) 
+    are represented as edges in the graph.
+- Alternatively, could have used tree-structure to prevent multiple paths to compute the 
+    same transformation. Graph structure allows registering a chain of transformations 
+    (e.g., from frame A->B->C->D), but also directly registering the transformation 
+    from A->D for performance
+- Directed edges for transformations, with optional automatic registration of 
+    inverse transformations.
+- Transformation between `eosimutil` provided reference frames: 
+    `ICRF_EC` and `ITRF` are automatically registered.
+
+Breadth-first search (BFS) algorithm for graph traversal:
+- Computes transformations between frames at specific times by discovering paths 
+    through intermediate frames.
+- Orientation and Position transformation are handled separately. 
+    Position transformations require corresponding orientation 
+    transformation to be available.
+
+Orientation Transformations:
+- Handles constant and time-varying orientations using `Orientation` subclasses: 
+    `ConstantOrientation` and `OrientationSeries`.
+- Computes composed transformations between frames (at specific times) 
+    using breadth-first search (BFS).
+
+Position Transformations:
+- Supports translations between frame origins using `Cartesian3DPosition` 
+    or `PositionSeries`.
+- Computes composed position transformations across multiple frames.
+
+Serialization and Deserialization:
+- Provides methods to serialize/deserialize the frame graph to/from a dictionary.
+
+**Example Applications**
+- Managing transformations between several connected reference frames.
+- Interpolating time-varying transformations for visualization or analysis.
+
+**Example graph illustration**
+
++-----------+       +-----------+
+|  ICRF_EC  |------>|   LVLH    |
++-----------+       +-----------+
+      ^                  ^
+      |                  |
+      v                  v
+ +--------+      +------------------+
+ |  ITRF  |      |  SC_BODY_FIXED   |
+ +--------+      +------------------+
+                         ^
+                         |
+                         v
+              +-----------------------+
+              |  SENSOR_BODY_FIXED    |
+              +-----------------------+
+
+An LVLH frame is defined relative to the ICRF_EC frame. The spacecraft body-fixed frame 
+is aligned with the LVLH frame, having zero offset. The sensor body-fixed frame is defined 
+relative to the spacecraft body-fixed frame, with a constant roll-axis offset for a 
+side-looking configuration. The double arrows indicate that bi-directional transformations 
+are registered.
+
+**Example dictionary representation**
+```
+{
+  "transforms": [
+    {
+      "orientation_type": "spice", "from": "ICRF_EC", "to": "ITRF"
+    },
+    {
+      "orientation_type": "spice", "from": "ITRF", "to": "ICRF_EC"
+    },
+    {
+      "orientation_type": "constant", "rotations": [0.0, 0.0, 1.57],
+      "rotations_type": "EULER", "from": "A", "to": "B", "euler_order": "xyz"
+    },
+    {
+      "orientation_type": "constant", "rotations": [0.0, 0.0, -1.57],
+      "rotations_type": "EULER", "from": "A", "to": "D", "euler_order": "xyz"
+    },
+    ...
+  ],
+  "pos_transforms": [
+    {
+      "from_frame": "A", "to_frame": "B",
+      "position": { "x": 1.0,  "y": 0.0, "z": 0.0,
+        "frame": "A", "type": "Cartesian3DPosition"
+      }
+    },
+    {
+      "from_frame": "A",
+      "to_frame": "D",
+      "position": {"x": -0.0, "y": -4.0, "z": -0.0,
+        "frame": "A", "type": "Cartesian3DPosition"
+      }
+    },
+    {
+      "from_frame": "A", "to_frame": "C",
+      "position": { "x": 5.0, "y": 0.0, "z": 0.0,
+        "frame": "A", "type": "Cartesian3DPosition"
+      }
+    },
+    ...
+  ]
+}
+```
+
 """
 
 from scipy.spatial.transform import Rotation as Scipy_Rotation
@@ -22,7 +135,8 @@ class FrameGraph:
     Underlying data structure:
     - Frames and transforms form a graph: nodes are ReferenceFrames and edges are Orientation
     instances.
-    - Adjacency list `_orientation_adj`: maps each source ReferenceFrame to a list of Orientation edges.
+    - Adjacency list `_orientation_adj`: maps each source ReferenceFrame to a 
+        list of Orientation edges.
     - Querying A->B at time t:
         1. BFS to discover a path through intermediate frames.
         2. At each edge, call its Orientation.at(t) to get the rotation(s)/angular velocity(ies).
@@ -126,7 +240,8 @@ class FrameGraph:
                 `from_frame` origin to `to_frame` origin, expressed in from_frame coordinates.
             set_inverse (bool, optional): Whether to automatically register the inverse transform.
             If set to true, the orientation transformation from `from_frame` to `to_frame`
-            must already be registered in the FrameGraph, or get_orientation_transform will raise an error.
+            must already be registered in the FrameGraph, or get_orientation_transform will 
+            raise an error.
         """
         if not isinstance(position, (Cartesian3DPosition, PositionSeries)):
             raise TypeError(

@@ -51,18 +51,18 @@ def convert_frame(
         return positions, velocities
 
     if from_frame.to_string() == "ITRF":
-        from_string = "J2000"
-    elif from_frame.to_string() == "ICRF_EC":
         from_string = "ITRF93"
+    elif from_frame.to_string() == "ICRF_EC":
+        from_string = "J2000"
     else:
         raise NotImplementedError(
             f"Frame conversion from {from_frame} to {to_frame} is not implemented."
         )
 
     if to_frame.to_string() == "ITRF":
-        to_string = "J2000"
-    elif to_frame.to_string() == "ICRF_EC":
         to_string = "ITRF93"
+    elif to_frame.to_string() == "ICRF_EC":
+        to_string = "J2000"
     else:
         raise NotImplementedError(
             f"Conversion from {from_frame} to {to_frame} is not implemented."

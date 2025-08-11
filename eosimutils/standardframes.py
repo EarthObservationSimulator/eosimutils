@@ -40,10 +40,10 @@ def get_lvlh(
         ValueError: If the state frame is not an inertial frame.
     """
     # Only support ICRF_EC as inertial
-    if state.frame != ReferenceFrame.get("ICRF_EC"):
-        raise ValueError(
-            f"get_LVLH only defined for inertial frames, got {state.frame}"
-        )
+    # if state.frame != ReferenceFrame.get("ICRF_EC"):
+    #     raise ValueError(
+    #         f"get_LVLH only defined for inertial frames, got {state.frame}"
+    #     )
 
     pos = state.data[0]  # shape (N,3)
     vel = state.data[1]  # shape (N,3)

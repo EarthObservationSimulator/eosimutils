@@ -78,8 +78,9 @@ import numpy as np
 import spiceypy as spice
 from typing import Union
 
-from .base import ReferenceFrame
+from .base import ReferenceFrame, EnumBase
 from .time import AbsoluteDate, AbsoluteDateArray
+from .state import Cartesian3DPositionArray
 from .timeseries import Timeseries
 from .spicekernels import load_spice_kernels
 
@@ -431,7 +432,9 @@ class StateSeries(Timeseries):
             to_frame,
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self,
+                time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
+                time_scale: Union[str, EnumBase] = "UTC") -> dict:
         """
         Serializes the StateSeries object to a dictionary.
 
@@ -439,7 +442,7 @@ class StateSeries(Timeseries):
             dict: A dictionary representation of the StateSeries object.
         """
         return {
-            "time": self.time.to_dict(),
+            "time": self.time.to_dict(time_format=time_format, time_scale=time_scale),
             "data": [arr.tolist() for arr in self.data],
             "frame": self.frame.to_string(),
             "headers": self.headers,
@@ -466,7 +469,14 @@ class StateSeries(Timeseries):
 
         Examples:
             dct = {
-                "time": {"et": [0.0, 1.0]},
+                "time": {
+                    "time_format": "GREGORIAN_DATE",
+                    "calendar_date": [
+                        "2025-03-17T13:00:00.000",
+                        "2025-03-17T14:00:00.000"
+                    ],
+                    "time_scale": "UTC",
+                },
                 "data": [
                     [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],  # Positions
                     [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]   # Velocities
@@ -584,6 +594,16 @@ class StateSeries(Timeseries):
 
         # Return a new StateSeries object
         return cls(time_obj, [positions, velocities], frame)
+    
+    @property
+    def position(self) -> Cartesian3DPositionArray:
+        """
+        Returns the entire position data as Cartesian3DPositionArray.
+
+        Returns:
+            Cartesian3DPositionArray: The position data as a Cartesian3DPositionArray.
+        """
+        return Cartesian3DPositionArray(positions=self.data[0], frame=self.frame)
 
 
 class PositionSeries(Timeseries):
@@ -599,8 +619,8 @@ class PositionSeries(Timeseries):
     | | t1, t2, t3, ..., tN           | |  --> AbsoluteDateArray (ephemeris times)
     | +-------------------------------+ |
     |                                   |
-    | data:                             |
-    | +-------------------------------+ |
+    | data:                             | (Note that 'data' is a list which contains
+    | +-------------------------------+ |    the below 2D numpy array)
     | | Positions (Nx3):              | |
     | | [[x1, y1, z1],                | |
     | |  [x2, y2, z2],                | |  --> Position array in kilometers
@@ -608,8 +628,8 @@ class PositionSeries(Timeseries):
     | |  [xN, yN, zN]]                | |
     | +-------------------------------+ |
     |                                   |
-    | headers:                          |
-    | +-------------------------------+ |
+    | headers:                          | (Note that 'headers' is a list which contains
+    | +-------------------------------+ |    the below list of headers)
     | | ["pos_x", "pos_y", "pos_z"]   | |  --> Labels for position components
     | +-------------------------------+ |
     |                                   |
@@ -648,7 +668,7 @@ class PositionSeries(Timeseries):
         super().__init__(time, [data], headers=[headers])
         self.frame = frame
         load_spice_kernels()  # Load SPICE kernels for frame conversion
-
+    
     def resample(
         self, new_time: np.ndarray, method: str = "linear"
     ) -> "PositionSeries":
@@ -697,7 +717,9 @@ class PositionSeries(Timeseries):
             AbsoluteDateArray(self.time.ephemeris_time.copy()), pos, to_frame
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self,
+                time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
+                time_scale: Union[str, EnumBase] = "UTC") -> dict:
         """
         Serializes the PositionSeries object to a dictionary.
 
@@ -705,7 +727,7 @@ class PositionSeries(Timeseries):
             dict: A dictionary representation of the PositionSeries object.
         """
         return {
-            "time": self.time.to_dict(),
+            "time": self.time.to_dict(time_format=time_format, time_scale=time_scale),
             "data": self.data[0].tolist(),
             "frame": self.frame.to_string(),
             "headers": self.headers[0],
@@ -906,3 +928,13 @@ class PositionSeries(Timeseries):
         if single:
             return positions[0]
         return positions
+    
+    @property
+    def position(self) -> Cartesian3DPositionArray:
+        """
+        Returns the entire position data as Cartesian3DPositionArray.
+
+        Returns:
+            Cartesian3DPositionArray: The position data as a Cartesian3DPositionArray.
+        """
+        return Cartesian3DPositionArray(positions=self.data[0], frame=self.frame)

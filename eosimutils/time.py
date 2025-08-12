@@ -310,6 +310,11 @@ class AbsoluteDateArray:
         if ephemeris_time.ndim != 1:
             raise ValueError("ephemeris_time must be a 1D numpy array")
         self.ephemeris_time = ephemeris_time
+    
+    @property
+    def length(self) -> int:
+        """Return the length of the ephemeris time array."""
+        return self.ephemeris_time.shape[0]
 
     @classmethod
     def from_dict(cls, dict_in: Dict[str, Any]) -> "AbsoluteDateArray":

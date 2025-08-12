@@ -98,7 +98,7 @@ class Timeseries:
     |   | time (1D)   | |  --> [t1, t2, t3, ..., tn]  (AbsoluteDateArray)
     |   +-------------+ |
     |                   |
-    |   data            |
+    |   data            | 'data' is a list containing the below numpy array(s).
     |   +-------------+ |
     |   | Array 1 (1D)| |  --> [d1, d2, d3, ..., dn]  (Scalar data)
     |   +-------------+ |
@@ -108,7 +108,7 @@ class Timeseries:
     |   |             | |       [vn1, vn2, vn3]]
     |   +-------------+ |
     |                   |
-    |   headers         |
+    |   headers         | 'headers' is a list containing the below list(s) of headers.
     |   +-------------+ |
     |   | Header 1    | |  --> "true_anomaly" (for scalar data)
     |   +-------------+ |

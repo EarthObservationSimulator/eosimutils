@@ -285,7 +285,8 @@ class GeographicPosition:
         Args:
             latitude_degrees (float): WGS84 Geodetic latitude in degrees.
             longitude_degrees (float): WGS84 Geodetic longitude in degrees.
-            elevation_m (float): Elevation in meters.
+            elevation_m (float): Elevation in meters. This is the altitude of point 
+                                above the reference spheroid (WGS84).
         """
 
         self.latitude_degrees = latitude_degrees
@@ -307,7 +308,8 @@ class GeographicPosition:
                 The dictionary should contain the following key-value pairs:
                 - "latitude" (float): Latitude in degrees.
                 - "longitude" (float): Longitude in degrees.
-                - "elevation" (float): Elevation in meters.
+                - "elevation" (float): Elevation in meters. This is the altitude of point 
+                                above the reference spheroid (WGS84).
 
         Returns:
             GeographicPosition: GeographicPosition object.

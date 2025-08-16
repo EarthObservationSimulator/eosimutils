@@ -754,12 +754,13 @@ class PositionSeries(Timeseries):
 
     @classmethod
     def from_list_of_cartesian_position(
-        cls, positions: list
+        cls, time: AbsoluteDateArray, positions: list
     ) -> "PositionSeries":
         """
         Creates a PositionSeries object from a list of Cartesian3DPosition objects.
 
         Args:
+            time (AbsoluteDateArray): The time samples corresponding to the positions.
             positions (list): A list of Cartesian3DPosition objects.
 
         Returns:
@@ -781,15 +782,17 @@ class PositionSeries(Timeseries):
                 "All Cartesian3DPosition objects must have the same reference frame."
             )
 
-        # Extract time and position data
-        times = np.array([pos.time.ephemeris_time for pos in positions])
+        # Extract position data
         pos_data = np.array([pos.to_numpy() for pos in positions])
 
-        # Create an AbsoluteDateArray for the time
-        time_obj = AbsoluteDateArray(times)
+        # Esnure number of time points matches number of positions
+        if pos_data.shape[0] != len(time):
+            raise ValueError(
+                "Number of positions must match the number of time samples."
+            )
 
         # Return a new PositionSeries object
-        return cls(time_obj, pos_data, frame)
+        return cls(time, pos_data, frame)
 
     def _arithmetic_op(self, other, op, interp_method: str = "linear"):
         """

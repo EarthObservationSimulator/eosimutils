@@ -266,12 +266,15 @@ class TestPositionSeries(unittest.TestCase):
             np.array([JD_OF_J2000 + t for t in [0.0, 1.0, 2.0]])
         )
         data = np.array(
-            [[1.0, 2.0, 3.0], [np.nan, np.nan, np.nan], [4.0, 5.0, 6.0]]
+            [[np.nan, np.nan, np.nan], [4.0, 5.0, 6.0], [np.nan, np.nan, np.nan]]
         )
         frame = ReferenceFrame.get("ICRF_EC")
         ps = PositionSeries(time, data, frame)
         gapless_ps = ps.remove_gaps()
-        assert gapless_ps.data[0].shape == (2, 3)
+        np.testing.assert_array_equal(
+            gapless_ps.data[0], [[4.0, 5.0, 6.0]]
+        )
+        np.testing.assert_array_equal(gapless_ps.time.ephemeris_time, [JD_OF_J2000 + 1])
 
     def test_to_frame(self):
         """Test frame conversion for PositionSeries."""
@@ -291,12 +294,11 @@ class TestPositionSeries(unittest.TestCase):
             Cartesian3DPosition(1.0, 2.0, 3.0, ReferenceFrame.get("ICRF_EC")),
             Cartesian3DPosition(4.0, 5.0, 6.0, ReferenceFrame.get("ICRF_EC")),
         ]
-        for pos in positions:
-            pos.time = AbsoluteDateArray(
-                np.array([JD_OF_J2000 + t for t in [0.0, 1.0]])
-            )  # Mock time attribute
-        ps = PositionSeries.from_list_of_cartesian_position(positions)
+        time = AbsoluteDateArray(np.array([JD_OF_J2000 + t for t in [0.0, 1.0]]))
+
+        ps = PositionSeries.from_list_of_cartesian_position(time,positions)
         assert ps.data[0].shape == (2, 3)
+        assert ps.time == time
         assert ps.frame == ReferenceFrame.get("ICRF_EC")
 
     def test_arithmetic_operations(self):

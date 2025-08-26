@@ -225,6 +225,22 @@ class ReferenceFrame:
         """
         return list(cls._registry.keys())
 
+    @classmethod
+    def delete(cls, name: str):
+        """
+        Deletes a ReferenceFrame from the registry.
+
+        Args:
+            name (str): The name of the reference frame to delete.
+
+        Raises:
+            ValueError: If the reference frame does not exist.
+        """
+        name = name.upper()
+        if name not in cls._registry:
+            raise ValueError(f"Frame '{name}' does not exist.")
+        del cls._registry[name]
+
 
 # Pre-register static frames
 # pylint: disable=protected-access

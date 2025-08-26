@@ -259,7 +259,6 @@ class TestPositionSeries(unittest.TestCase):
         resampled_ps = ps.resample(new_time)
         assert resampled_ps.data[0].shape == (1, 3)
 
-    @unittest.expectedFailure
     def test_remove_gaps(self):
         """Test removing gaps (NaN values) from PositionSeries."""
         time = AbsoluteDateArray(
@@ -287,7 +286,6 @@ class TestPositionSeries(unittest.TestCase):
         converted_ps = ps.to_frame(ReferenceFrame.get("ITRF"))
         assert converted_ps.frame == ReferenceFrame.get("ITRF")
 
-    @unittest.expectedFailure
     def test_from_list_of_cartesian_position(self):
         """Test creation of PositionSeries from a list of Cartesian3DPosition objects."""
         positions = [

@@ -71,9 +71,7 @@ Constant Trajectories:
 ```
 
 """
-
-# pylint: disable=protected-access
-
+from __future__ import annotations
 import numpy as np
 import spiceypy as spice
 from typing import Union
@@ -594,7 +592,25 @@ class StateSeries(Timeseries):
 
         # Return a new StateSeries object
         return cls(time_obj, [positions, velocities], frame)
-    
+
+    @classmethod
+    def from_position_series(cls, position_series: PositionSeries) -> "StateSeries":
+        """
+        Creates a StateSeries object from a PositionSeries object.
+
+        Args:
+            position_series (PositionSeries): The PositionSeries object to convert.
+
+        Returns:
+            StateSeries: A new StateSeries object.
+        """
+        # Extract time and position data
+        time = position_series.time
+        positions = position_series.position
+
+        # Create a new StateSeries object
+        return cls(time, [positions, np.full_like(positions, np.nan, dtype=float)], position_series.frame)
+
     @property
     def position(self) -> Cartesian3DPositionArray:
         """
@@ -815,6 +831,24 @@ class PositionSeries(Timeseries):
 
         # Return a new PositionSeries object
         return cls(time, pos_data, frame)
+    
+    @classmethod
+    def from_state_series(cls, state_series: StateSeries) -> "PositionSeries":
+        """
+        Creates a PositionSeries object from a StateSeries object.
+
+        Args:
+            state_series (StateSeries): The StateSeries object to convert.
+
+        Returns:
+            PositionSeries: A new PositionSeries object.
+        """
+        return cls(
+            time=state_series.time,
+            data=state_series.position,
+            frame=state_series.frame
+
+        )
 
     def _arithmetic_op(self, other, op, interp_method: str = "linear"):
         """

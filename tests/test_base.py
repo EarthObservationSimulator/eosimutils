@@ -38,6 +38,24 @@ class TestReferenceFrame(unittest.TestCase):
         self.assertNotEqual(ReferenceFrame.get("ICRF_EC"), 123)
         self.assertNotEqual(ReferenceFrame.get("ICRF_EC"), None)
 
+    def test_add_and_delete(self):
+        # Add a new reference frame
+        frame_name = "TEST_FRAME"
+        ReferenceFrame.add(frame_name)
+
+        # Ensure the frame is added
+        self.assertIn(frame_name, ReferenceFrame.names())
+
+        # Delete the frame
+        ReferenceFrame.delete(frame_name)
+
+        # Ensure the frame is deleted
+        self.assertNotIn(frame_name, ReferenceFrame.names())
+
+        # Attempt to delete a non-existent frame and check for ValueError
+        with self.assertRaises(ValueError):
+            ReferenceFrame.delete(frame_name)
+
 
 class TestJsonSerializerWithTimeSeries(unittest.TestCase):
     """Test the JsonSerializer class with Timeseries object."""

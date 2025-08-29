@@ -474,6 +474,15 @@ class AbsoluteDateArray:
             # Handle single index
             return AbsoluteDate(self.ephemeris_time[index])
 
+    def __iter__(self):
+        """Iterate over the ephemeris times in the AbsoluteDateArray.
+
+        Yields:
+            AbsoluteDate: Each time point as an AbsoluteDate object.
+        """
+        for time in self.ephemeris_time:
+            yield AbsoluteDate(time)
+
     def __eq__(self, value):
         """Check equality of two AbsoluteDateArray objects.
 

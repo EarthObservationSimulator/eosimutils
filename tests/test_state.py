@@ -549,3 +549,38 @@ class TestCartesian3DPositionArray(unittest.TestCase):
         self.assertIn("Cartesian3DPositionArray", s)
         self.assertIn("positions", s)
         self.assertIn("frame", s)
+    
+    def test_len(self):
+        """Test the __len__ method."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        self.assertEqual(len(arr), len(self.positions_np))
+
+    def test_getitem_single(self):
+        """Test the __getitem__ method for a single index."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        item = arr[1]
+        self.assertIsInstance(item, Cartesian3DPosition)
+        np.testing.assert_array_equal(item.to_numpy(), self.positions_np[1])
+        self.assertEqual(item.frame, self.frame)
+
+    def test_getitem_slice(self):
+        """Test the __getitem__ method for a slice."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        sliced_array = arr[1:]
+        self.assertIsInstance(sliced_array, Cartesian3DPositionArray)
+        np.testing.assert_array_equal(sliced_array.to_numpy(), self.positions_np[1:])
+        self.assertEqual(sliced_array.frame, self.frame)
+
+    def test_getitem_out_of_bounds(self):
+        """Test the __getitem__ method for an out-of-bounds index."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        with self.assertRaises(IndexError):
+            _ = arr[10]
+
+    def test_iter(self):
+        """Test the __iter__ method."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        for i, position in enumerate(arr):
+            self.assertIsInstance(position, Cartesian3DPosition)
+            np.testing.assert_array_equal(position.to_numpy(), self.positions_np[i])
+            self.assertEqual(position.frame, self.frame)

@@ -288,6 +288,15 @@ class TestAbsoluteDateArray(unittest.TestCase):
         self.assertIsInstance(slice_items, AbsoluteDateArray)
         self.assertEqual(len(slice_items), 2)
 
+    def test_iter(self):
+        """Test the __iter__ method for AbsoluteDateArray."""
+        et_array = np.array([553333629.183727, 553333630.183727, 553333630.0, 553333911.01])
+        abs_dates = AbsoluteDateArray(et_array)
+
+        for i, date in enumerate(abs_dates):
+            self.assertIsInstance(date, AbsoluteDate)
+            self.assertAlmostEqual(date.ephemeris_time, et_array[i], places=6)
+
     def test_equality_operator(self):
         """Test the equality operator for AbsoluteDateArray."""
         et_array1 = np.random.uniform(

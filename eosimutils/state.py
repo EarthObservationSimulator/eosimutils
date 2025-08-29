@@ -63,7 +63,7 @@ from skyfield.constants import AU_KM as Skyfield_AU_KM
 from skyfield.api import wgs84 as skyfield_wgs84
 
 from .base import ReferenceFrame
-from .time import AbsoluteDate
+from .time import AbsoluteDate, AbsoluteDateArray
 
 
 class Cartesian3DPosition:
@@ -568,12 +568,12 @@ class Cartesian3DPositionArray:
 
     @classmethod
     def from_cartesian_positions(
-        cls, positions: list
+        cls, positions: List[Cartesian3DPosition]
     ) -> "Cartesian3DPositionArray":
         """Creates a Cartesian3DPositionArray from a list of Cartesian3DPosition objects.
 
         Args:
-            positions (list): List of Cartesian3DPosition objects.
+            positions (List[Cartesian3DPosition]): List of Cartesian3DPosition objects.
 
         Returns:
             Cartesian3DPositionArray: A new Cartesian3DPositionArray object.
@@ -595,7 +595,7 @@ class Cartesian3DPositionArray:
 
     @classmethod
     def from_geographic_positions(
-        cls, positions: list
+        cls, positions: List[GeographicPosition]
     ) -> "Cartesian3DPositionArray":
         """Creates a Cartesian3DPositionArray from a list of GeographicPosition objects.
 
@@ -603,7 +603,7 @@ class Cartesian3DPositionArray:
         using the `itrs_xyz` property.
 
         Args:
-            positions (list): List of GeographicPosition objects.
+            positions (List[GeographicPosition]): List of GeographicPosition objects.
 
         Returns:
             Cartesian3DPositionArray: A new Cartesian3DPositionArray object.
@@ -669,3 +669,33 @@ class Cartesian3DPositionArray:
     def __repr__(self) -> str:
         """Returns the string representation of the Cartesian3DPositionArray object."""
         return f"Cartesian3DPositionArray(positions={self.positions!r}, frame={self.frame!r})"
+
+    def __len__(self):
+        """Return the length of the Cartesian3DPositionArray."""
+        return len(self.positions)
+
+    def __getitem__(self, index):
+        """Get an item or a slice from the Cartesian3DPositionArray.
+
+        Args:
+            index (int or slice): Index or slice of the item(s) to retrieve.
+
+        Returns:
+            Cartesian3DPosition or Cartesian3DPositionArray: Selected item(s) as Cartesian3DPosition
+                                                or Cartesian3DPositionArray.
+        """
+        if isinstance(index, slice):
+            # Handle slicing
+            return Cartesian3DPositionArray(self.positions[index], self.frame)
+        else:
+            # Handle single index
+            return Cartesian3DPosition.from_array(self.positions[index], self.frame)
+
+    def __iter__(self):
+        """Iterate over the positions in the Cartesian3DPositionArray.
+
+        Yields:
+            Cartesian3DPosition: Each position as a Cartesian3DPosition object.
+        """
+        for position in self.positions:
+            yield Cartesian3DPosition.from_array(position, self.frame)

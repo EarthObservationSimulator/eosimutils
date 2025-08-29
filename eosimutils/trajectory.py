@@ -606,10 +606,11 @@ class StateSeries(Timeseries):
         """
         # Extract time and position data
         time = position_series.time
-        positions = position_series.position
+        positions = position_series.position.to_numpy()
+        frame = position_series.frame
 
         # Create a new StateSeries object
-        return cls(time, [positions, np.full_like(positions, np.nan, dtype=float)], position_series.frame)
+        return cls(time, [positions, np.full_like(positions, np.nan, dtype=float)], frame)
 
     @property
     def position(self) -> Cartesian3DPositionArray:
@@ -845,7 +846,7 @@ class PositionSeries(Timeseries):
         """
         return cls(
             time=state_series.time,
-            data=state_series.position,
+            data=state_series.position.to_numpy(),
             frame=state_series.frame
 
         )

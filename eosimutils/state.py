@@ -30,7 +30,7 @@ Array of points:
 - Position and velocity of satellites (Cartesian3DPosition, Cartesian3DVelocity).
 - Position of center of reference frames (Cartesian3DPosition).
 - State vectors of satellite orbit (CartesianState).
-- Position on surface of Earth (GeographicPosition) for target observation locations and 
+- Position on surface of Earth (GeographicPosition) for target observation locations and
     ground stations.
 - Array of positions for multiple points (Cartesian3DPositionArray).
 
@@ -63,7 +63,7 @@ from skyfield.constants import AU_KM as Skyfield_AU_KM
 from skyfield.api import wgs84 as skyfield_wgs84
 
 from .base import ReferenceFrame
-from .time import AbsoluteDate, AbsoluteDateArray
+from .time import AbsoluteDate
 
 
 class Cartesian3DPosition:
@@ -285,7 +285,7 @@ class GeographicPosition:
         Args:
             latitude_degrees (float): WGS84 Geodetic latitude in degrees.
             longitude_degrees (float): WGS84 Geodetic longitude in degrees.
-            elevation_m (float): Elevation in meters. This is the altitude of point 
+            elevation_m (float): Elevation in meters. This is the altitude of point
                                 above the reference spheroid (WGS84).
         """
 
@@ -308,7 +308,7 @@ class GeographicPosition:
                 The dictionary should contain the following key-value pairs:
                 - "latitude" (float): Latitude in degrees.
                 - "longitude" (float): Longitude in degrees.
-                - "elevation" (float): Elevation in meters. This is the altitude of point 
+                - "elevation" (float): Elevation in meters. This is the altitude of point
                                 above the reference spheroid (WGS84).
 
         Returns:
@@ -368,7 +368,9 @@ class GeographicPosition:
             Cartesian3DPosition: The corresponding Cartesian3DPosition object.
         """
         itrs_xyz = self.itrs_xyz
-        return Cartesian3DPosition.from_array(itrs_xyz, frame=ReferenceFrame.get("ITRF"))
+        return Cartesian3DPosition.from_array(
+            itrs_xyz, frame=ReferenceFrame.get("ITRF")
+        )
 
 
 class CartesianState:
@@ -689,7 +691,9 @@ class Cartesian3DPositionArray:
             return Cartesian3DPositionArray(self.positions[index], self.frame)
         else:
             # Handle single index
-            return Cartesian3DPosition.from_array(self.positions[index], self.frame)
+            return Cartesian3DPosition.from_array(
+                self.positions[index], self.frame
+            )
 
     def __iter__(self):
         """Iterate over the positions in the Cartesian3DPositionArray.

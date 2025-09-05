@@ -2,7 +2,7 @@
 .. module:: eosimutils.timeseries
    :synopsis: Module for handling timeseries data.
 
-The timeseries module provides functionality for handling time-varying data, 
+The timeseries module provides functionality for handling time-varying data,
 represented as arrays associated with time points.
 
 **Key features:**
@@ -121,9 +121,9 @@ class Timeseries:
         time (AbsoluteDateArray): Contains a 1D numpy array of AbsoluteDateArray time objects.
         data (list): List of numpy arrays. Each array can be 1D (scalar) or 2D (vector).
         headers (list): List of headers for the data arrays. For vectors, headers are nested lists.
-    
+
         When performing arithmetic/boolean operations take note of the following:
-        
+
         Boolean logical operations:
         - Both Timeseries must have the same time grid. This is because interpolation of a Boolean
         array onto a new time grid would produce an array of NaNs. Thus an ensuing logical operation
@@ -167,7 +167,9 @@ class Timeseries:
                 raise ValueError(
                     "Each data array must have the same number of rows as time."
                 )
-            if not np.issubdtype(arr.dtype, np.number) and not np.issubdtype(arr.dtype, np.bool_):
+            if not np.issubdtype(arr.dtype, np.number) and not np.issubdtype(
+                arr.dtype, np.bool_
+            ):
                 raise TypeError("Data arrays must be numeric or boolean.")
         self.time = time
 
@@ -189,7 +191,9 @@ class Timeseries:
             ]
         self.interpolator = interpolator
 
-    def _resample_data(self, new_time: np.ndarray, method: str = "linear") -> tuple[AbsoluteDateArray, list, list]:
+    def _resample_data(
+        self, new_time: np.ndarray, method: str = "linear"
+    ) -> tuple[AbsoluteDateArray, list, list]:
         """
         Resample data arrays based on interpolation over contiguous segments.
 
@@ -220,7 +224,7 @@ class Timeseries:
         # we can skip resampling
         if np.array_equal(original_time, new_time):
             return self.time, self.data, self.headers
-        
+
         for arr in self.data:
             # If the data array is boolean, return an array of NaNs
             if np.issubdtype(arr.dtype, np.bool_):
@@ -346,7 +350,11 @@ class Timeseries:
         # Convert each numpy array in 'data' to a list using ndarray.tolist() for portability.
         # Boolean flags is converted to integers (0 and 1).
         serialized_data = [
-            arr.tolist() if not np.issubdtype(arr.dtype, np.bool_) else arr.astype(int).tolist()
+            (
+                arr.tolist()
+                if not np.issubdtype(arr.dtype, np.bool_)
+                else arr.astype(int).tolist()
+            )
             for arr in self.data
         ]
         return {
@@ -377,8 +385,11 @@ class Timeseries:
         time_instance = AbsoluteDateArray.from_dict(dct["time"])
         # Convert each list in 'data' back to a numpy array.
         reconstructed_data = [
-            np.array(item, dtype=bool) if isinstance(item[0], int) and all(x in [0, 1] for x in item)
-            else np.array(item)
+            (
+                np.array(item, dtype=bool)
+                if isinstance(item[0], int) and all(x in [0, 1] for x in item)
+                else np.array(item)
+            )
             for item in dct["data"]
         ]
         # Retrieve headers if available; otherwise, use None.
@@ -415,16 +426,26 @@ class Timeseries:
             # For scalar operations, the arithmetic naturally propagates NaNs.
             # Boolean arrays are replaced with NaNs.
             new_data = [
-                op(arr, other) if not np.issubdtype(arr.dtype, np.bool_) else np.full_like(arr, np.nan, dtype=float)
+                (
+                    op(arr, other)
+                    if not np.issubdtype(arr.dtype, np.bool_)
+                    else np.full_like(arr, np.nan, dtype=float)
+                )
                 for arr in self.data
             ]
             return Timeseries(self.time, new_data, self.headers)
         elif isinstance(other, Timeseries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other._resample_data(self.time.ephemeris_time)[1] #pylint: disable=protected-access
+            other_resamp = other._resample_data(self.time.ephemeris_time)[ # pylint: disable=protected-access
+                1
+            ]  # pylint: disable=protected-access
             # Perform vectorized operation for each data array.
             new_data = [
-                op(arr, other_arr) if not np.issubdtype(arr.dtype, np.bool_) else np.full_like(arr, np.nan, dtype=float)
+                (
+                    op(arr, other_arr)
+                    if not np.issubdtype(arr.dtype, np.bool_)
+                    else np.full_like(arr, np.nan, dtype=float)
+                )
                 for arr, other_arr in zip(self.data, other_resamp)
             ]
             return Timeseries(self.time, new_data, self.headers)
@@ -526,7 +547,7 @@ class Timeseries:
             for arr, other_arr in zip(self.data, other.data)
         ]
         return Timeseries(self.time, new_data, self.headers)
-    
+
     def logical_not(self):
         """
         Perform logical NOT on this Timeseries.

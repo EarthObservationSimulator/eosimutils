@@ -3,10 +3,9 @@
     :synopsis: Module to provide utility functions and classes.
 
 """
-from typing import Type, Dict, Any, Union, Optional
 
-from eosimutils.time import AbsoluteDateArray, AbsoluteDateIntervalArray
-from eosimutils.framegraph import FrameGraph
+from typing import Type, Union
+
 from eosimutils.state import (
     CartesianState,
     GeographicPosition,
@@ -15,20 +14,48 @@ from eosimutils.state import (
 from eosimutils.trajectory import StateSeries, PositionSeries
 
 
-def convert_object(source_obj: Union[Cartesian3DPosition, CartesianState, GeographicPosition, StateSeries, PositionSeries],
-                   target_type: Type) -> Union[Cartesian3DPosition, CartesianState, GeographicPosition, StateSeries, PositionSeries]:
+def convert_object(
+    source_obj: Union[
+        Cartesian3DPosition,
+        CartesianState,
+        GeographicPosition,
+        StateSeries,
+        PositionSeries,
+    ],
+    target_type: Type,
+) -> Union[
+    Cartesian3DPosition,
+    CartesianState,
+    GeographicPosition,
+    StateSeries,
+    PositionSeries,
+]:
     """
     Convert an object to a different type if possible.
 
     Args:
-        source_obj (Union[Cartesian3DPosition, CartesianState, GeographicPosition, StateSeries, PositionSeries]): The object to convert.
+        source_obj (Union[Cartesian3DPosition, CartesianState, 
+                        GeographicPosition, StateSeries, PositionSeries]): The object to convert.
         target_type (Type): The target type to convert the object to.
 
     Returns:
-        Union[Cartesian3DPosition, CartesianState, GeographicPosition, StateSeries, PositionSeries]: The converted object.
+        Union[Cartesian3DPosition, CartesianState, 
+              GeographicPosition, StateSeries, PositionSeries]: The converted object.
     """
-    if not isinstance(source_obj, (Cartesian3DPosition, CartesianState, GeographicPosition, StateSeries, PositionSeries)):
-        raise TypeError("Only following source object types are supported: Cartesian3DPosition, CartesianState, GeographicPosition, StateSeries, or PositionSeries.")
+    if not isinstance(
+        source_obj,
+        (
+            Cartesian3DPosition,
+            CartesianState,
+            GeographicPosition,
+            StateSeries,
+            PositionSeries,
+        ),
+    ):
+        raise TypeError(
+            "Only following source object types are supported: Cartesian3DPosition, "
+            "CartesianState, GeographicPosition, StateSeries, or PositionSeries."
+        )
 
     source_type = type(source_obj)
 
@@ -41,18 +68,24 @@ def convert_object(source_obj: Union[Cartesian3DPosition, CartesianState, Geogra
         elif source_type == CartesianState:
             return source_obj.position
         else:
-            raise NotImplementedError("Conversion from {} to Cartesian3DPosition is not implemented.".format(source_type))
+            raise NotImplementedError(
+                f"Conversion from {source_type} to Cartesian3DPosition is not implemented."
+            )
 
     if target_type == StateSeries:
         if source_type == PositionSeries:
             return StateSeries.from_position_series(source_obj)
         else:
-            raise NotImplementedError("Conversion from {} to StateSeries is not implemented.".format(source_type))
-    
+            raise NotImplementedError(
+                f"Conversion from {source_type} to StateSeries is not implemented."
+            )
+
     if target_type == PositionSeries:
         if source_type == StateSeries:
             return PositionSeries.from_state_series(source_obj)
         else:
-            raise NotImplementedError("Conversion from {} to PositionSeries is not implemented.".format(source_type))
+            raise NotImplementedError(
+                f"Conversion from {source_type} to PositionSeries is not implemented."
+            )
     else:
         raise ValueError(f"Unsupported target type: {target_type}")

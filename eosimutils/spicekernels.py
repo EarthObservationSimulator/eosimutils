@@ -65,7 +65,9 @@ def load_spice_kernels() -> None:
     kernel_dir = os.path.join(os.path.dirname(__file__), "spice_kernels")
     leap_seconds_kernel = os.path.join(kernel_dir, "naif0012.tls")
     eop_kernel = os.path.join(kernel_dir, "earth_000101_250627_250331.bpc")
-    de430_kernel = os.path.join(kernel_dir, "de430.bsp")  # contains ephemeris data of planets, Moon, Sun, Pluto
+    de430_kernel = os.path.join(
+        kernel_dir, "de430.bsp"
+    )  # contains ephemeris data of planets, Moon, Sun, Pluto
 
     try:
         spice.furnsh(leap_seconds_kernel)  # Load Leap Seconds Kernel

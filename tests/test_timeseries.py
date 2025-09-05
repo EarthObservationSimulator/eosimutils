@@ -140,7 +140,9 @@ class TestTimeseries(unittest.TestCase):
         """Test resampling of mixed data types: scalar, vector, and boolean."""
         mixed_data = [
             np.array([1.0, 2.0, np.nan, 4.0]),  # Scalar data
-            np.array([[1.0, 2.0], [3.0, 4.0], [np.nan, np.nan], [5.0, 6.0]]),  # Vector data
+            np.array(
+                [[1.0, 2.0], [3.0, 4.0], [np.nan, np.nan], [5.0, 6.0]]
+            ),  # Vector data
             np.array([True, False, True, False]),  # Boolean data
         ]
         ts = Timeseries.from_dict(
@@ -227,12 +229,16 @@ class TestTimeseries(unittest.TestCase):
         mixed_data_1 = [
             np.array([True, False, True, False]),  # Boolean data
             np.array([1.0, -2.0, np.nan, 4.0]),  # Scalar numeric data
-            np.array([[1.0, 0.0], [3.0, 4.0], [np.nan, np.nan], [5.0, 6.0]]),  # Vector numeric data
+            np.array(
+                [[1.0, 0.0], [3.0, 4.0], [np.nan, np.nan], [5.0, 6.0]]
+            ),  # Vector numeric data
         ]
         mixed_data_2 = [
             np.array([False, True, True, False]),  # Boolean data
             np.array([2.0, 3.0, 4.0, 5.0]),  # Scalar numeric data
-            np.array([[0.5, 1.5], [2.5, 3.5], [4.5, 5.5], [6.5, 7.5]]),  # Vector numeric data
+            np.array(
+                [[0.5, 1.5], [2.5, 3.5], [4.5, 5.5], [6.5, 7.5]]
+            ),  # Vector numeric data
         ]
 
         headers = ["boolean_header", "scalar_header", ["x", "y"]]
@@ -260,10 +266,10 @@ class TestTimeseries(unittest.TestCase):
         # Arithmetic operations with boolean values results in NaNs.
 
         # Test boolean AND operation
-        result_and = ts1.logical_and(ts2) 
+        result_and = ts1.logical_and(ts2)
         expected_and = [
             np.array([False, False, True, False]),  # Boolean AND
-            np.array([True, True, True, True]), 
+            np.array([True, True, True, True]),
             np.array([[True, False], [True, True], [True, True], [True, True]]),
         ]
         for i in range(len(expected_and)):
@@ -284,7 +290,9 @@ class TestTimeseries(unittest.TestCase):
         expected_not = [
             np.array([False, True, False, True]),
             np.array([False, False, False, False]),
-            np.array([[False, True], [False, False], [False, False], [False, False]]),
+            np.array(
+                [[False, True], [False, False], [False, False], [False, False]]
+            ),
         ]
         for i in range(len(expected_not)):
             np.testing.assert_array_equal(result_not.data[i], expected_not[i])
@@ -292,46 +300,78 @@ class TestTimeseries(unittest.TestCase):
         # Test addition
         result_add = ts1 + ts2
         expected_add = [
-            np.array([np.nan, np.nan, np.nan, np.nan]),  # Boolean addition results in NaNs.
+            np.array(
+                [np.nan, np.nan, np.nan, np.nan]
+            ),  # Boolean addition results in NaNs.
             np.array([3.0, 1.0, np.nan, 9.0]),
             np.array([[1.5, 1.5], [5.5, 7.5], [np.nan, np.nan], [11.5, 13.5]]),
         ]
         for i in range(len(expected_add)):
-            np.testing.assert_allclose(result_add.data[i], expected_add[i], equal_nan=True)
+            np.testing.assert_allclose(
+                result_add.data[i], expected_add[i], equal_nan=True
+            )
 
         # Test subtraction
         result_sub = ts1 - ts2
         expected_sub = [
-            np.array([np.nan, np.nan, np.nan, np.nan]),  # Boolean subtraction results in NaNs.
+            np.array(
+                [np.nan, np.nan, np.nan, np.nan]
+            ),  # Boolean subtraction results in NaNs.
             np.array([-1.0, -5.0, np.nan, -1.0]),
             np.array([[0.5, -1.5], [0.5, 0.5], [np.nan, np.nan], [-1.5, -1.5]]),
         ]
         for i in range(len(expected_sub)):
-            np.testing.assert_allclose(result_sub.data[i], expected_sub[i], equal_nan=True)
-        
+            np.testing.assert_allclose(
+                result_sub.data[i], expected_sub[i], equal_nan=True
+            )
+
         # Test multiplication
         result_mul = ts1 * ts2
         expected_mul = [
-            np.array([np.nan, np.nan, np.nan, np.nan]),  # Boolean multiplication results in NaNs.
+            np.array(
+                [np.nan, np.nan, np.nan, np.nan]
+            ),  # Boolean multiplication results in NaNs.
             np.array([2.0, -6.0, np.nan, 20.0]),
             np.array([[0.5, 0.0], [7.5, 14.0], [np.nan, np.nan], [32.5, 45.0]]),
         ]
         for i in range(len(expected_mul)):
-            np.testing.assert_allclose(result_mul.data[i], expected_mul[i], equal_nan=True)
+            np.testing.assert_allclose(
+                result_mul.data[i], expected_mul[i], equal_nan=True
+            )
 
         # Test division
         result_div = ts1 / ts2
         expected_div = [
-            np.array([np.nan, np.nan, np.nan, np.nan]),  # Boolean division results in NaNs.
-            np.array([0.5, -2.0/3.0, np.nan, 4.0/5.0]),
-            np.array([[1.0/0.5, 0.0], [3.0/2.5, 4.0/3.5], [np.nan, np.nan], [5.0/6.5, 6.0/7.5]]),
+            np.array(
+                [np.nan, np.nan, np.nan, np.nan]
+            ),  # Boolean division results in NaNs.
+            np.array([0.5, -2.0 / 3.0, np.nan, 4.0 / 5.0]),
+            np.array(
+                [
+                    [1.0 / 0.5, 0.0],
+                    [3.0 / 2.5, 4.0 / 3.5],
+                    [np.nan, np.nan],
+                    [5.0 / 6.5, 6.0 / 7.5],
+                ]
+            ),
         ]
         for i in range(len(expected_div)):
-            np.testing.assert_allclose(result_div.data[i], expected_div[i], equal_nan=True)
+            np.testing.assert_allclose(
+                result_div.data[i], expected_div[i], equal_nan=True
+            )
 
         # Ensure time and headers remain consistent
-        for result in [result_and, result_or, result_not, result_add, result_sub, result_mul]:
-            np.testing.assert_array_equal(result.time.ephemeris_time, self.time.ephemeris_time)
+        for result in [
+            result_and,
+            result_or,
+            result_not,
+            result_add,
+            result_sub,
+            result_mul,
+        ]:
+            np.testing.assert_array_equal(
+                result.time.ephemeris_time, self.time.ephemeris_time
+            )
             self.assertEqual(result.headers, headers)
 
     def test_mixed_data_operations_with_scalar(self):
@@ -339,7 +379,9 @@ class TestTimeseries(unittest.TestCase):
         mixed_data = [
             np.array([True, False, True, False]),  # Boolean data
             np.array([1.0, -2.0, np.nan, 4.0]),  # Scalar numeric data
-            np.array([[1.0, 0.0], [3.0, 4.0], [np.nan, np.nan], [5.0, 6.0]]),  # Vector numeric data
+            np.array(
+                [[1.0, 0.0], [3.0, 4.0], [np.nan, np.nan], [5.0, 6.0]]
+            ),  # Vector numeric data
         ]
 
         headers = ["boolean_header", "scalar_header", ["x", "y"]]
@@ -358,46 +400,65 @@ class TestTimeseries(unittest.TestCase):
         # Test addition
         result_add = ts + scalar
         expected_add = [
-            np.full_like(mixed_data[0], np.nan, dtype=float),  # Boolean addition results in NaNs
+            np.full_like(
+                mixed_data[0], np.nan, dtype=float
+            ),  # Boolean addition results in NaNs
             np.array([3.0, 0.0, np.nan, 6.0]),
             np.array([[3.0, 2.0], [5.0, 6.0], [np.nan, np.nan], [7.0, 8.0]]),
         ]
         for i in range(len(expected_add)):
-            np.testing.assert_allclose(result_add.data[i], expected_add[i], equal_nan=True)
+            np.testing.assert_allclose(
+                result_add.data[i], expected_add[i], equal_nan=True
+            )
 
         # Test subtraction
         result_sub = ts - scalar
         expected_sub = [
-            np.full_like(mixed_data[0], np.nan, dtype=float),  # Boolean subtraction results in NaNs
+            np.full_like(
+                mixed_data[0], np.nan, dtype=float
+            ),  # Boolean subtraction results in NaNs
             np.array([-1.0, -4.0, np.nan, 2.0]),
             np.array([[-1.0, -2.0], [1.0, 2.0], [np.nan, np.nan], [3.0, 4.0]]),
         ]
         for i in range(len(expected_sub)):
-            np.testing.assert_allclose(result_sub.data[i], expected_sub[i], equal_nan=True)
+            np.testing.assert_allclose(
+                result_sub.data[i], expected_sub[i], equal_nan=True
+            )
 
         # Test multiplication
         result_mul = ts * scalar
         expected_mul = [
-            np.full_like(mixed_data[0], np.nan, dtype=float),  # Boolean multiplication results in NaNs
+            np.full_like(
+                mixed_data[0], np.nan, dtype=float
+            ),  # Boolean multiplication results in NaNs
             np.array([2.0, -4.0, np.nan, 8.0]),
             np.array([[2.0, 0.0], [6.0, 8.0], [np.nan, np.nan], [10.0, 12.0]]),
         ]
         for i in range(len(expected_mul)):
-            np.testing.assert_allclose(result_mul.data[i], expected_mul[i], equal_nan=True)
+            np.testing.assert_allclose(
+                result_mul.data[i], expected_mul[i], equal_nan=True
+            )
 
         # Test division
         result_div = ts / scalar
         expected_div = [
-            np.full_like(mixed_data[0], np.nan, dtype=float),  # Boolean division results in NaNs
+            np.full_like(
+                mixed_data[0], np.nan, dtype=float
+            ),  # Boolean division results in NaNs
             np.array([0.5, -1.0, np.nan, 2.0]),
             np.array([[0.5, 0.0], [1.5, 2.0], [np.nan, np.nan], [2.5, 3.0]]),
         ]
         for i in range(len(expected_div)):
-            np.testing.assert_allclose(result_div.data[i], expected_div[i], equal_nan=True)
+            np.testing.assert_allclose(
+                result_div.data[i], expected_div[i], equal_nan=True
+            )
 
         # Ensure time and headers remain consistent
         for result in [result_add, result_sub, result_mul, result_div]:
-            np.testing.assert_array_equal(result.time.ephemeris_time, self.time.ephemeris_time)
+            np.testing.assert_array_equal(
+                result.time.ephemeris_time, self.time.ephemeris_time
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

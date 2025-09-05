@@ -310,7 +310,7 @@ class AbsoluteDateArray:
         if ephemeris_time.ndim != 1:
             raise ValueError("ephemeris_time must be a 1D numpy array")
         self.ephemeris_time = ephemeris_time
-    
+
     @property
     def length(self) -> int:
         """Return the length of the ephemeris time array."""
@@ -447,11 +447,12 @@ class AbsoluteDateArray:
         return {
             "time_format": time_format.to_string(),
             (
-                "calendar_date" if time_format == TimeFormat.GREGORIAN_DATE else "jd"
+                "calendar_date"
+                if time_format == TimeFormat.GREGORIAN_DATE
+                else "jd"
             ): times_list,
             "time_scale": time_scale.to_string(),
         }
-    
 
     def __len__(self):
         """Return the length of the AbsoluteDateArray."""
@@ -500,33 +501,46 @@ class AbsoluteDateArray:
         """Return a string representation of the AbsoluteDateArray."""
         return f"AbsoluteDateArray({self.ephemeris_time})"
 
+
 class AbsoluteDateIntervalArray:
     """
     Representation of time intervals in Ephemeris Time (ET).
 
-    This class stores a set of time intervals as two AbsoluteDateArray objects (start and stop times in Ephemeris Time, ET).
+    This class stores a set of time intervals as two AbsoluteDateArray objects (start and 
+    stop times in Ephemeris Time, ET).
     It provides methods to convert to other time representations, such as Astropy Time objects
-    and Skyfield Time objects, as well as importing/exporting time interval information from/to a dictionary.
+    and Skyfield Time objects, as well as importing/exporting time interval information 
+    from/to a dictionary.
 
     Attributes:
-        start_times (AbsoluteDateArray): AbsoluteDateArray of start times in Ephemeris Time (ET).
-        stop_times (AbsoluteDateArray): AbsoluteDateArray of stop times in Ephemeris Time (ET).
+        start_times (AbsoluteDateArray): Start times in Ephemeris Time (ET).
+        stop_times (AbsoluteDateArray): Stop times in Ephemeris Time (ET).
     """
 
-    def __init__(self, start_times: AbsoluteDateArray, stop_times: AbsoluteDateArray) -> None:
+    def __init__(
+        self, start_times: AbsoluteDateArray, stop_times: AbsoluteDateArray
+    ) -> None:
         """
         Constructor for the AbsoluteDateIntervalArray class.
 
         Args:
-            start_times (AbsoluteDateArray): AbsoluteDateArray of start times in Ephemeris Time (ET).
-            stop_times (AbsoluteDateArray): AbsoluteDateArray of stop times in Ephemeris Time (ET).
+            start_times (AbsoluteDateArray): Start times in Ephemeris Time (ET).
+            stop_times (AbsoluteDateArray): Stop times in Ephemeris Time (ET).
         """
-        if not isinstance(start_times, AbsoluteDateArray) or not isinstance(stop_times, AbsoluteDateArray):
-            raise TypeError("start_times and stop_times must be AbsoluteDateArray objects")
+        if not isinstance(start_times, AbsoluteDateArray) or not isinstance(
+            stop_times, AbsoluteDateArray
+        ):
+            raise TypeError(
+                "start_times and stop_times must be AbsoluteDateArray objects"
+            )
         if len(start_times) != len(stop_times):
-            raise ValueError("start_times and stop_times must have the same length")
+            raise ValueError(
+                "start_times and stop_times must have the same length"
+            )
         if not np.all(start_times.ephemeris_time <= stop_times.ephemeris_time):
-            raise ValueError("Each start time must be less than or equal to its corresponding stop time")
+            raise ValueError(
+                "Each start time must be less than or equal to its corresponding stop time"
+            )
 
         self.start_times = start_times
         self.stop_times = stop_times
@@ -581,7 +595,10 @@ class AbsoluteDateIntervalArray:
                 - First array: Start times in ET.
                 - Second array: Stop times in ET.
         """
-        return self.start_times.to_spice_ephemeris_time(), self.stop_times.to_spice_ephemeris_time()
+        return (
+            self.start_times.to_spice_ephemeris_time(),
+            self.stop_times.to_spice_ephemeris_time(),
+        )
 
     def __len__(self):
         """Return the number of intervals in the AbsoluteDateIntervalArray."""
@@ -600,9 +617,10 @@ class AbsoluteDateIntervalArray:
             index = slice(index, index + 1)  # Convert single index to slice
         return AbsoluteDateIntervalArray(
             AbsoluteDateArray(self.start_times.ephemeris_time[index]),
-            AbsoluteDateArray(self.stop_times.ephemeris_time[index])
+            AbsoluteDateArray(self.stop_times.ephemeris_time[index]),
         )
 
     def __repr__(self):
         """Return a string representation of the AbsoluteDateIntervalArray."""
-        return f"AbsoluteDateIntervalArray(start_times={self.start_times}, stop_times={self.stop_times})"
+        return f"AbsoluteDateIntervalArray(start_times={self.start_times}, \
+                stop_times={self.stop_times})"

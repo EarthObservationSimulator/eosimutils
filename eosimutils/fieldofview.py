@@ -246,8 +246,8 @@ class RectangularFieldOfView:
         frame: Union[ReferenceFrame, str],
         ref_angle: float,
         cross_angle: float,
-        ref_vector: Union[list, np.ndarray, None] = [1,0,0],
-        boresight: Union[list, np.ndarray, None] = [0.0,0.0,1.0],
+        ref_vector: Union[list, np.ndarray, None] = None,
+        boresight: Union[list, np.ndarray, None] = None,
     ) -> None:
         """Initializes the RectangularFieldOfView object.
 
@@ -257,17 +257,19 @@ class RectangularFieldOfView:
                                boresight and reference 3d-vector.
             cross_angle (float): Half of the total angular extent in the plane perpendicular to
                                 the reference 3d-vector.
-            ref_vector (Union[list, np.ndarray, None]): The reference 3d-vector defining the plane for
-                                            the reference angle. Defaults to [1.0, 0.0, 0.0]
+            ref_vector (Union[list, np.ndarray, None]): The reference 3d-vector defining the plane
+                                            for the reference angle. Defaults to [1.0, 0.0, 0.0]
                                             (pointing in the +X direction).
+                                            (Default value is assigned inside the function.)
             boresight (Union[list, np.ndarray, None]): The boresight 3d-vector of the FOV.
                                 Defaults to [0.0, 0.0, 1.0] (pointing in the +Z direction).
+                                (Default value is assigned inside the function.)
         """
         self.frame = ReferenceFrame.get(frame)
-        self.ref_vector = np.array(ref_vector)
+        self.ref_vector = np.array(ref_vector if ref_vector is not None else [1, 0, 0])
         self.ref_angle = ref_angle
         self.cross_angle = cross_angle
-        self.boresight = np.array(boresight)
+        self.boresight = np.array(boresight if boresight is not None else [0.0, 0.0, 1.0])
 
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "RectangularFieldOfView":
@@ -282,7 +284,8 @@ class RectangularFieldOfView:
                                                 (pointing in the +Z direction).
                 - "ref_vector" (Union[list, np.ndarray], optional): The reference 3d-vector defining
                                                         the plane for the reference angle.
-                                                        Default is [1.0, 0.0, 0.0] (pointing in the +X direction).
+                                                        Default is [1.0, 0.0, 0.0] 
+                                                        (pointing in the +X direction).
                 - "ref_angle" (float): Half of the total angular extent in the plane defined
                                         by the boresight and reference 3d-vector.
                 - "cross_angle" (float): Half of the total angular extent in the plane

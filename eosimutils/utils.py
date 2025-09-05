@@ -87,5 +87,5 @@ def convert_object(
             raise NotImplementedError(
                 f"Conversion from {source_type} to PositionSeries is not implemented."
             )
-    else:
-        raise ValueError(f"Unsupported target type: {target_type}")
+    
+    raise ValueError(f"Unsupported target type: {target_type}")

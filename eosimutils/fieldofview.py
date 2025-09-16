@@ -99,7 +99,7 @@ print(circular_fov.to_dict())
 
 """
 
-from typing import Type, Dict, Any, List, Union
+from typing import Type, Dict, Any, List, Union, Callable
 import numpy as np
 
 from .base import EnumBase, ReferenceFrame
@@ -114,68 +114,57 @@ class FieldOfViewType(EnumBase):
 
 
 class FieldOfViewFactory:
-    """Factory class to register and invoke the appropriate field-of-view class.
+    """Factory class to register and create field-of-view (FOV) objects."""
 
-    This class allows registering FOV classes and retrieving instances
-    of the appropriate FOV based on specifications.
+    # Class-level registry for FOV types
+    _registry: Dict[str, Type] = {}
 
-    example:
-        factory = FieldOfViewFactory()
-        factory.register_fov("Circular", Circular)
-        specs = {"type": "Circular", "diameter": 60}
-        fov = factory.get_fov(specs)
-
-    Attributes:
-        _creators (Dict[str, Type]): A dictionary mapping field-of-view shape
-                                     labels to their respective classes.
-    """
-
-    def __init__(self):
-        """Initializes the FieldOfViewFactory and registers default FOVs."""
-        self._creators: Dict[str, Type] = {}
-        self.register_fov(FieldOfViewType.CIRCULAR.value, CircularFieldOfView)
-        self.register_fov(
-            FieldOfViewType.RECTANGULAR.value, RectangularFieldOfView
-        )
-        self.register_fov(FieldOfViewType.POLYGON.value, PolygonFieldOfView)
-
-    def register_fov(self, fov_type: str, creator: Type) -> None:
-        """Registers a FOV class with a specific type label.
-
-        Args:
-            fov_type (str): The label for the fov type.
-            creator (Type): The fov class to register.
+    @classmethod
+    def register_type(cls, fov_type: str) -> Callable[[Type], Type]:
         """
-        self._creators[fov_type] = creator
-
-    def get_fov(self, specs: Dict[str, Any]) -> Any:
-        """Retrieves an instance of the appropriate FOV based on specifications.
+        Decorator to register an FOV class under a specific type name.
 
         Args:
-            specs (Dict[str, Any]): A dictionary containing fov specifications.
-                Must include a valid fov type in the "fov_type" key.
+            fov_type (str): The label for the FOV type.
 
         Returns:
-            Any: An instance of the appropriate fov class initialized
-                 with the given specifications.
+            Callable[[Type], Type]: A decorator that registers the FOV class.
+        """
+
+        def decorator(fov_class: Type) -> Type:
+            cls._registry[fov_type] = fov_class
+            return fov_class
+
+        return decorator
+
+    @classmethod
+    def from_dict(cls, specs: Dict[str, Any]) -> object:
+        """
+        Retrieves an instance of the appropriate FOV class based on specifications.
+
+        Args:
+            specs (Dict[str, Any]): A dictionary containing FOV specifications.
+                Must include a valid FOV type in the "fov_type" key.
+
+        Returns:
+            object: An instance of the appropriate FOV class initialized with
+                    the given specifications.
 
         Raises:
             KeyError: If the "fov_type" key is missing in the specifications dictionary.
-            ValueError: If the specified fov type is not registered.
+            ValueError: If the specified FOV type is not registered.
         """
         fov_type_str = specs.get("fov_type")
         if fov_type_str is None:
             raise KeyError(
                 'FOV type key "fov_type" not found in specifications dictionary.'
             )
-
-        if fov_type_str not in self._creators:
+        fov_class = cls._registry.get(fov_type_str)
+        if not fov_class:
             raise ValueError(f'FOV type "{fov_type_str}" is not registered.')
+        return fov_class.from_dict(specs)
 
-        creator = self._creators[fov_type_str]
-        return creator.from_dict(specs)
-
-
+@FieldOfViewFactory.register_type("CIRCULAR")
 class CircularFieldOfView:
     """This class represents a circular field-of-view with a specified diameter."""
 
@@ -232,12 +221,13 @@ class CircularFieldOfView:
             Dict[str, Any]: Dictionary representation of the CircularFieldOfView object.
         """
         return {
+            "fov_type": FieldOfViewType.CIRCULAR.value,
             "diameter": self.diameter,
             "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
         }
 
-
+@FieldOfViewFactory.register_type("RECTANGULAR")
 class RectangularFieldOfView:
     """Represents a rectangular field-of-view (FOV) with specified parameters."""
 
@@ -324,6 +314,7 @@ class RectangularFieldOfView:
             Dict[str, Any]: Dictionary representation of the RectangularFieldOfView object.
         """
         return {
+            "fov_type": FieldOfViewType.RECTANGULAR.value,
             "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
             "ref_vector": self.ref_vector.tolist(),
@@ -331,7 +322,7 @@ class RectangularFieldOfView:
             "cross_angle": self.cross_angle,
         }
 
-
+@FieldOfViewFactory.register_type("POLYGON")
 class PolygonFieldOfView:
     """Represents a polygonal field-of-view (FOV) with specified parameters."""
 
@@ -410,6 +401,7 @@ class PolygonFieldOfView:
             Dict[str, Any]: Dictionary representation of the PolygonFieldOfView object.
         """
         return {
+            "fov_type": FieldOfViewType.POLYGON.value,
             "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
             "boundary_corners": [

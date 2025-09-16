@@ -23,9 +23,9 @@ class TestFieldOfViewFactory(unittest.TestCase):
             "boresight": [0.0, 0.0, 1.0],
         }
 
-    def test_get_fov_circular(self):
+    def test_from_dict_circular(self):
         """Test retrieving a CircularFieldOfView object."""
-        fov = self.factory.get_fov(self.circular_fov_specs)
+        fov = self.factory.from_dict(self.circular_fov_specs)
         self.assertIsInstance(fov, CircularFieldOfView)
         self.assertEqual(fov.diameter, self.circular_fov_specs["diameter"])
         self.assertEqual(fov.frame, self.circular_fov_specs["frame"])
@@ -33,21 +33,21 @@ class TestFieldOfViewFactory(unittest.TestCase):
             fov.boresight.tolist(), self.circular_fov_specs["boresight"]
         )
 
-    def test_get_fov_missing_type(self):
+    def test_from_dict_missing_type(self):
         """Test error handling for a missing fov_type key."""
         specs = {"diameter": 60.0}
         with self.assertRaises(KeyError) as context:
-            self.factory.get_fov(specs)
+            self.factory.from_dict(specs)
         self.assertIn(
             'FOV type key "fov_type" not found in specifications dictionary.',
             str(context.exception),
         )
 
-    def test_get_fov_invalid_type(self):
+    def test_from_dict_invalid_type(self):
         """Test error handling for an invalid fov_type."""
         specs = {"fov_type": "INVALID_TYPE", "diameter": 60.0}
         with self.assertRaises(ValueError) as context:
-            self.factory.get_fov(specs)
+            self.factory.from_dict(specs)
         self.assertIn(
             'FOV type "INVALID_TYPE" is not registered.', str(context.exception)
         )
@@ -55,15 +55,15 @@ class TestFieldOfViewFactory(unittest.TestCase):
     def test_register_fov(self):
         """Test registering a new FOV type."""
 
+        @FieldOfViewFactory.register_type("DUMMY_FOV")
         class DummyFOV:
             @classmethod
             def from_dict(cls, specs):
                 self.specs = specs
                 return cls()
 
-        self.factory.register_fov("DUMMY_FOV", DummyFOV)
         specs = {"fov_type": "DUMMY_FOV"}
-        fov = self.factory.get_fov(specs)
+        fov = self.factory.from_dict(specs)
         self.assertIsInstance(fov, DummyFOV)
 
 

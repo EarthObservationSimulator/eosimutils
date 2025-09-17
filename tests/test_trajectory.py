@@ -222,7 +222,7 @@ class TestStateSeries(unittest.TestCase):
             StateSeries.from_list_of_cartesian_state(states)
 
 
-class TestPositionSeries:
+class TestPositionSeries(unittest.TestCase):
     """Unit tests for the PositionSeries class."""
 
     def test_initialization(self):
@@ -265,15 +265,19 @@ class TestPositionSeries:
             np.array([JD_OF_J2000 + t for t in [0.0, 1.0, 2.0]])
         )
         data = np.array(
-            [[np.nan, np.nan, np.nan], [4.0, 5.0, 6.0], [np.nan, np.nan, np.nan]]
+            [
+                [np.nan, np.nan, np.nan],
+                [4.0, 5.0, 6.0],
+                [np.nan, np.nan, np.nan],
+            ]
         )
         frame = ReferenceFrame.get("ICRF_EC")
         ps = PositionSeries(time, data, frame)
         gapless_ps = ps.remove_gaps()
+        np.testing.assert_array_equal(gapless_ps.data[0], [[4.0, 5.0, 6.0]])
         np.testing.assert_array_equal(
-            gapless_ps.data[0], [[4.0, 5.0, 6.0]]
+            gapless_ps.time.ephemeris_time, [JD_OF_J2000 + 1]
         )
-        np.testing.assert_array_equal(gapless_ps.time.ephemeris_time, [JD_OF_J2000 + 1])
 
     def test_to_frame(self):
         """Test frame conversion for PositionSeries."""
@@ -292,9 +296,11 @@ class TestPositionSeries:
             Cartesian3DPosition(1.0, 2.0, 3.0, ReferenceFrame.get("ICRF_EC")),
             Cartesian3DPosition(4.0, 5.0, 6.0, ReferenceFrame.get("ICRF_EC")),
         ]
-        time = AbsoluteDateArray(np.array([JD_OF_J2000 + t for t in [0.0, 1.0]]))
+        time = AbsoluteDateArray(
+            np.array([JD_OF_J2000 + t for t in [0.0, 1.0]])
+        )
 
-        ps = PositionSeries.from_list_of_cartesian_position(time,positions)
+        ps = PositionSeries.from_list_of_cartesian_position(time, positions)
         assert ps.data[0].shape == (2, 3)
         assert ps.time == time
         assert ps.frame == ReferenceFrame.get("ICRF_EC")
@@ -334,6 +340,37 @@ class TestPositionSeries:
         # Test scalar subtraction
         scalar_subtracted = ps1 - 1
         np.testing.assert_array_equal(scalar_subtracted.data[0], data1 - 1)
+
+    def test_to_dict_and_from_dict(self):
+        """Test serialization and deserialization of PositionSeries."""
+        time = AbsoluteDateArray.from_dict(
+            {
+                "time_format": "Julian_Date",
+                "jd": [JD_OF_J2000 + t for t in [0.0, 1.0, 2.0]],
+                "time_scale": "UTC",
+            }
+        )
+        data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7, 8, 9]])
+        frame = ReferenceFrame.get("ICRF_EC")
+        original_dict = {
+            "time": time.to_dict("JULIAN_DATE"),
+            "data": data.tolist(),
+            "frame": frame.to_string(),
+            "headers": ["pos_x", "pos_y", "pos_z"],
+        }
+
+        ps = PositionSeries.from_dict(original_dict)
+        serialized_dict = ps.to_dict(
+            time_format="Julian_date", time_scale="UTC"
+        )
+
+        # Check if the serialized dictionary matches the original dictionary
+        self.assertEqual(serialized_dict["time"], original_dict["time"])
+        self.assertEqual(serialized_dict["frame"], original_dict["frame"])
+        self.assertEqual(serialized_dict["headers"], original_dict["headers"])
+        np.testing.assert_array_equal(
+            np.array(serialized_dict["data"]), np.array(original_dict["data"])
+        )
 
 
 if __name__ == "__main__":

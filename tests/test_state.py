@@ -290,7 +290,9 @@ class TestGeographicPosition(unittest.TestCase):
             geo_pos.longitude * spice.rpd(),
             geo_pos.latitude * spice.rpd(),
             geo_pos.elevation / 1000.0,  # Convert elevation to kilometers
-            6378.1370, 1/298.257223563  # WGS84 parameters from Skyfield: https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49  pylint: disable=line-too-long
+            6378.1370,
+            1
+            / 298.257223563,  # WGS84 parameters from Skyfield: https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49  pylint: disable=line-too-long
         )
 
         # Validate the Cartesian coordinates
@@ -549,3 +551,42 @@ class TestCartesian3DPositionArray(unittest.TestCase):
         self.assertIn("Cartesian3DPositionArray", s)
         self.assertIn("positions", s)
         self.assertIn("frame", s)
+
+    def test_len(self):
+        """Test the __len__ method."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        self.assertEqual(len(arr), len(self.positions_np))
+
+    def test_getitem_single(self):
+        """Test the __getitem__ method for a single index."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        item = arr[1]
+        self.assertIsInstance(item, Cartesian3DPosition)
+        np.testing.assert_array_equal(item.to_numpy(), self.positions_np[1])
+        self.assertEqual(item.frame, self.frame)
+
+    def test_getitem_slice(self):
+        """Test the __getitem__ method for a slice."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        sliced_array = arr[1:]
+        self.assertIsInstance(sliced_array, Cartesian3DPositionArray)
+        np.testing.assert_array_equal(
+            sliced_array.to_numpy(), self.positions_np[1:]
+        )
+        self.assertEqual(sliced_array.frame, self.frame)
+
+    def test_getitem_out_of_bounds(self):
+        """Test the __getitem__ method for an out-of-bounds index."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        with self.assertRaises(IndexError):
+            _ = arr[10]
+
+    def test_iter(self):
+        """Test the __iter__ method."""
+        arr = Cartesian3DPositionArray(self.positions_np, self.frame)
+        for i, position in enumerate(arr):
+            self.assertIsInstance(position, Cartesian3DPosition)
+            np.testing.assert_array_equal(
+                position.to_numpy(), self.positions_np[i]
+            )
+            self.assertEqual(position.frame, self.frame)

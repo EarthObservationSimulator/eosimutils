@@ -2,39 +2,39 @@
 .. module:: eosimutils.framegraph
    :synopsis: Registry for managing transformations between reference frames.
 
-The `framegraph` module provides a graph-based registry for managing and querying 
-transformations between reference frames. It supports both orientation and position 
+The `framegraph` module provides a graph-based registry for managing and querying
+transformations between reference frames. It supports both orientation and position
 transformations and enables seamless composition of transformations across multiple frames.
 
 **Key Features**
 
 Graph-Based Structure:
-- Frames are represented as nodes, and transformations (orientations and/or positions) 
+- Frames are represented as nodes, and transformations (orientations and/or positions)
     are represented as edges in the graph.
-- Alternatively, could have used tree-structure to prevent multiple paths to compute the 
-    same transformation. Graph structure allows registering a chain of transformations 
-    (e.g., from frame A->B->C->D), but also directly registering the transformation 
+- Alternatively, could have used tree-structure to prevent multiple paths to compute the
+    same transformation. Graph structure allows registering a chain of transformations
+    (e.g., from frame A->B->C->D), but also directly registering the transformation
     from A->D for performance
-- Directed edges for transformations, with optional automatic registration of 
+- Directed edges for transformations, with optional automatic registration of
     inverse transformations.
-- Transformation between `eosimutil` provided reference frames: 
+- Transformation between `eosimutil` provided reference frames:
     `ICRF_EC` and `ITRF` are automatically registered.
 
 Breadth-first search (BFS) algorithm for graph traversal:
-- Computes transformations between frames at specific times by discovering paths 
+- Computes transformations between frames at specific times by discovering paths
     through intermediate frames.
-- Orientation and Position transformation are handled separately. 
-    Position transformations require corresponding orientation 
+- Orientation and Position transformation are handled separately.
+    Position transformations require corresponding orientation
     transformation to be available.
 
 Orientation Transformations:
-- Handles constant and time-varying orientations using `Orientation` subclasses: 
+- Handles constant and time-varying orientations using `Orientation` subclasses:
     `ConstantOrientation` and `OrientationSeries`.
-- Computes composed transformations between frames (at specific times) 
+- Computes composed transformations between frames (at specific times)
     using breadth-first search (BFS).
 
 Position Transformations:
-- Supports translations between frame origins using `Cartesian3DPosition` 
+- Supports translations between frame origins using `Cartesian3DPosition`
     or `PositionSeries`.
 - Computes composed position transformations across multiple frames.
 
@@ -63,10 +63,10 @@ Serialization and Deserialization:
               |  SENSOR_BODY_FIXED    |
               +-----------------------+
 
-An LVLH frame is defined relative to the ICRF_EC frame. The spacecraft body-fixed frame 
-is aligned with the LVLH frame, having zero offset. The sensor body-fixed frame is defined 
-relative to the spacecraft body-fixed frame, with a constant roll-axis offset for a 
-side-looking configuration. The double arrows indicate that bi-directional transformations 
+An LVLH frame is defined relative to the ICRF_EC frame. The spacecraft body-fixed frame
+is aligned with the LVLH frame, having zero offset. The sensor body-fixed frame is defined
+relative to the spacecraft body-fixed frame, with a constant roll-axis offset for a
+side-looking configuration. The double arrows indicate that bi-directional transformations
 are registered.
 
 **Example dictionary representation**
@@ -135,7 +135,7 @@ class FrameGraph:
     Underlying data structure:
     - Frames and transforms form a graph: nodes are ReferenceFrames and edges are Orientation
     instances.
-    - Adjacency list `_orientation_adj`: maps each source ReferenceFrame to a 
+    - Adjacency list `_orientation_adj`: maps each source ReferenceFrame to a
         list of Orientation edges.
     - Querying A->B at time t:
         1. BFS to discover a path through intermediate frames.
@@ -240,7 +240,7 @@ class FrameGraph:
                 `from_frame` origin to `to_frame` origin, expressed in from_frame coordinates.
             set_inverse (bool, optional): Whether to automatically register the inverse transform.
             If set to true, the orientation transformation from `from_frame` to `to_frame`
-            must already be registered in the FrameGraph, or get_orientation_transform will 
+            must already be registered in the FrameGraph, or get_orientation_transform will
             raise an error.
         """
         if not isinstance(position, (Cartesian3DPosition, PositionSeries)):

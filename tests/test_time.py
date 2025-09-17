@@ -6,7 +6,11 @@ import copy
 
 from astropy.time import Time as Astropy_Time
 
-from eosimutils.time import AbsoluteDate, AbsoluteDateArray, AbsoluteDateIntervalArray
+from eosimutils.time import (
+    AbsoluteDate,
+    AbsoluteDateArray,
+    AbsoluteDateIntervalArray,
+)
 
 
 class TestAbsoluteDate(unittest.TestCase):
@@ -288,6 +292,17 @@ class TestAbsoluteDateArray(unittest.TestCase):
         self.assertIsInstance(slice_items, AbsoluteDateArray)
         self.assertEqual(len(slice_items), 2)
 
+    def test_iter(self):
+        """Test the __iter__ method for AbsoluteDateArray."""
+        et_array = np.array(
+            [553333629.183727, 553333630.183727, 553333630.0, 553333911.01]
+        )
+        abs_dates = AbsoluteDateArray(et_array)
+
+        for i, date in enumerate(abs_dates):
+            self.assertIsInstance(date, AbsoluteDate)
+            self.assertAlmostEqual(date.ephemeris_time, et_array[i], places=6)
+
     def test_equality_operator(self):
         """Test the equality operator for AbsoluteDateArray."""
         et_array1 = np.random.uniform(
@@ -313,6 +328,7 @@ class TestAbsoluteDateArray(unittest.TestCase):
 
         # Assert that the returned array matches the input ephemeris times
         np.testing.assert_allclose(spice_ephemeris_times, et_array, rtol=1e-6)
+
 
 class TestAbsoluteDateIntervalArray(unittest.TestCase):
     """Test the AbsoluteDateIntervalArray class."""
@@ -344,7 +360,9 @@ class TestAbsoluteDateIntervalArray(unittest.TestCase):
     def test_invalid_initialization(self):
         """Test invalid initialization of AbsoluteDateIntervalArray."""
         with self.assertRaises(TypeError):
-            AbsoluteDateIntervalArray(start_times=[1, 2], stop_times=self.stop_times)
+            AbsoluteDateIntervalArray(
+                start_times=[1, 2], stop_times=self.stop_times
+            )
         with self.assertRaises(ValueError):
             AbsoluteDateIntervalArray(
                 start_times=self.start_times,
@@ -365,22 +383,32 @@ class TestAbsoluteDateIntervalArray(unittest.TestCase):
         dict_in = {
             "start_times": {
                 "time_format": "GREGORIAN_DATE",
-                "calendar_date": ["2017-07-14T19:46:00.000", "2017-07-14T19:46:01.000"],
+                "calendar_date": [
+                    "2017-07-14T19:46:00.000",
+                    "2017-07-14T19:46:01.000",
+                ],
                 "time_scale": "UTC",
             },
             "stop_times": {
                 "time_format": "GREGORIAN_DATE",
-                "calendar_date": ["2017-07-14T19:46:10.000", "2017-07-14T19:46:11.000"],
+                "calendar_date": [
+                    "2017-07-14T19:46:10.000",
+                    "2017-07-14T19:46:11.000",
+                ],
                 "time_scale": "UTC",
             },
         }
         interval_array = AbsoluteDateIntervalArray.from_dict(dict_in)
         self.assertEqual(len(interval_array), 2)
         self.assertAlmostEqual(
-            interval_array.start_times.ephemeris_time[0], 553333629.183727, places=6
+            interval_array.start_times.ephemeris_time[0],
+            553333629.183727,
+            places=6,
         )
         self.assertAlmostEqual(
-            interval_array.stop_times.ephemeris_time[1], 553333640.183727, places=6
+            interval_array.stop_times.ephemeris_time[1],
+            553333640.183727,
+            places=6,
         )
 
     def test_to_dict(self):
@@ -389,12 +417,18 @@ class TestAbsoluteDateIntervalArray(unittest.TestCase):
         expected_dict = {
             "start_times": {
                 "time_format": "GREGORIAN_DATE",
-                "calendar_date": ["2017-07-14T19:46:00.000", "2017-07-14T19:46:01.000"],
+                "calendar_date": [
+                    "2017-07-14T19:46:00.000",
+                    "2017-07-14T19:46:01.000",
+                ],
                 "time_scale": "UTC",
             },
             "stop_times": {
                 "time_format": "GREGORIAN_DATE",
-                "calendar_date": ["2017-07-14T19:46:10.000", "2017-07-14T19:46:11.000"],
+                "calendar_date": [
+                    "2017-07-14T19:46:10.000",
+                    "2017-07-14T19:46:11.000",
+                ],
                 "time_scale": "UTC",
             },
         }
@@ -417,10 +451,12 @@ class TestAbsoluteDateIntervalArray(unittest.TestCase):
         self.assertIsInstance(interval, AbsoluteDateIntervalArray)
         self.assertEqual(len(interval), 1)
         np.testing.assert_allclose(
-            interval.start_times.ephemeris_time, [self.start_times.ephemeris_time[0]]
+            interval.start_times.ephemeris_time,
+            [self.start_times.ephemeris_time[0]],
         )
         np.testing.assert_allclose(
-            interval.stop_times.ephemeris_time, [self.stop_times.ephemeris_time[0]]
+            interval.stop_times.ephemeris_time,
+            [self.stop_times.ephemeris_time[0]],
         )
 
         # Test slicing
@@ -435,6 +471,7 @@ class TestAbsoluteDateIntervalArray(unittest.TestCase):
             sliced_intervals.stop_times.ephemeris_time,
             [self.stop_times.ephemeris_time[0]],
         )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -34,12 +34,12 @@ def convert_object(
     Convert an object to a different type if possible.
 
     Args:
-        source_obj (Union[Cartesian3DPosition, CartesianState, 
+        source_obj (Union[Cartesian3DPosition, CartesianState,
                         GeographicPosition, StateSeries, PositionSeries]): The object to convert.
         target_type (Type): The target type to convert the object to.
 
     Returns:
-        Union[Cartesian3DPosition, CartesianState, 
+        Union[Cartesian3DPosition, CartesianState,
               GeographicPosition, StateSeries, PositionSeries]: The converted object.
     """
     if not isinstance(
@@ -87,5 +87,5 @@ def convert_object(
             raise NotImplementedError(
                 f"Conversion from {source_type} to PositionSeries is not implemented."
             )
-    
+
     raise ValueError(f"Unsupported target type: {target_type}")

@@ -506,10 +506,10 @@ class AbsoluteDateIntervalArray:
     """
     Representation of time intervals in Ephemeris Time (ET).
 
-    This class stores a set of time intervals as two AbsoluteDateArray objects (start and 
+    This class stores a set of time intervals as two AbsoluteDateArray objects (start and
     stop times in Ephemeris Time, ET).
     It provides methods to convert to other time representations, such as Astropy Time objects
-    and Skyfield Time objects, as well as importing/exporting time interval information 
+    and Skyfield Time objects, as well as importing/exporting time interval information
     from/to a dictionary.
 
     Attributes:

@@ -266,10 +266,14 @@ class RectangularFieldOfView:
                                 (Default value is assigned inside the function.)
         """
         self.frame = ReferenceFrame.get(frame)
-        self.ref_vector = np.array(ref_vector if ref_vector is not None else [1, 0, 0])
+        self.ref_vector = np.array(
+            ref_vector if ref_vector is not None else [1, 0, 0]
+        )
         self.ref_angle = ref_angle
         self.cross_angle = cross_angle
-        self.boresight = np.array(boresight if boresight is not None else [0.0, 0.0, 1.0])
+        self.boresight = np.array(
+            boresight if boresight is not None else [0.0, 0.0, 1.0]
+        )
 
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "RectangularFieldOfView":
@@ -284,7 +288,7 @@ class RectangularFieldOfView:
                                                 (pointing in the +Z direction).
                 - "ref_vector" (Union[list, np.ndarray], optional): The reference 3d-vector defining
                                                         the plane for the reference angle.
-                                                        Default is [1.0, 0.0, 0.0] 
+                                                        Default is [1.0, 0.0, 0.0]
                                                         (pointing in the +X direction).
                 - "ref_angle" (float): Half of the total angular extent in the plane defined
                                         by the boresight and reference 3d-vector.

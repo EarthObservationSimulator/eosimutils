@@ -387,7 +387,9 @@ class Timeseries:
         reconstructed_data = [
             (
                 np.array(item, dtype=bool)
-                if item and isinstance(item[0], int) and all(x in [0, 1] for x in item)
+                if item
+                and isinstance(item[0], int)
+                and all(x in [0, 1] for x in item)
                 else np.array(item)
             )
             for item in dct["data"]
@@ -436,7 +438,9 @@ class Timeseries:
             return Timeseries(self.time, new_data, self.headers)
         elif isinstance(other, Timeseries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other._resample_data(self.time.ephemeris_time)[ # pylint: disable=protected-access
+            other_resamp = other._resample_data(
+                self.time.ephemeris_time
+            )[  # pylint: disable=protected-access
                 1
             ]  # pylint: disable=protected-access
             # Perform vectorized operation for each data array.

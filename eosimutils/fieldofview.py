@@ -93,7 +93,7 @@ specs = {
     "frame": "ICRF_EC",
     "boresight": [0.0, 0.0, 1.0]
 }
-circular_fov = factory.get_fov(specs)
+circular_fov = factory.from_dict(specs)
 print(circular_fov.to_dict())
 ```
 

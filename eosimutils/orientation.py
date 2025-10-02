@@ -3,7 +3,7 @@
    :synopsis: Classes for representing transformations between reference frames.
 
 The `orientation` module offers classes and functions for representing and manipulating orientations
-as transformations between reference frames. The orientation information between two frames is 
+as transformations between reference frames. The orientation information between two frames is
 represented using SciPy's rotation objects and angular velocity vector.
 It includes utilities for transforming position and state vectors across reference frames.
 
@@ -11,11 +11,11 @@ It includes utilities for transforming position and state vectors across referen
 **Key Features**
 
 Orientation Representation:
-- `Orientation`: Base class for orientation representations supporting transformations between 
+- `Orientation`: Base class for orientation representations supporting transformations between
                     reference frames and position/state vectors.
 - `ConstantOrientation`: Represents a time-invariant orientation using a single constant rotation
                             and zero angular velocity.
-- `SpiceOrientation`: Represents orientations defined using SPICE frame transformations, 
+- `SpiceOrientation`: Represents orientations defined using SPICE frame transformations,
                         including angular velocity.
 - `OrientationSeries`: Represents orientation data as a time series using SciPy rotation objects and
                         angular velocity.
@@ -25,7 +25,7 @@ Frame Conversion:
 - Support for SPICE-based frame transformations.
 
 Interpolation and Resampling:
-- Resampling of time-series orientation data to new time bases using spherical 
+- Resampling of time-series orientation data to new time bases using spherical
     linear interpolation (SLERP).
 
 Factory Pattern:

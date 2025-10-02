@@ -15,7 +15,7 @@ def get_lvlh(
     state: StateSeries, lvlh_frame: ReferenceFrame
 ) -> tuple["OrientationSeries", "PositionSeries"]:
     """
-    Compute an LVLH OrientationSeries and PositionSeries from a 
+    Compute an LVLH OrientationSeries and PositionSeries from a
     satellite's StateSeries (in inertial frame).
 
     The axes are constructed as follows:

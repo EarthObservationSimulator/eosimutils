@@ -2,17 +2,17 @@
 .. module:: eosimutils.trajectory
    :synopsis: Trajectory data representation.
 
-The `trajectory` module provides classes and functions for handling trajectory data, 
-including positions, velocities, and reference frame conversions. It is designed to 
-represent spacecraft trajectories and perform operations such as interpolation, 
+The `trajectory` module provides classes and functions for handling trajectory data,
+including positions, velocities, and reference frame conversions. It is designed to
+represent spacecraft trajectories and perform operations such as interpolation,
 resampling, and arithmetic.
 
 **Key Features**
 
 Trajectory Representation:
-- `StateSeries`: Represents trajectory data with separate (3D) arrays for position (km) 
+- `StateSeries`: Represents trajectory data with separate (3D) arrays for position (km)
     and velocity (km/s), associated with a vector of times.
-- `PositionSeries`: Represents position data with a single (3D) array for position (km), 
+- `PositionSeries`: Represents position data with a single (3D) array for position (km),
     associated with a vector of times.
 
 Frame Conversion:
@@ -26,14 +26,14 @@ Arithmetic Operations:
 - Addition, subtraction, multiplication, and division between trajectories or with scalars.
 
 Constant Trajectories:
-- constant_position: Creates a trajectory with a fixed position and zero velocity over a 
+- constant_position: Creates a trajectory with a fixed position and zero velocity over a
                         specified time range.
-- constant_velocity: Creates a trajectory with constant velocity and linearly varying 
+- constant_velocity: Creates a trajectory with constant velocity and linearly varying
                         position over a specified time range.
 
 **Example Applications**
 - Spacecraft trajectory representation (`StateSeries`) for representing spacecraft propagation data.
-- Position-only trajectory representation (`PositionSeries`) for cases where only 
+- Position-only trajectory representation (`PositionSeries`) for cases where only
     position data is needed.
 
 
@@ -72,14 +72,14 @@ Constant Trajectories:
 
 """
 
-# pylint: disable=protected-access
-
+from __future__ import annotations
 import numpy as np
 import spiceypy as spice
 from typing import Union
 
-from .base import ReferenceFrame
+from .base import ReferenceFrame, EnumBase
 from .time import AbsoluteDate, AbsoluteDateArray
+from .state import Cartesian3DPositionArray
 from .timeseries import Timeseries
 from .spicekernels import load_spice_kernels
 
@@ -334,7 +334,7 @@ class StateSeries(Timeseries):
             return super()._arithmetic_op(other, op)
         elif isinstance(other, StateSeries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other._resample(
+            other_resamp = other._resample(  # pylint: disable=protected-access
                 self.time.ephemeris_time, method=interp_method
             )
             # If frames do not match, attempt frame conversion.
@@ -431,7 +431,11 @@ class StateSeries(Timeseries):
             to_frame,
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(
+        self,
+        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
+        time_scale: Union[str, EnumBase] = "UTC",
+    ) -> dict:
         """
         Serializes the StateSeries object to a dictionary.
 
@@ -439,7 +443,9 @@ class StateSeries(Timeseries):
             dict: A dictionary representation of the StateSeries object.
         """
         return {
-            "time": self.time.to_dict(),
+            "time": self.time.to_dict(
+                time_format=time_format, time_scale=time_scale
+            ),
             "data": [arr.tolist() for arr in self.data],
             "frame": self.frame.to_string(),
             "headers": self.headers,
@@ -466,7 +472,14 @@ class StateSeries(Timeseries):
 
         Examples:
             dct = {
-                "time": {"et": [0.0, 1.0]},
+                "time": {
+                    "time_format": "GREGORIAN_DATE",
+                    "calendar_date": [
+                        "2025-03-17T13:00:00.000",
+                        "2025-03-17T14:00:00.000"
+                    ],
+                    "time_scale": "UTC",
+                },
                 "data": [
                     [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]],  # Positions
                     [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]   # Velocities
@@ -585,6 +598,43 @@ class StateSeries(Timeseries):
         # Return a new StateSeries object
         return cls(time_obj, [positions, velocities], frame)
 
+    @classmethod
+    def from_position_series(
+        cls, position_series: PositionSeries
+    ) -> "StateSeries":
+        """
+        Creates a StateSeries object from a PositionSeries object.
+
+        Args:
+            position_series (PositionSeries): The PositionSeries object to convert.
+
+        Returns:
+            StateSeries: A new StateSeries object.
+        """
+        # Extract time and position data
+        time = position_series.time
+        positions = position_series.position.to_numpy()
+        frame = position_series.frame
+
+        # Create a new StateSeries object
+        return cls(
+            time,
+            [positions, np.full_like(positions, np.nan, dtype=float)],
+            frame,
+        )
+
+    @property
+    def position(self) -> Cartesian3DPositionArray:
+        """
+        Returns the entire position data as Cartesian3DPositionArray.
+
+        Returns:
+            Cartesian3DPositionArray: The position data as a Cartesian3DPositionArray.
+        """
+        return Cartesian3DPositionArray(
+            positions=self.data[0], frame=self.frame
+        )
+
 
 class PositionSeries(Timeseries):
     """
@@ -599,8 +649,8 @@ class PositionSeries(Timeseries):
     | | t1, t2, t3, ..., tN           | |  --> AbsoluteDateArray (ephemeris times)
     | +-------------------------------+ |
     |                                   |
-    | data:                             |
-    | +-------------------------------+ |
+    | data:                             | (Note that 'data' is a list which contains
+    | +-------------------------------+ |    the below 2D numpy array)
     | | Positions (Nx3):              | |
     | | [[x1, y1, z1],                | |
     | |  [x2, y2, z2],                | |  --> Position array in kilometers
@@ -608,8 +658,8 @@ class PositionSeries(Timeseries):
     | |  [xN, yN, zN]]                | |
     | +-------------------------------+ |
     |                                   |
-    | headers:                          |
-    | +-------------------------------+ |
+    | headers:                          | (Note that 'headers' is a list which contains
+    | +-------------------------------+ |    the below list of headers)
     | | ["pos_x", "pos_y", "pos_z"]   | |  --> Labels for position components
     | +-------------------------------+ |
     |                                   |
@@ -697,7 +747,11 @@ class PositionSeries(Timeseries):
             AbsoluteDateArray(self.time.ephemeris_time.copy()), pos, to_frame
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(
+        self,
+        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
+        time_scale: Union[str, EnumBase] = "UTC",
+    ) -> dict:
         """
         Serializes the PositionSeries object to a dictionary.
 
@@ -705,7 +759,9 @@ class PositionSeries(Timeseries):
             dict: A dictionary representation of the PositionSeries object.
         """
         return {
-            "time": self.time.to_dict(),
+            "time": self.time.to_dict(
+                time_format=time_format, time_scale=time_scale
+            ),
             "data": self.data[0].tolist(),
             "frame": self.frame.to_string(),
             "headers": self.headers[0],
@@ -793,6 +849,23 @@ class PositionSeries(Timeseries):
 
         # Return a new PositionSeries object
         return cls(time, pos_data, frame)
+
+    @classmethod
+    def from_state_series(cls, state_series: StateSeries) -> "PositionSeries":
+        """
+        Creates a PositionSeries object from a StateSeries object.
+
+        Args:
+            state_series (StateSeries): The StateSeries object to convert.
+
+        Returns:
+            PositionSeries: A new PositionSeries object.
+        """
+        return cls(
+            time=state_series.time,
+            data=state_series.position.to_numpy(),
+            frame=state_series.frame,
+        )
 
     def _arithmetic_op(self, other, op, interp_method: str = "linear"):
         """
@@ -909,3 +982,15 @@ class PositionSeries(Timeseries):
         if single:
             return positions[0]
         return positions
+
+    @property
+    def position(self) -> Cartesian3DPositionArray:
+        """
+        Returns the entire position data as Cartesian3DPositionArray.
+
+        Returns:
+            Cartesian3DPositionArray: The position data as a Cartesian3DPositionArray.
+        """
+        return Cartesian3DPositionArray(
+            positions=self.data[0], frame=self.frame
+        )

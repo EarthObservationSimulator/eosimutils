@@ -30,6 +30,7 @@ def download_latest_kernels() -> None:
     kernels = {
         "LSK": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls",  # pylint: disable=line-too-long
         "BPC": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_000101_250627_250331.bpc",  # pylint: disable=line-too-long
+        "DE430": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp",  # pylint: disable=line-too-long
     }
 
     # Function to download a kernel if it doesn't already exist
@@ -64,13 +65,18 @@ def load_spice_kernels() -> None:
     kernel_dir = os.path.join(os.path.dirname(__file__), "spice_kernels")
     leap_seconds_kernel = os.path.join(kernel_dir, "naif0012.tls")
     eop_kernel = os.path.join(kernel_dir, "earth_000101_250627_250331.bpc")
+    de430_kernel = os.path.join(
+        kernel_dir, "de430.bsp"
+    )  # contains ephemeris data of planets, Moon, Sun, Pluto
 
     try:
         spice.furnsh(leap_seconds_kernel)  # Load Leap Seconds Kernel
         spice.furnsh(eop_kernel)  # Load High-precision EOP Kernel
+        spice.furnsh(de430_kernel)  # Load DE430 Ephemeris Kernel
     except spice.utils.exceptions.SpiceyError as e:
         raise FileNotFoundError(
             f"SPICE kernel files not found. Please check the paths:\n"
             f"Leap Seconds Kernel: {leap_seconds_kernel}\n"
-            f"EOP Kernel: {eop_kernel}"
+            f"EOP Kernel: {eop_kernel}\n"
+            f"DE430 Kernel: {de430_kernel}"
         ) from e

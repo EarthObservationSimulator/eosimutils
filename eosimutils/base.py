@@ -66,6 +66,8 @@ class JsonSerializer:
         """Save the object to a JSON file."""
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(obj.to_dict(), f, indent=4)
+
+
 class SurfaceType(EnumBase):
     """
     Enumeration of recognized planetary surface types.
@@ -98,21 +100,21 @@ class ReferenceFrame:
     """Reference frame registry with static and dynamic support.
 
     The ReferenceFrame class is a registry for managing reference frames.
-    It allows for the creation, retrieval, and management of reference frames 
+    It allows for the creation, retrieval, and management of reference frames
     globally across the application.
 
     Reference frames are stored in a (class-variable) dictionary providing lookup by name.
     Hence, there can be only one ReferenceFrame registry shared globally across the application.
 
     **Key Features:**
-    - Global Registry: Reference frames are stored in a class-level dictionary (`_registry`), 
+    - Global Registry: Reference frames are stored in a class-level dictionary (`_registry`),
                         enabling global access and lookup by name.
     - Dynamic Addition: New reference frames can be dynamically added using the `add` method.
     - Pre-Registered Frames: `eosimutils` builtin frames (`ICRF_EC` and `ITRF`) are pre-registered.
-    - String Representation: Frames can be converted to strings using the `to_string` method 
+    - String Representation: Frames can be converted to strings using the `to_string` method
                                 or via `__str__` method.
     - Equality and Hashing: Frames can be compared using `__eq__` and are hashable via `__hash__`.
-    - Retrieval: Frames can be retrieved by name using the `get` method. The `values` method 
+    - Retrieval: Frames can be retrieved by name using the `get` method. The `values` method
                 returns all registered frames, while the `names` method provides a list of their names.
 
     **Description of the pre-registered frames:**
@@ -225,6 +227,22 @@ class ReferenceFrame:
         """
         return list(cls._registry.keys())
 
+    @classmethod
+    def delete(cls, name: str):
+        """
+        Deletes a ReferenceFrame from the registry.
+
+        Args:
+            name (str): The name of the reference frame to delete.
+
+        Raises:
+            ValueError: If the reference frame does not exist.
+        """
+        name = name.upper()
+        if name not in cls._registry:
+            raise ValueError(f"Frame '{name}' does not exist.")
+        del cls._registry[name]
+
 
 # Pre-register static frames
 # pylint: disable=protected-access
@@ -235,7 +253,11 @@ ReferenceFrame._registry["ITRF"] = ReferenceFrame("ITRF")
 # See: https://en.wikipedia.org/wiki/World_Geodetic_System
 WGS84_EARTH_EQUATORIAL_RADIUS = 6378.1370
 WGS84_EARTH_FLATTENING = 1.0 / 298.257223563
-WGS84_EARTH_POLAR_RADIUS = WGS84_EARTH_EQUATORIAL_RADIUS * (1.0 - WGS84_EARTH_FLATTENING)
+WGS84_EARTH_POLAR_RADIUS = WGS84_EARTH_EQUATORIAL_RADIUS * (
+    1.0 - WGS84_EARTH_FLATTENING
+)
 
 # See: https://en.wikipedia.org/wiki/Earth_radius
 SPHERICAL_EARTH_MEAN_RADIUS = 6371.0087714
+
+SUN_RADIUS = 695700.0  # Sun radius in km

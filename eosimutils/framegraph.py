@@ -513,7 +513,7 @@ class FrameGraph:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "FrameGraph":
+    def from_dict(cls, data: Dict[str, Any], set_inverse=False) -> "FrameGraph":
         """
         Deserialize a FrameGraph from a dictionary.
 
@@ -526,6 +526,8 @@ class FrameGraph:
                     - "from_frame": string name of the source ReferenceFrame,
                     - "to_frame": string name of the target ReferenceFrame,
                     - "position": dict with a "type" key and serialized position data.
+                    
+            set_inverse (bool, optional): Whether to automatically register inverse transforms.
 
         Returns:
             FrameGraph: New instance with all orientation and position transforms added.
@@ -537,7 +539,7 @@ class FrameGraph:
         # Add orientation transforms
         for orient_data in data.get("orientation_transforms", []):
             orientation = Orientation.from_dict(orient_data)
-            registry.add_orientation_transform(orientation, set_inverse=False)
+            registry.add_orientation_transform(orientation, set_inverse=set_inverse)
 
         # Add position transforms
         for pos_data in data.get("position_transforms", []):
@@ -558,7 +560,7 @@ class FrameGraph:
             else:
                 raise ValueError(f"Unknown position type: {pos_type}")
             registry.add_pos_transform(
-                from_frame, to_frame, position, set_inverse=False
+                from_frame, to_frame, position, set_inverse=set_inverse
             )
         
         # Add spice transforms

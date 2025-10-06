@@ -294,6 +294,19 @@ class Timeseries:
                 new_data.append(new_arr)
         return AbsoluteDateArray(new_time), new_data, self.headers
 
+    def at(self, time: "AbsoluteDateArray"):
+        """
+        Evaluate the timeseries at the given time points.
+
+        Args:
+            time (AbsoluteDateArray): Target time points.
+
+        Returns:
+            list[numpy.ndarray]: One array per data member, evaluated at the specified times.
+        """
+        _, new_data, _ = self._resample_data(time.ephemeris_time, method=self.interpolator)
+        return new_data
+
     def _remove_gaps_data(self):
         """
         Remove leading and trailing gaps (NaN values) from time and data arrays.

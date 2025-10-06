@@ -334,7 +334,7 @@ class StateSeries(Timeseries):
             return super()._arithmetic_op(other, op)
         elif isinstance(other, StateSeries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other._resample( # pylint: disable=protected-access
+            other_resamp = other._resample(  # pylint: disable=protected-access
                 self.time.ephemeris_time, method=interp_method
             )
             # If frames do not match, attempt frame conversion.

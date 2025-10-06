@@ -294,6 +294,19 @@ class Timeseries:
                 new_data.append(new_arr)
         return AbsoluteDateArray(new_time), new_data, self.headers
 
+    def at(self, time: "AbsoluteDateArray"):
+        """
+        Evaluate the timeseries at the given time points.
+
+        Args:
+            time (AbsoluteDateArray): Target time points.
+
+        Returns:
+            list[numpy.ndarray]: One array per data member, evaluated at the specified times.
+        """
+        _, new_data, _ = self._resample_data(time.ephemeris_time, method=self.interpolator)
+        return new_data
+
     def _remove_gaps_data(self):
         """
         Remove leading and trailing gaps (NaN values) from time and data arrays.
@@ -387,7 +400,9 @@ class Timeseries:
         reconstructed_data = [
             (
                 np.array(item, dtype=bool)
-                if item and isinstance(item[0], int) and all(x in [0, 1] for x in item)
+                if item
+                and isinstance(item[0], int)
+                and all(x in [0, 1] for x in item)
                 else np.array(item)
             )
             for item in dct["data"]
@@ -436,7 +451,9 @@ class Timeseries:
             return Timeseries(self.time, new_data, self.headers)
         elif isinstance(other, Timeseries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other._resample_data(self.time.ephemeris_time)[ # pylint: disable=protected-access
+            other_resamp = other._resample_data(
+                self.time.ephemeris_time
+            )[  # pylint: disable=protected-access
                 1
             ]  # pylint: disable=protected-access
             # Perform vectorized operation for each data array.

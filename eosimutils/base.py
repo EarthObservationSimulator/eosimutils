@@ -57,9 +57,13 @@ class JsonSerializer:
     @staticmethod
     def load_from_json(other_cls, file_path):
         """Load an object from a JSON file."""
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return other_cls.from_dict(data)
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return other_cls.from_dict(data)
+        except Exception as e:
+            print(f"Error loading JSON from {file_path}: {e}")
+            return None
 
     @staticmethod
     def save_to_json(obj, file_path):

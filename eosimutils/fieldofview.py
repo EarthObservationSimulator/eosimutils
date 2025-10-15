@@ -77,6 +77,7 @@
 - **CircularFieldOfView**: Ensures the diameter is between 0 and 180 degrees.
 - **RectangularFieldOfView**: Validates that reference and cross angles are between 0 and 90 degrees.
 - **PolygonFieldOfView**: Ensures at least three boundary corners are provided and that all corners lie in the same hemisphere as the boresight vector.
+- **OmnidirectionalFieldOfView**: No specific parameters; represents an all-encompassing FOV.
 - **FieldOfViewFactory**: Raises errors for missing or unregistered FOV types.
 
 ---
@@ -111,6 +112,7 @@ class FieldOfViewType(EnumBase):
     CIRCULAR = "CIRCULAR"
     RECTANGULAR = "RECTANGULAR"
     POLYGON = "POLYGON"
+    OMNIDIRECTIONAL = "OMNIDIRECTIONAL"
 
 
 class FieldOfViewFactory:
@@ -163,6 +165,35 @@ class FieldOfViewFactory:
         if not fov_class:
             raise ValueError(f'FOV type "{fov_type_str}" is not registered.')
         return fov_class.from_dict(specs)
+
+@FieldOfViewFactory.register_type("OMNIDIRECTIONAL")
+class OmnidirectionalFieldOfView:
+    """This class represents an omnidirectional field-of-view (FOV) that covers the entire sphere."""
+
+    def __init__(self):
+        """Initializes the OmnidirectionalFieldOfView."""
+        pass
+
+    @classmethod
+    def from_dict(cls, specs: Dict[str, Any]) -> "OmnidirectionalFieldOfView":
+        """Creates an OmnidirectionalFieldOfView object from a dictionary.
+
+        Args:
+            specs (Dict[str, Any]): Dictionary containing the specifications for the field-of-view.
+                This class does not require any specific parameters.
+
+        Returns:
+            OmnidirectionalFieldOfView: An instance of the OmnidirectionalFieldOfView class.
+        """
+        return cls()
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Converts the OmnidirectionalFieldOfView object to a dictionary.
+
+        Returns:
+            Dict[str, Any]: Dictionary representation of the OmnidirectionalFieldOfView object.
+        """
+        return {"fov_type": FieldOfViewType.OMNIDIRECTIONAL.value}
 
 @FieldOfViewFactory.register_type("CIRCULAR")
 class CircularFieldOfView:

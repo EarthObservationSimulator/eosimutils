@@ -61,7 +61,7 @@ class JsonSerializer:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             return other_cls.from_dict(data)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(f"Error loading JSON from {file_path}: {e}")
             return None
 
@@ -72,6 +72,7 @@ class JsonSerializer:
         If the object (or items inside a dict/list) expose a to_dict() method,
         that method is used recursively to produce a JSON-serializable structure.
         """
+
         def _to_serializable(o):
             # prefer user-defined to_dict for custom objects
             if hasattr(o, "to_dict") and callable(getattr(o, "to_dict")):
@@ -93,6 +94,7 @@ class JsonSerializer:
         serializable = _to_serializable(obj)
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(serializable, f, indent=4)
+
 
 class SurfaceType(EnumBase):
     """

@@ -166,25 +166,34 @@ class FieldOfViewFactory:
             raise ValueError(f'FOV type "{fov_type_str}" is not registered.')
         return fov_class.from_dict(specs)
 
+
 @FieldOfViewFactory.register_type("OMNIDIRECTIONAL")
 class OmnidirectionalFieldOfView:
-    """This class represents an omnidirectional field-of-view (FOV) that covers the entire sphere."""
+    """This class represents an omnidirectional FOV that covers the entire sphere."""
 
     def __init__(self):
         """Initializes the OmnidirectionalFieldOfView."""
         pass
 
     @classmethod
-    def from_dict(cls, specs: Dict[str, Any]) -> "OmnidirectionalFieldOfView":
+    def from_dict(
+        cls, specs: Dict[str, Any] = None
+    ) -> "OmnidirectionalFieldOfView":
         """Creates an OmnidirectionalFieldOfView object from a dictionary.
 
         Args:
             specs (Dict[str, Any]): Dictionary containing the specifications for the field-of-view.
-                This class does not require any specific parameters.
+            This class does not require any specific parameters.
+            The input can be None or an empty dictionary.
 
         Returns:
             OmnidirectionalFieldOfView: An instance of the OmnidirectionalFieldOfView class.
         """
+        if specs is not None or len(specs) > 0:
+            print(
+                "Warning: OmnidirectionalFieldOfView does "
+                "not require any parameters. Ignoring provided specs."
+            )
         return cls()
 
     def to_dict(self) -> Dict[str, Any]:
@@ -194,6 +203,7 @@ class OmnidirectionalFieldOfView:
             Dict[str, Any]: Dictionary representation of the OmnidirectionalFieldOfView object.
         """
         return {"fov_type": FieldOfViewType.OMNIDIRECTIONAL.value}
+
 
 @FieldOfViewFactory.register_type("CIRCULAR")
 class CircularFieldOfView:
@@ -257,6 +267,7 @@ class CircularFieldOfView:
             "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
         }
+
 
 @FieldOfViewFactory.register_type("RECTANGULAR")
 class RectangularFieldOfView:
@@ -356,6 +367,7 @@ class RectangularFieldOfView:
             "ref_angle": self.ref_angle,
             "cross_angle": self.cross_angle,
         }
+
 
 @FieldOfViewFactory.register_type("POLYGON")
 class PolygonFieldOfView:

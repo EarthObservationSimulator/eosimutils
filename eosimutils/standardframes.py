@@ -3,7 +3,7 @@
    :synopsis: Functions to compute commonly used reference frames.
 """
 
-from typing import Dict, Tuple, Any, Optional, Type, Callable
+from typing import Dict, Any, Type, Callable
 from scipy.spatial.transform import Rotation as Scipy_Rotation
 import numpy as np
 
@@ -91,14 +91,18 @@ def get_lvlh(
 
     return orientation, position_series
 
+
 class StandardFrameType(EnumBase):
     """Standard supported frame type definitions."""
-    LVLH_TYPE_1 = "LVLH_TYPE_1" # LVLH_INERTIAL_Z_NEGATIVE_POSITION_Y_NEGATIVE_ANGULAR_MOMENTUM_X_CROSS_RIGHT_HAND
+
+    LVLH_TYPE_1 = "LVLH_TYPE_1"  # LVLH_INERTIAL_Z_NEGATIVE_POSITION_Y_NEGATIVE_ANGULAR_MOMENTUM_X_CROSS_RIGHT_HAND # pylint: disable=line-too-long
+
 
 class StandardFrameHandlerFactory:
     """Factory class to register and handle standard frames.
     The word "Handler" is used to avoid confusion with ReferenceFrame class.
     """
+
     # Class-level registry for standard frame types
     _registry: Dict[str, Type] = {}
 
@@ -143,18 +147,20 @@ class StandardFrameHandlerFactory:
             )
         return frame_class.from_dict(specs)
 
+
 @StandardFrameHandlerFactory.register_type(StandardFrameType.LVLH_TYPE_1.value)
 class LVLHType1FrameHandler:
     """
     Class to register and compute LVLH (Local Vertical Local Horizontal) type-1 reference frame.
     The instance variable `frame` holds the ReferenceFrame object for the LVLH frame.
 
-    See the method `eosimutils.standardframes.get_lvlh` function for details on the frame definition.
+    See `eosimutils.standardframes.get_lvlh` function for details on the frame definition.
     """
+
     def __init__(self, frame_name: str):
         """
         Initializes an LVLHType1FrameHandler instance.
-        The frame is registered (if not already) with the 
+        The frame is registered (if not already) with the
         ReferenceFrame class upon initialization.
 
         Args:
@@ -167,7 +173,8 @@ class LVLHType1FrameHandler:
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "LVLHType1FrameHandler":
         """
-        Creates an LVLHType1FrameHandler instance and registers the frame from a specifications dictionary.
+        Creates an LVLHType1FrameHandler instance and registers the frame
+        from a specifications dictionary.
 
         Args:
             specs (Dict[str, Any]): A dictionary containing LVLH frame specifications.
@@ -175,7 +182,8 @@ class LVLHType1FrameHandler:
                 - "name" (str): Name of the LVLH frame to be created.
 
         Returns:
-            LVLHType1FrameHandler: An instance of the LVLHType1FrameHandler class initialized with the given specifications.
+            LVLHType1FrameHandler: An instance of the LVLHType1FrameHandler class
+                                initialized with the given specifications.
 
         Raises:
             KeyError: If required keys are missing in the specifications dictionary.
@@ -184,7 +192,7 @@ class LVLHType1FrameHandler:
         if name is None:
             raise KeyError('Key "name" not found in specifications dictionary.')
         return cls(name)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the LVLHType1FrameHandler instance to a dictionary representation.
@@ -199,7 +207,7 @@ class LVLHType1FrameHandler:
             "frame_type": StandardFrameType.LVLH_TYPE_1.value,
             "name": self.frame.to_string(),
         }
-    
+
     def get_frame(self) -> ReferenceFrame:
         """
         Returns the ReferenceFrame object for the LVLH frame.
@@ -213,15 +221,15 @@ class LVLHType1FrameHandler:
         self, state: StateSeries
     ) -> tuple["OrientationSeries", "PositionSeries"]:
         """
-        Computes the transformation i.e. the LVLH OrientationSeries and PositionSeries 
+        Computes the transformation i.e. the LVLH OrientationSeries and PositionSeries
         from a satellite's StateSeries (in inertial coordinates).
 
         See the function `eosimutils.standardframes.get_lvlh` function for details.
 
         """
         return get_lvlh(state, self.frame)
-    
+
     def __eq__(self, value):
-        if not isinstance(value, LVLHType1FrameHandler): # type is checked
+        if not isinstance(value, LVLHType1FrameHandler):  # type is checked
             return False
-        return (self.frame == value.frame)
+        return self.frame == value.frame

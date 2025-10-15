@@ -13,6 +13,7 @@ lsk_kernel_file_name = "naif0012.tls"
 eop_kernel_file_name = "earth_1962_250826_2125_combined.bpc"
 de430_kernel_file_name = "de430.bsp"
 
+
 def download_latest_kernels() -> None:
     """Download the latest SPICE kernels from the NAIF website.
 
@@ -31,9 +32,12 @@ def download_latest_kernels() -> None:
 
     # Define the latest kernel URLs
     kernels = {
-        "LSK": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/"+lsk_kernel_file_name,  # pylint: disable=line-too-long
-        "BPC": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/"+eop_kernel_file_name,  # pylint: disable=line-too-long
-        "DE430": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/"+de430_kernel_file_name,  # pylint: disable=line-too-long
+        "LSK": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/"
+        + lsk_kernel_file_name,  # pylint: disable=line-too-long
+        "BPC": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/"
+        + eop_kernel_file_name,  # pylint: disable=line-too-long
+        "DE430": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/"
+        + de430_kernel_file_name,  # pylint: disable=line-too-long
     }
 
     # Function to download a kernel if it doesn't already exist

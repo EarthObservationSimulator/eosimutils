@@ -304,7 +304,9 @@ class Timeseries:
         Returns:
             list[numpy.ndarray]: One array per data member, evaluated at the specified times.
         """
-        _, new_data, _ = self._resample_data(time.ephemeris_time, method=self.interpolator)
+        _, new_data, _ = self._resample_data(
+            time.ephemeris_time, method=self.interpolator
+        )
         return new_data
 
     def _remove_gaps_data(self):
@@ -451,11 +453,11 @@ class Timeseries:
             return Timeseries(self.time, new_data, self.headers)
         elif isinstance(other, Timeseries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other._resample_data(
-                self.time.ephemeris_time
-            )[  # pylint: disable=protected-access
-                1
-            ]  # pylint: disable=protected-access
+            other_resamp = (
+                other._resample_data(  # pylint: disable=protected-access
+                    self.time.ephemeris_time
+                )[1]
+            )
             # Perform vectorized operation for each data array.
             new_data = [
                 (

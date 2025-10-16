@@ -58,8 +58,7 @@ class TestFieldOfViewFactory(unittest.TestCase):
         @FieldOfViewFactory.register_type("DUMMY_FOV")
         class DummyFOV:
             @classmethod
-            def from_dict(cls, specs):
-                self.specs = specs
+            def from_dict(cls, specs): #pylint: disable=unused-argument
                 return cls()
 
         specs = {"fov_type": "DUMMY_FOV"}

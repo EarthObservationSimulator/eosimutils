@@ -189,11 +189,12 @@ class OmnidirectionalFieldOfView:
         Returns:
             OmnidirectionalFieldOfView: An instance of the OmnidirectionalFieldOfView class.
         """
-        if specs is not None or len(specs) > 0:
-            print(
-                "Warning: OmnidirectionalFieldOfView does "
-                "not require any parameters. Ignoring provided specs."
-            )
+        if specs is not None:
+            if len(specs) > 0:
+                print(
+                    "Warning: OmnidirectionalFieldOfView does "
+                    "not require any parameters. Ignoring provided specs."
+                )
         return cls()
 
     def to_dict(self) -> Dict[str, Any]:

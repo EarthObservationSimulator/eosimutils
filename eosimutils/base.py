@@ -60,7 +60,10 @@ class JsonSerializer:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return other_cls.from_dict(data)
+            if isinstance(data, list):
+                return [other_cls.from_dict(d) for d in data]
+            else:
+                return other_cls.from_dict(data)
         except Exception as e:  # pylint: disable=broad-except
             print(f"Error loading JSON from {file_path}: {e}")
             return None

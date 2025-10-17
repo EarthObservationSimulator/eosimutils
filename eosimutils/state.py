@@ -697,3 +697,138 @@ class Cartesian3DPositionArray:
         """
         for position in self.positions:
             yield Cartesian3DPosition.from_array(position, self.frame)
+
+class GeographicPositionArray:
+    """
+    Stores an array of geographic positions (latitude, longitude, elevation).
+    Each geographic position is defined in the geodetic coordinate system.
+    The geodetic position is defined with respect to the
+    World Geodetic System 1984 Geoid as defined in Skyfield.
+
+    All units are consistent with GeographicPosition: degrees for lat/lon, meters for elevation.
+
+    The instance can be initialized from a list of GeographicPosition objects.
+
+    Internally, the positions are stored as a NumPy array.
+
+    +---------------------------------------------+
+    |         GeographicPositionArray             |
+    +---------------------------------------------+
+    |                                             |
+    | geo_positions:                              |
+    | +-----------------------------------------+ |
+    | | [[lat1, lon1, elev1],                   | |
+    | |  [lat2, lon2, elev2],                   | |
+    | |   ...                                   | |  --> NumPy array of shape (N, 3)
+    | |  [latN, lonN, elevN]]                   | |      lat/lon in degrees, elev in meters
+    | +-----------------------------------------+ |
+    |                                             |
+    +---------------------------------------------+
+
+    """
+
+    def __init__(self, geo_positions: np.ndarray):
+        """
+        Args:
+            geo_positions (np.ndarray): NumPy array of shape (N, 3) with columns [latitude, longitude, elevation].
+        Raises:
+            ValueError: If geo_positions does not have shape (N, 3).
+        """
+        if geo_positions.ndim != 2 or geo_positions.shape[1] != 3:
+            raise ValueError("geo_positions array must have shape (N, 3)")
+        self.geo_positions = geo_positions
+
+    @classmethod
+    def from_geographic_positions(cls, geo_positions: List[GeographicPosition]) -> "GeographicPositionArray":
+        """
+        Creates a GeographicPositionArray from a list of GeographicPosition objects.
+        Args:
+            geo_positions (List[GeographicPosition]): List of GeographicPosition objects.
+        Returns:
+            GeographicPositionArray: A new GeographicPositionArray object.
+        Raises:
+            ValueError: If the list is empty.
+        """
+        if not geo_positions:
+            raise ValueError("The list of GeographicPosition objects cannot be empty.")
+        arr = np.array([[p.latitude, p.longitude, p.elevation] for p in geo_positions])
+        return cls(arr)
+
+    @property
+    def itrs_xyz(self) -> np.ndarray:
+        """Get the ITRS XYZ positions in kilometers for all entries in the array.
+
+        Conversion is performed using Skyfield for each row in self.geo_positions.
+
+        Returns:
+            np.ndarray: Array of shape (N, 3) with ITRS XYZ positions in kilometers.
+        """
+        itrs_list = []
+        for lat_deg, lon_deg, elev_m in self.geo_positions:
+            skyfield_geo_position = skyfield_wgs84.latlon(
+                latitude_degrees=float(lat_deg),
+                longitude_degrees=float(lon_deg),
+                elevation_m=float(elev_m),
+            )
+            itrs_list.append(skyfield_geo_position.itrs_xyz.km)
+        return np.array(itrs_list)
+
+    def to_cartesian3d_position_array(self) -> Cartesian3DPositionArray:
+        """Convert the geographic position array to a Cartesian3DPositionArray.
+
+        Returns:
+            Cartesian3DPositionArray: The corresponding Cartesian3DPositionArray object.
+        """
+        itrs_xyz = self.itrs_xyz
+        return Cartesian3DPositionArray(
+            positions=itrs_xyz, 
+            frame=ReferenceFrame.get("ITRF")
+        )
+
+    @classmethod
+    def from_dict(cls, dict_in: dict) -> "GeographicPositionArray":
+        """
+        Deserializes a GeographicPositionArray object from a dictionary.
+        Args:
+            dict_in (dict): The dictionary must contain the key "geo_positions":
+                - "geo_positions": A list or array representing geo_positions (Nx3), columns [latitude, longitude, elevation].
+        Returns:
+            GeographicPositionArray: The deserialized object.
+        """
+        geo_positions = np.array(dict_in["geo_positions"])
+        return cls(geo_positions)
+
+    def to_dict(self) -> dict:
+        """
+        Serializes the GeographicPositionArray to a dictionary.
+        Returns:
+            dict: A dictionary representation of the GeographicPositionArray object.
+        """
+        return {
+            "geo_positions": self.geo_positions.tolist()
+        }
+
+    def to_numpy(self) -> np.ndarray:
+        """Returns the internal NumPy array of geo_positions."""
+        return self.geo_positions
+
+    def to_list(self) -> list:
+        """Returns a list of geo_positions."""
+        return self.geo_positions.tolist()
+
+    def __len__(self):
+        return len(self.geo_positions)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return GeographicPositionArray(self.geo_positions[index])
+        else:
+            lat, lon, elev = self.geo_positions[index]
+            return GeographicPosition(lat, lon, elev)
+
+    def __iter__(self):
+        for lat, lon, elev in self.geo_positions:
+            yield GeographicPosition(lat, lon, elev)
+
+    def __repr__(self):
+        return f"GeographicPositionArray(geo_positions={self.geo_positions!r})"

@@ -17,6 +17,7 @@ from eosimutils.state import (
     GeographicPosition,
     CartesianState,
     Cartesian3DPositionArray,
+    GeographicPositionArray,
 )
 
 
@@ -590,3 +591,101 @@ class TestCartesian3DPositionArray(unittest.TestCase):
                 position.to_numpy(), self.positions_np[i]
             )
             self.assertEqual(position.frame, self.frame)
+
+class TestGeographicPositionArray(unittest.TestCase):
+    """Test the GeographicPositionArray class."""
+
+    def setUp(self):
+        self.geo_positions = [
+            GeographicPosition(10.0, 20.0, 100.0),
+            GeographicPosition(-45.0, 60.0, 500.0),
+        ]
+        self.geo_positions_np = np.array([
+            [10.0, 20.0, 100.0],
+            [-45.0, 60.0, 500.0],
+        ])
+
+    def test_initialization(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        np.testing.assert_array_equal(arr.geo_positions, self.geo_positions_np)
+
+    def test_invalid_shape(self):
+        with self.assertRaises(ValueError):
+            GeographicPositionArray(np.array([10.0, 20.0, 100.0]))
+        with self.assertRaises(ValueError):
+            GeographicPositionArray(np.array([[10.0, 20.0], [30.0, 40.0]]))
+
+    def test_from_geographic_positions(self):
+        arr = GeographicPositionArray.from_geographic_positions(self.geo_positions)
+        np.testing.assert_array_equal(arr.geo_positions, self.geo_positions_np)
+
+    def test_to_numpy_and_to_list(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        np.testing.assert_array_equal(arr.to_numpy(), self.geo_positions_np)
+        self.assertEqual(arr.to_list(), self.geo_positions_np.tolist())
+
+    def test_to_dict_and_from_dict(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        dict_out = arr.to_dict()
+        self.assertEqual(dict_out["geo_positions"], self.geo_positions_np.tolist())
+        arr2 = GeographicPositionArray.from_dict(dict_out)
+        np.testing.assert_array_equal(arr2.geo_positions, self.geo_positions_np)
+
+    def test_repr(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        s = repr(arr)
+        self.assertIn("GeographicPositionArray", s)
+        self.assertIn("geo_positions", s)
+
+    def test_len(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        self.assertEqual(len(arr), len(self.geo_positions_np))
+
+    def test_getitem_single(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        item = arr[1]
+        self.assertIsInstance(item, GeographicPosition)
+        self.assertAlmostEqual(item.latitude, self.geo_positions_np[1][0])
+        self.assertAlmostEqual(item.longitude, self.geo_positions_np[1][1])
+        self.assertAlmostEqual(item.elevation, self.geo_positions_np[1][2])
+
+    def test_getitem_slice(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        sliced_array = arr[1:]
+        self.assertIsInstance(sliced_array, GeographicPositionArray)
+        np.testing.assert_array_equal(
+            sliced_array.to_numpy(), self.geo_positions_np[1:]
+        )
+
+    def test_getitem_out_of_bounds(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        with self.assertRaises(IndexError):
+            _ = arr[10]
+
+    def test_iter(self):
+        arr = GeographicPositionArray(self.geo_positions_np)
+        for i, geo_pos in enumerate(arr):
+            self.assertIsInstance(geo_pos, GeographicPosition)
+            self.assertAlmostEqual(geo_pos.latitude, self.geo_positions_np[i][0])
+            self.assertAlmostEqual(geo_pos.longitude, self.geo_positions_np[i][1])
+            self.assertAlmostEqual(geo_pos.elevation, self.geo_positions_np[i][2])
+    
+    def test_itrs_xyz_array(self):
+        """Test that itrs_xyz returns an (N,3) array matching per-item conversions."""
+        arr = GeographicPositionArray(self.geo_positions_np)
+        itrs_array = arr.itrs_xyz
+        # Shape and type checks
+        self.assertEqual(itrs_array.shape, (len(self.geo_positions_np), 3))
+        self.assertTrue(np.issubdtype(itrs_array.dtype, np.floating))
+        # Expected: stack of each GeographicPosition.itrs_xyz
+        expected = np.array([gp.itrs_xyz for gp in self.geo_positions])
+        np.testing.assert_array_almost_equal(itrs_array, expected, decimal=9)
+
+    def test_to_cartesian3d_position_array(self):
+        """Test conversion to Cartesian3DPositionArray preserves coordinates and frame."""
+        arr = GeographicPositionArray(self.geo_positions_np)
+        cart_arr = arr.to_cartesian3d_position_array()
+        self.assertIsInstance(cart_arr, Cartesian3DPositionArray)
+        self.assertEqual(cart_arr.frame, ReferenceFrame.get("ITRF"))
+        # positions should match arr.itrs_xyz
+        np.testing.assert_array_almost_equal(cart_arr.positions, arr.itrs_xyz, decimal=9)

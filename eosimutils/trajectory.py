@@ -956,22 +956,24 @@ class PositionSeries(Timeseries):
         """
         return self._arithmetic_op(other, lambda a, b: a / b)
 
-    def at(self, t: Union["AbsoluteDate", "AbsoluteDateArray"]) -> np.ndarray:
+    def at(
+        self, time: Union["AbsoluteDate", "AbsoluteDateArray"]
+    ) -> np.ndarray:
         """
         Returns the position(s) at the given time(s) by interpolation.
 
         Args:
-            t (AbsoluteDate or AbsoluteDateArray): The time(s) at which to evaluate the position.
+            time (AbsoluteDate or AbsoluteDateArray): The time(s) at which to evaluate the position.
 
         Returns:
             np.ndarray: Interpolated position(s). Shape (3,) for AbsoluteDate, (N,3) for
             AbsoluteDateArray.
         """
-        if isinstance(t, AbsoluteDate):
-            query_times = np.array([t.ephemeris_time])
+        if isinstance(time, AbsoluteDate):
+            query_times = np.array([time.ephemeris_time])
             single = True
-        elif isinstance(t, AbsoluteDateArray):
-            query_times = t.ephemeris_time
+        elif isinstance(time, AbsoluteDateArray):
+            query_times = time.ephemeris_time
             single = False
         else:
             raise TypeError("Input must be AbsoluteDate or AbsoluteDateArray.")

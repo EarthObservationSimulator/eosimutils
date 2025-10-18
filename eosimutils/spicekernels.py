@@ -9,6 +9,10 @@ import spiceypy as spice
 import os
 import urllib.request
 
+lsk_kernel_file_name = "naif0012.tls"
+eop_kernel_file_name = "earth_1962_250826_2125_combined.bpc"
+de430_kernel_file_name = "de430.bsp"
+
 
 def download_latest_kernels() -> None:
     """Download the latest SPICE kernels from the NAIF website.
@@ -28,9 +32,12 @@ def download_latest_kernels() -> None:
 
     # Define the latest kernel URLs
     kernels = {
-        "LSK": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls",  # pylint: disable=line-too-long
-        "BPC": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_000101_250627_250331.bpc",  # pylint: disable=line-too-long
-        "DE430": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp",  # pylint: disable=line-too-long
+        "LSK": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/"
+        + lsk_kernel_file_name,  # pylint: disable=line-too-long
+        "BPC": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/"
+        + eop_kernel_file_name,  # pylint: disable=line-too-long
+        "DE430": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/"
+        + de430_kernel_file_name,  # pylint: disable=line-too-long
     }
 
     # Function to download a kernel if it doesn't already exist
@@ -63,15 +70,20 @@ def load_spice_kernels() -> None:
 
     # Load the kernels
     kernel_dir = os.path.join(os.path.dirname(__file__), "spice_kernels")
-    leap_seconds_kernel = os.path.join(kernel_dir, "naif0012.tls")
-    eop_kernel = os.path.join(kernel_dir, "earth_000101_250627_250331.bpc")
+    leap_seconds_kernel = os.path.join(kernel_dir, lsk_kernel_file_name)
+    eop_kernel = os.path.join(kernel_dir, eop_kernel_file_name)
     de430_kernel = os.path.join(
-        kernel_dir, "de430.bsp"
+        kernel_dir, de430_kernel_file_name
     )  # contains ephemeris data of planets, Moon, Sun, Pluto
 
     try:
+        spice.unload(leap_seconds_kernel)  # Unload if already loaded
         spice.furnsh(leap_seconds_kernel)  # Load Leap Seconds Kernel
+
+        spice.unload(eop_kernel)  # Unload if already loaded
         spice.furnsh(eop_kernel)  # Load High-precision EOP Kernel
+
+        spice.unload(de430_kernel)  # Unload if already loaded
         spice.furnsh(de430_kernel)  # Load DE430 Ephemeris Kernel
     except spice.utils.exceptions.SpiceyError as e:
         raise FileNotFoundError(

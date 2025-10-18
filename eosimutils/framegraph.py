@@ -72,7 +72,7 @@ are registered.
 **Example dictionary representation**
 ```
 {
-  "transforms": [
+  "orientation_transforms": [
     {
       "orientation_type": "spice", "from": "ICRF_EC", "to": "ITRF"
     },
@@ -89,9 +89,20 @@ are registered.
     },
     ...
   ],
-  "pos_transforms": [
+  "position_transforms": [
     {
-      "from_frame": "A", "to_frame": "B",
+      "from_frame": "ICRF_EC", "to_frame": "ITRF",
+      "position": { "x": 0.0,  "y": 0.0, "z": 0.0,
+        "frame": "ICRF_EC", "type": "Cartesian3DPosition"
+      }
+    },
+    {
+      "from_frame": "ITRF", "to_frame": "ICRF_EC",
+      "position": { "x": 0.0,  "y": 0.0, "z": 0.0,
+        "frame": "ITRF", "type": "Cartesian3DPosition"
+      }
+    },
+    { "from_frame": "A", "to_frame": "B",
       "position": { "x": 1.0,  "y": 0.0, "z": 0.0,
         "frame": "A", "type": "Cartesian3DPosition"
       }
@@ -113,7 +124,6 @@ are registered.
   ]
 }
 ```
-
 """
 
 from scipy.spatial.transform import Rotation as Scipy_Rotation
@@ -247,6 +257,8 @@ class FrameGraph:
             raise TypeError(
                 "Position must be a Cartesian3DPosition or PositionSeries instance"
             )
+        if from_frame is None or to_frame is None:
+            raise ValueError("from_frame and/or to_frame cannot be None")
         if position.frame != from_frame:
             raise ValueError(
                 "Position object must be expressed in from_frame coordinates."
@@ -456,16 +468,17 @@ class FrameGraph:
         Serialize the FrameGraph to a dictionary.
 
         The result contains:
-            - "transforms": a list of Orientation object dictionaries (see Orientation.to_dict())
-            - "pos_transforms": a list of position transforms, each as a dict with:
+            - "orientation_transforms": a list of Orientation object dictionaries
+                                        (see Orientation.to_dict())
+            - "position_transforms": a list of position transforms, each as a dict with:
                 - "from_frame": string name of the source ReferenceFrame,
                 - "to_frame": string name of the target ReferenceFrame,
                 - "position": dict representation of the position object (with a "type" key).
 
         Returns:
             dict: {
-                "transforms": List[dict],      # orientation transforms
-                "pos_transforms": List[dict],  # position transforms
+                "orientation_transforms": List[dict],      # orientation transforms
+                "position_transforms": List[dict],  # position transforms
             }
         """
         transforms = []
@@ -496,22 +509,27 @@ class FrameGraph:
                 )
 
         return {
-            "transforms": transforms,
-            "pos_transforms": pos_transforms,
+            "orientation_transforms": transforms,
+            "position_transforms": pos_transforms,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "FrameGraph":
+    def from_dict(cls, data: Dict[str, Any], set_inverse=False) -> "FrameGraph":
         """
         Deserialize a FrameGraph from a dictionary.
 
+        Transformations between the base frames `ICRF_EC` and `ITRF` are automatically added.
+
         Args:
             data (dict): Dictionary with the following keys:
-                - "transforms": List of orientation transform dicts (see Orientation.from_dict()).
-                - "pos_transforms": List of position transform dicts, each with:
+                - "orientation_transforms": List of orientation transform dicts
+                                            (see Orientation.from_dict()).
+                - "position_transforms": List of position transform dicts, each with:
                     - "from_frame": string name of the source ReferenceFrame,
                     - "to_frame": string name of the target ReferenceFrame,
                     - "position": dict with a "type" key and serialized position data.
+
+            set_inverse (bool, optional): Whether to automatically register inverse transforms.
 
         Returns:
             FrameGraph: New instance with all orientation and position transforms added.
@@ -521,14 +539,21 @@ class FrameGraph:
         registry._pos_adj.clear()
 
         # Add orientation transforms
-        for orient_data in data.get("transforms", []):
+        for orient_data in data.get("orientation_transforms", []):
             orientation = Orientation.from_dict(orient_data)
-            registry.add_orientation_transform(orientation, set_inverse=False)
+            registry.add_orientation_transform(
+                orientation, set_inverse=set_inverse
+            )
 
         # Add position transforms
-        for pos_data in data.get("pos_transforms", []):
+        for pos_data in data.get("position_transforms", []):
             from_frame = ReferenceFrame.get(pos_data["from_frame"])
             to_frame = ReferenceFrame.get(pos_data["to_frame"])
+            if from_frame is None or to_frame is None:
+                raise ValueError(
+                    f"from_frame and/or to_frame not recognized. "
+                    f"from_frame: {from_frame}, to_frame: {to_frame}"
+                )
             pos_dict = pos_data["position"]
             pos_type = pos_dict.get("type")
             # Remove the type key before passing to from_dict
@@ -540,7 +565,10 @@ class FrameGraph:
             else:
                 raise ValueError(f"Unknown position type: {pos_type}")
             registry.add_pos_transform(
-                from_frame, to_frame, position, set_inverse=False
+                from_frame, to_frame, position, set_inverse=set_inverse
             )
+
+        # Add spice transforms
+        registry.add_spice_transforms()
 
         return registry

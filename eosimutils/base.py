@@ -70,6 +70,10 @@ class JsonSerializer:
 
     @staticmethod
     def to_serializable(o):
+        """Convert an object to a JSON-serializable structure.
+        If the object (or items inside a dict/list) expose a to_dict() method,
+        that method is used recursively to produce a JSON-serializable structure.
+        """
         # prefer user-defined to_dict for custom objects
         if hasattr(o, "to_dict") and callable(getattr(o, "to_dict")):
             return JsonSerializer.to_serializable(o.to_dict())

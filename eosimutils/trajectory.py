@@ -433,11 +433,14 @@ class StateSeries(Timeseries):
 
     def to_dict(
         self,
-        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
-        time_scale: Union[str, EnumBase] = "UTC",
+        time_format: Union[str, EnumBase] = "SPICE_ET",
+        time_scale: Union[str, EnumBase] = "ET",
     ) -> dict:
         """
         Serializes the StateSeries object to a dictionary.
+
+        The time arrays are serialized in the `SPICE_ET` format, `ET` time scale 
+        by default to allow for faster serialization.
 
         Returns:
             dict: A dictionary representation of the StateSeries object.

@@ -6,17 +6,20 @@ The time module provides classes and functions for representing, converting,
 and manipulating time data.
 
 **Internal Representation**:
-The module maintains time internally in the SPICE Ephemeris Time (ET) format, which
+The module maintains time internally in the SPICE Ephemeris Time (ET) time system, which
 corresponds to Barycentric Dynamical Time (TDB).
 
 **Time Formats:**
 Time formats define how time is represented. The module supports:
 - **Gregorian Date**
 - **Julian Date**
+= **SPICE ET**: Count of ephemeris seconds past the ephemeris reference epoch (J2000) 
+                J2000 epoch is Greenwich noon on January 1, 2000 Barycentric Dynamical Time (TDB).
 
 **Time Scales:**
 Time scales define the method for measuring time. The module currently supports:
 - **UTC (Coordinated Universal Time)**
+- **ET (Ephemeris Time)**
 
 **Key Features:**
 - The module provides methods to convert between Gregorian Date, Julian Date (UTC time scale).
@@ -87,6 +90,7 @@ class TimeFormat(EnumBase):
 
     GREGORIAN_DATE = "GREGORIAN_DATE"
     JULIAN_DATE = "JULIAN_DATE"
+    SPICE_ET = "SPICE_ET"
 
 
 class TimeScale(EnumBase):
@@ -95,6 +99,7 @@ class TimeScale(EnumBase):
     """
 
     UTC = "UTC"
+    ET = "ET" # SPICE Ephemeris Time (TDB)
 
 
 class AbsoluteDate:
@@ -119,11 +124,10 @@ class AbsoluteDate:
         Args:
             dict_in (dict): Dictionary with the date-time information.
                 The dictionary should contain the following key-value pairs:
-                - "time_format" (str): The date-time format, e.g.,
-                                       "Gregorian_Date" or "Julian_Date"
+                - "time_format" (str): The date-time format, e.g., "spice_et"
                                        (case-insensitive).
                                        See :class:`eosimutils.time.TimeFormat` for options.
-                - "time_scale" (str): The time scale, e.g., "UTC"
+                - "time_scale" (str): The time scale, e.g., "et"
                                       (case-insensitive).
                                       See :class:`eosimutils.time.TimeScale` for options.
 
@@ -134,17 +138,24 @@ class AbsoluteDate:
                 For "Julian_Date" format:
                 - "jd" (float): The Julian Date.
 
+                For "SPICE_ET" format:
+                - "ephemeris_time" (float): The SPICE Ephemeris Time (ET) value.
+
         Returns:
             AbsoluteDate: AbsoluteDate object.
         """
         time_scale: TimeScale = TimeScale.get(dict_in["time_scale"])
         time_format: TimeFormat = TimeFormat.get(dict_in["time_format"])
 
+        if time_scale == TimeScale.ET and time_format == TimeFormat.SPICE_ET:
+            # Directly use the provided Ephemeris Time (ET)
+            spice_ephemeris_time: float = dict_in["ephemeris_time"]
+            return cls(ephemeris_time=spice_ephemeris_time)
+        
         # Load SPICE kernel files
         load_spice_kernels()
-
+        
         if time_scale == TimeScale.UTC:
-
             if time_format == TimeFormat.GREGORIAN_DATE:
                 # Parse the calendar date string and convert to Ephemeris Time (ET)
                 calendar_date_str: str = dict_in["calendar_date"]
@@ -172,22 +183,31 @@ class AbsoluteDate:
 
         Args:
             time_format (str): The type of date-time format to use
-                                ("GREGORIAN_DATE" or "JULIAN_DATE").
+                                e.g. "Gregorian_Date" (case-insensitive).
+                                See :class:`eosimutils.time.TimeFormat` for options.
                                 Default is "GREGORIAN_DATE".
 
-            time_scale (str): The time scale to use (e.g., "UTC").
+            time_scale (str): The time scale to use 
+                                e.g. "utc" (case-insensitive)
+                                (see :class:`eosimutils.time.TimeScale`).
                                 Default is "UTC".
 
 
         Returns:
             dict: Dictionary with the date-time information.
         """
-
-        # Load SPICE kernel files
-        load_spice_kernels()
-
         time_format = TimeFormat.get(time_format)
         time_scale = TimeScale.get(time_scale)
+
+        if time_scale == TimeScale.ET and time_format == TimeFormat.SPICE_ET:
+            return {
+                    "time_format": time_format.to_string(),
+                    "ephemeris_time": self.ephemeris_time,
+                    "time_scale": time_scale.to_string(),
+                }
+        
+        # Load SPICE kernel files
+        load_spice_kernels()
 
         if time_scale == TimeScale.UTC:
 
@@ -325,7 +345,7 @@ class AbsoluteDateArray:
             dict_in (dict): Dictionary with the time information.
                 The dictionary should contain the following key-value pairs:
                 - "time_format" (str): The date-time format, e.g.,
-                                       "Gregorian_Date" or "Julian_Date"
+                                       "Gregorian_Date".
                                        (case-insensitive).
                                        See :class:`eosimutils.time.TimeFormat` for options.
                 - "time_scale" (str): The time scale, e.g., "UTC"
@@ -334,16 +354,24 @@ class AbsoluteDateArray:
 
                 For "Gregorian_Date" format:
                 - "calendar_date" (list of str): List of date-times in YYYY-MM-DDTHH:MM:SS.SSS
-                format.
+                                                 format.
 
                 For "Julian_Date" format:
                 - "jd" (list of float): List of Julian Dates.
+
+                For "SPICE_ET" format:
+                - "ephemeris_time" (list of float): List of Ephemeris Times.
 
         Returns:
             AbsoluteDateArray: AbsoluteDateArray object.
         """
         time_scale: TimeScale = TimeScale.get(dict_in["time_scale"])
         time_format: TimeFormat = TimeFormat.get(dict_in["time_format"])
+
+        # If the input format and scale is SPICE_ET and ET, return directly
+        if time_scale == TimeScale.ET and time_format == TimeFormat.SPICE_ET:
+            ephemeris_times = np.asarray(dict_in["ephemeris_time"], dtype=float)
+            return cls(ephemeris_time=ephemeris_times)
 
         # Load SPICE kernel files
         load_spice_kernels()
@@ -422,20 +450,39 @@ class AbsoluteDateArray:
         Convert the AbsoluteDateArray object to a dictionary.
 
         Args:
-            time_format (str): The desired time format. Options are "GREGORIAN_DATE"
-                                or "JULIAN_DATE". Default is "GREGORIAN_DATE".
-            time_scale (str): The time scale to use (e.g., "UTC"). Default is "UTC".
+            time_format (str): The type of date-time format to use
+                                e.g. "Gregorian_Date" (case-insensitive).
+                                See :class:`eosimutils.time.TimeFormat` for options.
+                                Default is "GREGORIAN_DATE".
+
+            time_scale (str): The time scale to use 
+                                e.g. "utc" (case-insensitive)
+                                (see :class:`eosimutils.time.TimeScale`).
+                                Default is "UTC".
 
         Returns:
             dict: Dictionary with keys:
-                - "time_format": the chosen format,
-                - "calendar_date" or "jd": list of times (ISO strings/Gregorian or float/jd),
-                - "time_scale": the time scale.
+                - "time_format": The chosen format.
+                - "time_scale": The time scale.
+                - "calendar_date" or "jd" or "ephemeris_time": List of times
+                    (ISO strings/Gregorian or float/jd or float/ephemeris times),
+                    depending on the chosen format.
         """
         # Convert each ephemeris time using AbsoluteDate.to_dict for consistency.
-        times_list = []
         time_format = TimeFormat.get(time_format)
         time_scale = TimeScale.get(time_scale)
+
+        # if the requested format and scale is SPICE_ET and ET, return directly
+        if time_format == TimeFormat.SPICE_ET and time_scale == TimeScale.ET:
+            return {
+                "time_format": time_format.to_string(),
+                "time_scale": time_scale.to_string(),
+                "ephemeris_time": self.ephemeris_time.tolist(),
+            }
+
+        # Requested format and scale is *not* SPICE_ET and ET.
+        # Convert each ephemeris time using AbsoluteDate.to_dict for consistency.
+        times_list = []
         for t in self.ephemeris_time:
             ad_dict = AbsoluteDate(t).to_dict(time_format, time_scale)
             if time_format == TimeFormat.GREGORIAN_DATE:
@@ -444,14 +491,15 @@ class AbsoluteDateArray:
                 times_list.append(ad_dict["jd"])
             else:
                 raise ValueError(f"Unsupported time_format: {time_format}")
+
         return {
             "time_format": time_format.to_string(),
+            "time_scale": time_scale.to_string(),
             (
                 "calendar_date"
                 if time_format == TimeFormat.GREGORIAN_DATE
                 else "jd"
             ): times_list,
-            "time_scale": time_scale.to_string(),
         }
 
     def __len__(self):
@@ -572,8 +620,7 @@ class AbsoluteDateIntervalArray:
         Convert the AbsoluteDateIntervalArray object to a dictionary.
 
         Args:
-            time_format (str): The desired time format. Options are "GREGORIAN_DATE"
-                               or "JULIAN_DATE". Default is "GREGORIAN_DATE".
+            time_format (str): The desired time format. Default is "GREGORIAN_DATE".
             time_scale (str): The time scale to use (e.g., "UTC"). Default is "UTC".
 
         Returns:

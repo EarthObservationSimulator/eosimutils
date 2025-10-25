@@ -752,8 +752,8 @@ class PositionSeries(Timeseries):
 
     def to_dict(
         self,
-        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
-        time_scale: Union[str, EnumBase] = "UTC",
+        time_format: Union[str, EnumBase] = "SPICE_ET",
+        time_scale: Union[str, EnumBase] = "ET",
     ) -> dict:
         """
         Serializes the PositionSeries object to a dictionary.

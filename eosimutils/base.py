@@ -56,10 +56,16 @@ class JsonSerializer:
 
     @staticmethod
     def load_from_json(other_cls, file_path):
-        """Load an object from a JSON file."""
+        """Load an object from a JSON file.
+        
+        If other_cls is a dict, returns the loaded JSON as a dict.
+        Otherwise, expects other_cls to have a from_dict() method.
+        """
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            if other_cls is dict:
+                return data
             if isinstance(data, list):
                 return [other_cls.from_dict(d) for d in data]
             else:

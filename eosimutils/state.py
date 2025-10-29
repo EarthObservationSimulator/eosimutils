@@ -58,9 +58,10 @@ Array of points:
 import numpy as np
 from typing import Dict, List, Tuple, Any, Union, Optional
 
+import spiceypy as spice
+
 from skyfield.positionlib import build_position as skyfield_build_position
 from skyfield.constants import AU_KM as Skyfield_AU_KM
-from skyfield.api import wgs84 as skyfield_wgs84
 
 from .base import ReferenceFrame
 from .time import AbsoluteDate
@@ -270,9 +271,17 @@ class Cartesian3DVelocity:
 
 class GeographicPosition:
     """Handles geographic position in the geodetic coordinate system.
-    The geodetic position is defined with respect to the
-    World Geodetic System 1984 Geoid as defined in Skyfield.
-    Reference: https://rhodesmill.org/skyfield/api-topos.html
+
+    This class represents a geographic position defined by latitude, longitude, 
+    and elevation in the WGS84 geodetic coordinate system.
+
+    SpiceyPy is used to convert geodetic coordinates to ITRS XYZ coordinates.
+    The conversion uses the following World Geodetic System 1984 (WGS84) parameters:
+    - Equatorial radius: 6378.1370 km
+    - Flattening: 1 / 298.257223563
+
+    These parameters are consistent with those used in Skyfield:
+    https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49
     """
 
     def __init__(
@@ -343,16 +352,25 @@ class GeographicPosition:
     @property
     def itrs_xyz(self):
         """Get the ITRS XYZ position in kilometers.
-        Conversion is performed using Skyfield.
+        Spicey implementation of georec is used for conversion.
+        The conversion uses the following World Geodetic System 1984 (WGS84) parameters:
+        - Equatorial radius: 6378.1370 km
+        - Flattening: 1 / 298.257223563
+
+        These parameters are consistent with those used in Skyfield:
+        https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49
+        
         Returns:
             np.ndarray: ITRS XYZ position in kilometers.
         """
-        skyfield_geo_position = skyfield_wgs84.latlon(
-            latitude_degrees=self.latitude_degrees,
-            longitude_degrees=self.longitude_degrees,
-            elevation_m=self.elevation_m,
+        itrs_xyz = spice.georec(
+            self.longitude_degrees * spice.rpd(), # Convert to radians
+            self.latitude_degrees * spice.rpd(), # Convert to radians
+            self.elevation_m / 1000.0,  # Convert elevation to kilometers
+            6378.1370,
+            1 / 298.257223563,
         )
-        itrs_xyz = skyfield_geo_position.itrs_xyz.km
+
         return itrs_xyz
 
     def to_cartesian3d_position(self) -> Cartesian3DPosition:
@@ -702,8 +720,7 @@ class GeographicPositionArray:
     """
     Stores an array of geographic positions (latitude, longitude, elevation).
     Each geographic position is defined in the geodetic coordinate system.
-    The geodetic position is defined with respect to the
-    World Geodetic System 1984 Geoid as defined in Skyfield.
+    and is consistent with the definition in the :class:`eosimutils.state.GeographicPosition`.
 
     All units are consistent with GeographicPosition: degrees for lat/lon, meters for elevation.
 
@@ -758,19 +775,23 @@ class GeographicPositionArray:
     def itrs_xyz(self) -> np.ndarray:
         """Get the ITRS XYZ positions in kilometers for all entries in the array.
 
-        Conversion is performed using Skyfield for each row in self.geo_positions.
-
+        See :class:`eosimutils.state.GeographicPosition.itrs_xyz` for details
+        on the conversion method and parameters used.
+                        
         Returns:
             np.ndarray: Array of shape (N, 3) with ITRS XYZ positions in kilometers.
         """
         itrs_list = []
         for lat_deg, lon_deg, elev_m in self.geo_positions:
-            skyfield_geo_position = skyfield_wgs84.latlon(
-                latitude_degrees=float(lat_deg),
-                longitude_degrees=float(lon_deg),
-                elevation_m=float(elev_m),
-            )
-            itrs_list.append(skyfield_geo_position.itrs_xyz.km)
+            itrs_xyz = spice.georec(
+                            float(lon_deg) * spice.rpd(), # Convert to radians
+                            float(lat_deg) * spice.rpd(), # Convert to radians
+                            float(elev_m) / 1000.0,  # Convert elevation to kilometers
+                            6378.1370,
+                            1
+                            / 298.257223563,
+                        )
+            itrs_list.append(itrs_xyz)
         return np.array(itrs_list)
 
     def to_cartesian3d_position_array(self) -> Cartesian3DPositionArray:

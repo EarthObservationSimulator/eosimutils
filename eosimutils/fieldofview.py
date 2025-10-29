@@ -283,6 +283,8 @@ class RectangularFieldOfView:
         boresight: Union[list, np.ndarray, None] = None,
     ) -> None:
         """Initializes the RectangularFieldOfView object.
+        Note that the angles below correspond to half of the total angular extents
+        and not the full extents.
 
         Args:
             frame (Union[ReferenceFrame, str]): The reference frame in which the FOV is defined.

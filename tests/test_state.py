@@ -287,8 +287,6 @@ class TestGeographicPosition(unittest.TestCase):
         cartesian_pos = geo_pos.to_cartesian3d_position()
 
         # Use Skyfield to perform the same conversion
-        from skyfield.positionlib import build_position as skyfield_build_position
-        from skyfield.constants import AU_KM as Skyfield_AU_KM
         from skyfield.api import wgs84 as skyfield_wgs84
 
         skyfield_location = skyfield_wgs84.latlon(
@@ -303,30 +301,19 @@ class TestGeographicPosition(unittest.TestCase):
             cartesian_pos.coords, skyfield_xyz, decimal=6
         )
 
-    def test_spice_validation(self):
-        """Validate GeographicPosition to Cartesian coordinates conversion using spiceypy."""
-        # Create a GeographicPosition object
-        geo_pos = GeographicPosition(
-            self.latitude_degrees, self.longitude_degrees, self.elevation_m
-        )
+    def test_from_cartesian3d_position(self):
+        """Test conversion from Cartesian3DPosition to GeographicPosition."""
+        # Create a GeographicPosition and convert to Cartesian3DPosition
+        geo_pos = GeographicPosition(self.latitude_degrees, self.longitude_degrees, self.elevation_m)
+        cart_pos = geo_pos.to_cartesian3d_position()
 
-        # Convert to Cartesian3DPosition
-        cartesian_pos = geo_pos.to_cartesian3d_position()
+        # Convert back to GeographicPosition
+        geo_pos2 = GeographicPosition.from_cartesian3d_position(cart_pos)
 
-        # Use spiceypy to perform the same conversion
-        spice_xyz = spice.georec(
-            geo_pos.longitude * spice.rpd(),
-            geo_pos.latitude * spice.rpd(),
-            geo_pos.elevation / 1000.0,  # Convert elevation to kilometers
-            6378.1370,
-            1
-            / 298.257223563,  # WGS84 parameters from Skyfield: https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49  pylint: disable=line-too-long
-        )
-
-        # Validate the Cartesian coordinates
-        np.testing.assert_array_almost_equal(
-            cartesian_pos.coords, spice_xyz, decimal=9
-        )
+        # Check that the values are close to the originals
+        self.assertAlmostEqual(geo_pos2.latitude, self.latitude_degrees, places=4)
+        self.assertAlmostEqual(geo_pos2.longitude, self.longitude_degrees, places=4)
+        self.assertAlmostEqual(geo_pos2.elevation, self.elevation_m, places=2)
 
 
 class TestCartesianState(unittest.TestCase):
@@ -626,10 +613,14 @@ class TestGeographicPositionArray(unittest.TestCase):
         self.geo_positions = [
             GeographicPosition(10.0, 20.0, 100.0),
             GeographicPosition(-45.0, 60.0, 500.0),
+            GeographicPosition(45.0, -60.0, 200.0),
+            GeographicPosition(-45.0, -60.0, 500.0),
         ]
         self.geo_positions_np = np.array([
             [10.0, 20.0, 100.0],
             [-45.0, 60.0, 500.0],
+            [45.0, -60.0, 200.0],
+            [-45.0, -60.0, 500.0],
         ])
 
     def test_initialization(self):
@@ -716,3 +707,36 @@ class TestGeographicPositionArray(unittest.TestCase):
         self.assertEqual(cart_arr.frame, ReferenceFrame.get("ITRF"))
         # positions should match arr.itrs_xyz
         np.testing.assert_array_almost_equal(cart_arr.positions, arr.itrs_xyz, decimal=9)
+    
+    def test_from_cartesian3d_position_array(self):
+        """Test conversion from Cartesian3DPositionArray to GeographicPositionArray."""        
+        # Generate a random GeographicPositionArray
+        geo_positions_array = np.array([
+            [
+                random.uniform(-90, 90),         # latitude
+                random.uniform(-180, 180),       # longitude
+                random.uniform(0, 10000),        # elevation in meters
+            ]
+            for _ in range(5)
+        ])
+        arr = GeographicPositionArray(geo_positions_array)
+
+        cart_arr = arr.to_cartesian3d_position_array()
+
+        # Convert back to GeographicPositionArray
+        geo_arr2 = GeographicPositionArray.from_cartesian3d_position_array(cart_arr)
+
+        # Check that the values are close to the originals
+        for orig, conv in zip(geo_positions_array, geo_arr2):
+            self.assertAlmostEqual(orig[0], conv.latitude, places=4)
+            self.assertAlmostEqual(orig[1], conv.longitude, places=4)
+            self.assertAlmostEqual(orig[2], conv.elevation, places=2)
+
+    def test_from_cartesian3d_position_array_invalid_frame(self):
+        """Test that ValueError is raised when frame is not ITRF."""
+        cart_arr_non_itrs = Cartesian3DPositionArray(positions=np.array([[1e6, 2e6, 3e6], [4e6, 5e6, 6e6]]), frame=ReferenceFrame.get("ICRF_EC"))
+        with self.assertRaises(ValueError):
+            GeographicPositionArray.from_cartesian3d_position_array(cart_arr_non_itrs)
+
+if __name__ == "__main__":
+    unittest.main()

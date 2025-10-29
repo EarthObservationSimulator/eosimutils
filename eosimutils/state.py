@@ -384,6 +384,23 @@ class GeographicPosition:
             itrs_xyz, frame=ReferenceFrame.get("ITRF")
         )
 
+    @classmethod
+    def from_cartesian3d_position(cls, cartesian_position: Cartesian3DPosition) -> "GeographicPosition":
+        """
+        Convert a Cartesian3DPosition to a GeographicPosition.
+        The Cartesian3DPosition must be in the ITRF frame.
+        """
+        if cartesian_position.frame is not None and cartesian_position.frame != ReferenceFrame.get("ITRF"):
+            raise ValueError(
+                "Cartesian3DPosition must be in the ITRF frame for conversion to GeographicPosition."
+            )
+        longitude, latitude, elevation = spice.recgeo(
+            rectan=cartesian_position.to_numpy(),
+            re=6378.1370,
+            f=1 / 298.257223563,
+        )
+        return cls(latitude_degrees=latitude*spice.dpr(), longitude_degrees=longitude*spice.dpr(), elevation_m=elevation*1e3)
+
 
 class CartesianState:
     """Handles Cartesian state information."""
@@ -828,6 +845,26 @@ class GeographicPositionArray:
         return {
             "geo_positions": self.geo_positions.tolist()
         }
+    
+    @classmethod
+    def from_cartesian3d_position_array(cls, cartesian_position_array: Cartesian3DPositionArray) -> "GeographicPositionArray":
+        """
+        Convert a Cartesian3DPositionArray to a GeographicPositionArray.
+        The Cartesian3DPositionArray must be in the ITRF frame.
+        """
+        if cartesian_position_array.frame is not None and cartesian_position_array.frame != ReferenceFrame.get("ITRF"):
+            raise ValueError(
+                "Cartesian3DPosition must be in the ITRF frame for conversion to GeographicPosition."
+            )
+        geo_positions_list = []
+        for rectan in cartesian_position_array.to_numpy():
+            longitude, latitude, elevation = spice.recgeo(
+                rectan=rectan,
+                re=6378.1370,
+                f=1 / 298.257223563,
+            )
+            geo_positions_list.append([latitude*spice.dpr(), longitude*spice.dpr(), elevation*1e3])
+        return cls(geo_positions=np.array(geo_positions_list))
 
     def to_numpy(self) -> np.ndarray:
         """Returns the internal NumPy array of geo_positions."""

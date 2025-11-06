@@ -293,12 +293,6 @@ class GeographicPosition:
         self.longitude_degrees = longitude_degrees
         self.elevation_m = elevation_m
 
-        self.skyfield_geo_position = skyfield_wgs84.latlon(
-            latitude_degrees=latitude_degrees,
-            longitude_degrees=longitude_degrees,
-            elevation_m=elevation_m,
-        )
-
     @classmethod
     def from_dict(cls, dict_in: Dict[str, Any]) -> "GeographicPosition":
         """Construct a GeographicPosition object from a dictionary.

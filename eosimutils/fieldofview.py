@@ -383,6 +383,44 @@ class PolygonFieldOfView:
                 )
 
     @classmethod
+    def from_rectangular(cls, rect_fov: RectangularFieldOfView) -> "PolygonFieldOfView":
+        """Create a PolygonFieldOfView from a RectangularFieldOfView.
+
+        This performs a conversion of the rectangular FOV (defined by boresight, reference
+        vector, ref_angle and cross_angle) into a spherical quadrilateral (4-corner spherical
+        polygon). The four boundary planes of a rectangular FOV are those making signed half-angles
+        ref_angle about the boresight/reference plane and cross_angle about the boresight/cross
+        plane. Intersecting these planes with the unit sphere yields corner direction vectors.
+        Args:
+            rect_fov (RectangularFieldOfView): The rectangular field-of-view instance.
+
+        Returns:
+            PolygonFieldOfView: A polygonal (4-corner) representation of the rectangular FOV.
+        """
+        b = np.array(rect_fov.boresight, dtype=float)      
+        x_hat = np.array(rect_fov.ref_vector, dtype=float)
+        y_hat = np.cross(b, x_hat)
+
+        ref_tan = np.tan(np.deg2rad(rect_fov.ref_angle))
+        cross_tan = np.tan(np.deg2rad(rect_fov.cross_angle))
+
+        # CCW order when looking down boresight (right-handed basis with y_hat = b × x_hat):
+        # (+x,+y),(-x,+y),(-x,-y),(+x,-y)
+        sign_pairs = [( 1,  1), (-1,  1), (-1, -1), ( 1, -1)]
+
+        boundary_corners = []
+        for s_ref, s_cross in sign_pairs:
+            v = b + s_ref*ref_tan*x_hat + s_cross*cross_tan*y_hat
+            v /= np.linalg.norm(v)
+            boundary_corners.append(v)
+
+        return cls(
+            frame=rect_fov.frame,
+            boundary_corners=boundary_corners,
+            boresight=rect_fov.boresight,
+        )
+    
+    @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "PolygonFieldOfView":
         """Creates a PolygonFieldOfView object from a dictionary.
 

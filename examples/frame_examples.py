@@ -5,7 +5,7 @@ from eosimutils.time import AbsoluteDate, AbsoluteDateArray
 from eosimutils.trajectory import StateSeries
 from eosimutils.orientation import OrientationSeries
 from eosimutils.framegraph import FrameGraph
-from eosimutils.standardframes import get_lvlh
+from eosimutils.standardframes import LVLHType1FrameHandler
 
 # Build a circular orbit in ICRF_EC
 μ = 398600.4418           # Earth's GM, km³/s²
@@ -36,9 +36,10 @@ state_icrf = StateSeries(
     frame=ReferenceFrame.get("ICRF_EC")
 )
 
-# Add LVLH frame
-lvlh_frame = ReferenceFrame.add("LVLH")
-att_lvlh, pos_lvlh = get_lvlh(state_icrf,lvlh_frame)
+# Build LVLH frame via handler and compute transform
+lvlh_handler = LVLHType1FrameHandler("LVLH")
+lvlh_frame = lvlh_handler.get_frame()
+att_lvlh, pos_lvlh = lvlh_handler.get_transform(state_icrf)
 
 registry   = FrameGraph()
 registry.add_orientation_transform(att_lvlh)

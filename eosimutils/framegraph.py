@@ -464,7 +464,7 @@ class FrameGraph:
             f"No position path from '{from_frame}' to '{to_frame}' at time {t}"
         )
 
-    def transform(
+    def transform_series(
         self,
         series: Union[PositionSeries, StateSeries],
         to_frame: ReferenceFrame,
@@ -507,7 +507,7 @@ class FrameGraph:
             to_frame,
         )
 
-    def transform_single(
+    def transform(
         self,
         item: Union[Cartesian3DPosition, Cartesian3DVelocity, CartesianState],
         to_frame: ReferenceFrame,

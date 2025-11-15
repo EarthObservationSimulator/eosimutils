@@ -702,7 +702,7 @@ class PositionSeries(Timeseries):
         self.frame = frame
         load_spice_kernels()  # Load SPICE kernels for frame conversion
 
-    def resample(
+    def _resample(
         self, new_time: np.ndarray, method: str = "linear"
     ) -> "PositionSeries":
         """
@@ -717,6 +717,23 @@ class PositionSeries(Timeseries):
         """
         new_time_obj, new_data, _ = self._resample_data(new_time, method)
         return PositionSeries(new_time_obj, new_data[0], self.frame)
+    
+    def resample(
+        self, new_time: AbsoluteDateArray, method: str = "linear"
+    ) -> "PositionSeries":
+        """
+        Resamples the PositionSeries to a new time base.
+
+        Takes AbsoluteDataArray as input and calls the private _resample method.
+
+        Args:
+            new_time (AbsoluteDateArray): The new time samples.
+            method (str, optional): Interpolation method. Defaults to "linear".
+
+        Returns:
+            PositionSeries: A new PositionSeries object with resampled data.
+        """
+        return self._resample(new_time.ephemeris_time, method)
 
     def remove_gaps(self) -> "PositionSeries":
         """
@@ -891,7 +908,7 @@ class PositionSeries(Timeseries):
             return super()._arithmetic_op(other, op)
         elif isinstance(other, PositionSeries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other.resample(
+            other_resamp = other._resample(
                 self.time.ephemeris_time, method=interp_method
             )
             # If frames do not match, attempt frame conversion.

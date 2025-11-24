@@ -4,8 +4,8 @@
 
     The module provides classes and utilities for representing and managing different types of
     fields-of-view (FOV)
-    Three main types of FOV are supported:
-    (1) Circular, (2) Rectangular, and (3) Polygonal
+    Four main types of FOV are supported:
+    (1) Circular, (2) Rectangular, (3) Polygonal, and (4) Omnidirectional
 
     Each FOV type is associated with its own set of parameters and methods.
     The reference frame for each FOV needs to be specified.
@@ -22,6 +22,7 @@
     - **CircularFieldOfView**: Represents a circular FOV defined by its angular diameter, reference frame, and boresight vector.
     - **RectangularFieldOfView**: Represents a rectangular FOV defined by its reference frame, boresight vector, reference vector, and angular extents (reference angle and cross angle).
     - **PolygonFieldOfView**: Represents a polygonal FOV defined by its reference frame, boresight vector, and a list of boundary corner vectors.
+    - **OmnidirectionalFieldOfView**: Represents an all-encompassing FOV tied to a reference frame.
 
     Factory Pattern:
     - **FieldOfViewFactory**: A factory class for creating instances of the appropriate FOV type based on a dictionary of specifications.
@@ -68,6 +69,14 @@
             [0.3, 0.4, 0.866],
             [0.6, 0.0, 0.8]
         ]
+    }
+    ```
+
+    **OmnidirectionalFieldOfView**:
+    ```python
+    {
+        "fov_type": "OMNIDIRECTIONAL",
+        "frame": "ICRF_EC"  # Reference frame
     }
     ```
 
@@ -169,33 +178,32 @@ class FieldOfViewFactory:
 
 @FieldOfViewFactory.register_type("OMNIDIRECTIONAL")
 class OmnidirectionalFieldOfView:
-    """This class represents an omnidirectional FOV that covers the entire sphere."""
+    """This class represents an omnidirectional FOV that covers the entire sphere.
+    """
 
-    def __init__(self):
-        """Initializes the OmnidirectionalFieldOfView."""
-        pass
+    def __init__(self, frame: Union[ReferenceFrame, str]):
+        """Initializes the OmnidirectionalFieldOfView.
+
+        Args:
+            frame (Union[ReferenceFrame, str]): Reference frame for the field-of-view.
+        """
+        self.frame = ReferenceFrame.get(frame)
 
     @classmethod
     def from_dict(
-        cls, specs: Dict[str, Any] = None
+        cls, specs: Dict[str, Any]
     ) -> "OmnidirectionalFieldOfView":
         """Creates an OmnidirectionalFieldOfView object from a dictionary.
 
         Args:
             specs (Dict[str, Any]): Dictionary containing the specifications for the field-of-view.
-            This class does not require any specific parameters.
-            The input can be None or an empty dictionary.
+                Expected keys:
+                - "frame" (str): Reference frame for the field-of-view.
 
         Returns:
             OmnidirectionalFieldOfView: An instance of the OmnidirectionalFieldOfView class.
         """
-        if specs is not None:
-            if len(specs) > 0:
-                print(
-                    "Warning: OmnidirectionalFieldOfView does "
-                    "not require any parameters. Ignoring provided specs."
-                )
-        return cls()
+        return cls(frame=specs["frame"])
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the OmnidirectionalFieldOfView object to a dictionary.
@@ -203,7 +211,10 @@ class OmnidirectionalFieldOfView:
         Returns:
             Dict[str, Any]: Dictionary representation of the OmnidirectionalFieldOfView object.
         """
-        return {"fov_type": FieldOfViewType.OMNIDIRECTIONAL.value}
+        return {
+            "fov_type": FieldOfViewType.OMNIDIRECTIONAL.value,
+            "frame": self.frame.to_string(),
+        }
 
 
 @FieldOfViewFactory.register_type("CIRCULAR")
@@ -417,6 +428,44 @@ class PolygonFieldOfView:
                     "All boundary_corners must be in the same hemisphere as the boresight vector."
                 )
 
+    @classmethod
+    def from_rectangular(cls, rect_fov: RectangularFieldOfView) -> "PolygonFieldOfView":
+        """Create a PolygonFieldOfView from a RectangularFieldOfView.
+
+        This performs a conversion of the rectangular FOV (defined by boresight, reference
+        vector, ref_angle and cross_angle) into a spherical quadrilateral (4-corner spherical
+        polygon). The four boundary planes of a rectangular FOV are those making signed half-angles
+        ref_angle about the boresight/reference plane and cross_angle about the boresight/cross
+        plane. Intersecting these planes with the unit sphere yields corner direction vectors.
+        Args:
+            rect_fov (RectangularFieldOfView): The rectangular field-of-view instance.
+
+        Returns:
+            PolygonFieldOfView: A polygonal (4-corner) representation of the rectangular FOV.
+        """
+        b = np.array(rect_fov.boresight, dtype=float)      
+        x_hat = np.array(rect_fov.ref_vector, dtype=float)
+        y_hat = np.cross(b, x_hat)
+
+        ref_tan = np.tan(np.deg2rad(rect_fov.ref_angle))
+        cross_tan = np.tan(np.deg2rad(rect_fov.cross_angle))
+
+        # CCW order when looking down boresight (right-handed basis with y_hat = b × x_hat):
+        # (+x,+y),(-x,+y),(-x,-y),(+x,-y)
+        sign_pairs = [( 1,  1), (-1,  1), (-1, -1), ( 1, -1)]
+
+        boundary_corners = []
+        for s_ref, s_cross in sign_pairs:
+            v = b + s_ref*ref_tan*x_hat + s_cross*cross_tan*y_hat
+            v /= np.linalg.norm(v)
+            boundary_corners.append(v)
+
+        return cls(
+            frame=rect_fov.frame,
+            boundary_corners=boundary_corners,
+            boresight=rect_fov.boresight,
+        )
+    
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "PolygonFieldOfView":
         """Creates a PolygonFieldOfView object from a dictionary.

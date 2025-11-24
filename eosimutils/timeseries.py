@@ -39,9 +39,11 @@ represented as arrays associated with time points.
 
 """
 
+from typing import Union
+
 import numpy as np
 from scipy.interpolate import interp1d
-from .time import AbsoluteDateArray
+from .time import AbsoluteDate, AbsoluteDateArray
 
 
 def _group_contiguous(indices):
@@ -294,19 +296,35 @@ class Timeseries:
                 new_data.append(new_arr)
         return AbsoluteDateArray(new_time), new_data, self.headers
 
-    def at(self, time: "AbsoluteDateArray"):
+    def at(self, time: Union[AbsoluteDateArray, AbsoluteDate]):
         """
         Evaluate the timeseries at the given time points.
 
         Args:
-            time (AbsoluteDateArray): Target time points.
+            time (AbsoluteDateArray or AbsoluteDate): Target time points.
 
         Returns:
-            list[numpy.ndarray]: One array per data member, evaluated at the specified times.
+            numpy.ndarray or list[numpy.ndarray]: If the series has a single data array,
+            returns that array (or a single element when a single AbsoluteDate is provided);
+            otherwise, returns a list of arrays—one per data member—evaluated at the specified
+            times.
         """
+        single_time = False
+        if isinstance(time, AbsoluteDate):
+            target_times = np.array([time.ephemeris_time])
+            single_time = True
+        elif isinstance(time, AbsoluteDateArray):
+            target_times = time.ephemeris_time
+        else:
+            raise TypeError("time must be an AbsoluteDateArray or AbsoluteDate.")
+
         _, new_data, _ = self._resample_data(
-            time.ephemeris_time, method=self.interpolator
+            target_times, method=self.interpolator
         )
+        if len(new_data) == 1:
+            result = new_data[0]
+            return result[0] if single_time else result
+
         return new_data
 
     def _remove_gaps_data(self):

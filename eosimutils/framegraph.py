@@ -468,13 +468,25 @@ class FrameGraph:
         self,
         series: Union[PositionSeries, StateSeries],
         to_frame: ReferenceFrame,
+        transform_origin: bool = False,
     ) -> Union[PositionSeries, StateSeries]:
         """
-        Transform a PositionSeries or StateSeries into ``to_frame``.
+        Transform a PositionSeries or StateSeries into ``to_frame``. 
+        
+        Note that if a StateSeries is used, it is assumed that the velocity is the derivative of
+        the position,taken in the frame of series.frame. Hence the coriolis term is applied during
+        the transformation so that this same convention holds in the target frame.
+
 
         Args:
             series: Time-series data defined in the source reference frame.
             to_frame: Target reference frame for the transformation.
+            transform_origin: If True and series is a PositionSeries, the position offset
+                between the two frames is applied. That is, the input vector is assumed to be
+                expressed relative to the origin of series.frame, and the output vector will be
+                relative to the origin of to_frame. If False, only the orientation transform
+                is applied. Not used for StateSeries, since this would require knowing velocity
+                between the frame origins.
 
         Returns:
             A new time-series instance expressed in ``to_frame``.
@@ -492,26 +504,32 @@ class FrameGraph:
 
         rot, w = self.get_orientation_transform(series.frame, to_frame, series.time)
 
-        positions = series.data[0]
+        if transform_origin and isinstance(series, PositionSeries):
+            positions = series.data[0] - self.get_position_offset(series.frame, to_frame, series.time)
+        else:
+            positions = series.data[0]
+        
         new_positions = rot.apply(positions)
         time_copy = AbsoluteDateArray(series.time.ephemeris_time.copy())
 
         if isinstance(series, PositionSeries):
             return PositionSeries(time_copy, new_positions, to_frame)
-
-        velocities = series.data[1]
-        new_velocities = rot.apply(velocities) + np.cross(w, new_positions)
-        return StateSeries(
-            time_copy,
-            [new_positions, new_velocities],
-            to_frame,
-        )
+        else:
+            velocities = series.data[1]
+            new_velocities = rot.apply(velocities) + np.cross(w, new_positions)
+            
+            return StateSeries(
+                time_copy,
+                [new_positions, new_velocities],
+                to_frame,
+            )
 
     def transform(
         self,
         item: Union[Cartesian3DPosition, Cartesian3DVelocity, CartesianState],
         to_frame: ReferenceFrame,
         t: AbsoluteDate,
+        transform_origin: bool = False,
     ) -> Union[Cartesian3DPosition, Cartesian3DVelocity, CartesianState]:
         """
         Transform a single position, velocity, or state into ``to_frame`` at time ``t``.
@@ -522,6 +540,12 @@ class FrameGraph:
             item: Cartesian object expressed in the source reference frame.
             to_frame: Target reference frame.
             t: Time at which to evaluate the orientation transform.
+            transform_origin: If True and item is a Cartesian3DPosition, the position offset
+                between the two frames is applied. That is, the input vector is assumed to be
+                expressed relative to the origin of item.frame, and the output vector will be
+                relative to the origin of to_frame. If False, only the orientation transform
+                is applied. Not used for CartesianState, since this would require knowing velocity
+                between the frame origins.
 
         Returns:
             A new object of the same type expressed in ``to_frame``.
@@ -545,7 +569,12 @@ class FrameGraph:
         rot, w = self.get_orientation_transform(from_frame, to_frame, t)
 
         if isinstance(item, Cartesian3DPosition):
-            new_pos = rot.apply(item.to_numpy())
+            if transform_origin:
+                pos_offset = self.get_pos_transform(from_frame, to_frame, t)
+                new_pos = rot.apply(item.to_numpy() - pos_offset)
+            else:
+                new_pos = rot.apply(item.to_numpy())
+
             return Cartesian3DPosition(new_pos[0], new_pos[1], new_pos[2], to_frame)
 
         if isinstance(item, Cartesian3DVelocity):

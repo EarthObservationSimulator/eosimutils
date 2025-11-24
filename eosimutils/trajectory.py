@@ -956,35 +956,6 @@ class PositionSeries(Timeseries):
         """
         return self._arithmetic_op(other, lambda a, b: a / b)
 
-    def at(
-        self, time: Union["AbsoluteDate", "AbsoluteDateArray"]
-    ) -> np.ndarray:
-        """
-        Returns the position(s) at the given time(s) by interpolation.
-
-        Args:
-            time (AbsoluteDate or AbsoluteDateArray): The time(s) at which to evaluate the position.
-
-        Returns:
-            np.ndarray: Interpolated position(s). Shape (3,) for AbsoluteDate, (N,3) for
-            AbsoluteDateArray.
-        """
-        if isinstance(time, AbsoluteDate):
-            query_times = np.array([time.ephemeris_time])
-            single = True
-        elif isinstance(time, AbsoluteDateArray):
-            query_times = time.ephemeris_time
-            single = False
-        else:
-            raise TypeError("Input must be AbsoluteDate or AbsoluteDateArray.")
-
-        # Use internal _resample_data for interpolation
-        _, new_data, _ = self._resample_data(query_times, method="linear")
-        positions = new_data[0]
-        if single:
-            return positions[0]
-        return positions
-
     @property
     def position(self) -> Cartesian3DPositionArray:
         """

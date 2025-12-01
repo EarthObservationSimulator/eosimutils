@@ -273,7 +273,7 @@ class GeographicPosition:
     """Handles geographic position in the geodetic coordinate system.
 
     This class represents a geographic position defined by latitude, longitude, 
-    and elevation in the WGS84 geodetic coordinate system.
+    and elevation in the WGS84 geodetic coordinate system (~ITRF).
 
     SpiceyPy is used to convert geodetic coordinates to ITRS XYZ coordinates.
     The conversion uses the following World Geodetic System 1984 (WGS84) parameters:
@@ -625,30 +625,26 @@ class Cartesian3DPositionArray:
         return cls(coords, frame)
 
     @classmethod
-    def from_geographic_positions(
-        cls, positions: List[GeographicPosition]
+    def from_geographic_position_array(
+        cls, positions: "GeographicPositionArray"
     ) -> "Cartesian3DPositionArray":
-        """Creates a Cartesian3DPositionArray from a list of GeographicPosition objects.
+        """Creates a Cartesian3DPositionArray from a GeographicPositionArray object.
 
         Geographic positions are converted into Cartesian coordinates in the ITRF frame
         using the `itrs_xyz` property.
 
         Args:
-            positions (List[GeographicPosition]): List of GeographicPosition objects.
+            positions (GeographicPositionArray): GeographicPositionArray object.
 
         Returns:
             Cartesian3DPositionArray: A new Cartesian3DPositionArray object.
 
-        Raises:
-            ValueError: If the list is empty.
         """
-        if not positions:
-            raise ValueError(
-                "The list of GeographicPosition objects cannot be empty."
-            )
-        frame = ReferenceFrame.get("ITRF")
-        coords = np.array([pos.itrs_xyz for pos in positions])
-        return cls(coords, frame)
+        itrs_xyz = positions.itrs_xyz
+        return cls(
+            positions=itrs_xyz, 
+            frame=ReferenceFrame.get("ITRF")
+        )
 
     def to_numpy(self) -> np.ndarray:
         """Returns the internal NumPy array of positions.
@@ -773,7 +769,7 @@ class GeographicPositionArray:
         self.geo_positions = geo_positions
 
     @classmethod
-    def from_geographic_positions(cls, geo_positions: List[GeographicPosition]) -> "GeographicPositionArray":
+    def from_geographic_position_list(cls, geo_positions: List[GeographicPosition]) -> "GeographicPositionArray":
         """
         Creates a GeographicPositionArray from a list of GeographicPosition objects.
         Args:

@@ -240,6 +240,43 @@ class TestGeographicPosition(unittest.TestCase):
             cartesian_pos.coords, expected_xyz, decimal=6
         )
 
+    def test_from_geographic_position_skyfield_validation(self):
+        geo_pos = GeographicPosition(
+            self.latitude_degrees, self.longitude_degrees, self.elevation_m
+        )
+        cartesian_pos = Cartesian3DPosition.from_geographic_position(geo_pos)
+        from skyfield.api import wgs84 as skyfield_wgs84
+
+        skyfield_location = skyfield_wgs84.latlon(
+            geo_pos.latitude,
+            geo_pos.longitude,
+            elevation_m=geo_pos.elevation,
+        )
+        skyfield_xyz = skyfield_location.itrs_xyz.km
+        self.assertEqual(cartesian_pos.frame, ReferenceFrame.get("ITRF"))
+        np.testing.assert_array_almost_equal(
+            cartesian_pos.coords, skyfield_xyz, decimal=6
+        )
+
+    def test_cartesian_to_geographic_position_skyfield_validation(self):
+        from skyfield.api import wgs84 as skyfield_wgs84
+
+        skyfield_location = skyfield_wgs84.latlon(
+            self.latitude_degrees,
+            self.longitude_degrees,
+            elevation_m=self.elevation_m,
+        )
+        cartesian_pos = Cartesian3DPosition(
+            skyfield_location.itrs_xyz.km[0],
+            skyfield_location.itrs_xyz.km[1],
+            skyfield_location.itrs_xyz.km[2],
+            ReferenceFrame.get("ITRF"),
+        )
+        geo_pos = cartesian_pos.to_geographic_position()
+        self.assertAlmostEqual(geo_pos.latitude, self.latitude_degrees, places=6)
+        self.assertAlmostEqual(geo_pos.longitude, self.longitude_degrees, places=6)
+        self.assertAlmostEqual(geo_pos.elevation, self.elevation_m, places=3)
+
     def test_itrs_xyz_astropy_validation(self):
         def geodetic_to_itrf(lat_deg: float, lon_deg: float, height_m: float):
             """
@@ -545,6 +582,35 @@ class TestCartesian3DPositionArray(unittest.TestCase):
         )
         self.assertEqual(arr.positions.shape, (2, 3))
         self.assertEqual(arr.frame, ReferenceFrame.get("ITRF"))
+
+    def test_to_geographic_position_array(self):
+        """Conversion to GeographicPositionArray should recover original lat/lon/elev."""
+        geo_position_list = [
+            GeographicPosition(5.0, 25.0, 50.0),
+            GeographicPosition(-35.5, 128.4, 450.0),
+            GeographicPosition(42.25, -75.0, 1200.0),
+        ]
+        cart_position_list = [
+            Cartesian3DPosition.from_geographic_position(gp)
+            for gp in geo_position_list
+        ]
+        cart_array = Cartesian3DPositionArray.from_cartesian_positions(
+            cart_position_list
+        )
+        geo_array = cart_array.to_geographic_position_array()
+
+        self.assertIsInstance(geo_array, GeographicPositionArray)
+        self.assertEqual(len(geo_array), len(geo_position_list))
+        for computed, original in zip(geo_array, geo_position_list):
+            self.assertAlmostEqual(
+                computed.latitude, original.latitude, places=4
+            )
+            self.assertAlmostEqual(
+                computed.longitude, original.longitude, places=4
+            )
+            self.assertAlmostEqual(
+                computed.elevation, original.elevation, places=2
+            )
 
     def test_to_numpy_and_to_list(self):
         arr = Cartesian3DPositionArray(self.positions_np, self.frame)

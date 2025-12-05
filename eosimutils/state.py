@@ -641,7 +641,7 @@ class Cartesian3DPositionArray:
         self.frame = frame
 
     @classmethod
-    def from_cartesian_positions(
+    def from_cartesian_position_list(
         cls, positions: List[Cartesian3DPosition]
     ) -> "Cartesian3DPositionArray":
         """Creates a Cartesian3DPositionArray from a list of Cartesian3DPosition objects.

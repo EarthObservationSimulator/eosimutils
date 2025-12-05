@@ -569,8 +569,8 @@ class TestCartesian3DPositionArray(unittest.TestCase):
                 np.array([[1.0, 2.0], [3.0, 4.0]]), self.frame
             )
 
-    def test_from_cartesian_positions(self):
-        arr = Cartesian3DPositionArray.from_cartesian_positions(
+    def test_from_cartesian_position_list(self):
+        arr = Cartesian3DPositionArray.from_cartesian_position_list(
             self.cartesian_positions
         )
         np.testing.assert_array_equal(arr.positions, self.positions_np)
@@ -594,7 +594,7 @@ class TestCartesian3DPositionArray(unittest.TestCase):
             Cartesian3DPosition.from_geographic_position(gp)
             for gp in geo_position_list
         ]
-        cart_array = Cartesian3DPositionArray.from_cartesian_positions(
+        cart_array = Cartesian3DPositionArray.from_cartesian_position_list(
             cart_position_list
         )
         geo_array = cart_array.to_geographic_position_array()

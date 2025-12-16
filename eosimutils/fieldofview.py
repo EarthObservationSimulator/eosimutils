@@ -112,8 +112,7 @@ print(circular_fov.to_dict())
 from typing import Type, Dict, Any, List, Union, Callable
 import numpy as np
 
-from .base import EnumBase, ReferenceFrame
-
+from .base import EnumBase, ReferenceFrame, SPHERICAL_EARTH_MEAN_RADIUS
 
 class FieldOfViewType(EnumBase):
     """Enumeration of supported FOV types (shapes)."""
@@ -266,7 +265,7 @@ class CircularFieldOfView:
             "boresight", [0.0, 0.0, 1.0]
         )  # Default to +Z axis
         return cls(diameter, frame, boresight)
-
+    
     def to_dict(self) -> Dict[str, Any]:
         """Converts the CircularFieldOfView object to a dictionary.
 
@@ -279,6 +278,16 @@ class CircularFieldOfView:
             "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
         }
+    
+    def Area(self) -> float:
+        """Calculates the area of the circular field-of-view on the unit sphere.
+
+        Returns:
+            float: The area of the circular FOV in steradians.
+        """
+        radius_rad = np.deg2rad(self.diameter / 2)
+        area = 2 * np.pi * (1 - np.cos(radius_rad))
+        return area
 
 
 @FieldOfViewFactory.register_type("RECTANGULAR")
@@ -381,6 +390,17 @@ class RectangularFieldOfView:
             "ref_angle": self.ref_angle,
             "cross_angle": self.cross_angle,
         }
+    
+    def Area(self) -> float:
+        """Calculates the area of the rectangular field-of-view on the unit sphere.
+
+        Returns:
+            float: The area of the rectangular FOV in steradians.
+        """
+        ref_rad = np.deg2rad(self.ref_angle)
+        cross_rad = np.deg2rad(self.cross_angle)
+        area = 4 * np.arcsin(np.sin(ref_rad) * np.sin(cross_rad))
+        return area
 
 
 @FieldOfViewFactory.register_type("POLYGON")
@@ -507,3 +527,71 @@ class PolygonFieldOfView:
                 corner.tolist() for corner in self.boundary_corners
             ],
         }
+
+def cone_footprint_angle(theta: float, d: float, Re: float = SPHERICAL_EARTH_MEAN_RADIUS) -> float:
+    """
+    Angular radius of a conical footprint on a sphere (as seen from the center) for a
+    nadir-pointing cone with vertex outside the sphere.
+
+    This formula is derived from the on-axis cone–sphere intersection geometry in
+    Mathar (2022), "Volume of Intersection of a Cone with a Sphere", https://arxiv.org/abs/2203.17227,
+    specifically Equations (19) and (20), which handle the case where the cone vertex
+    is outside the sphere.
+
+    Args:
+        theta (float): Half-angle of the conical field-of-view (radians)
+        d (float): Positive distance from the cone vertex to the sphere center (must be > Re)
+        Re (float): Sphere radius (default is the mean radius of a spherical Earth)
+
+    Returns:
+        float: Angular radius of the footprint on the sphere (radians)
+    """
+    if d <= Re:
+        raise ValueError("Cone vertex must be outside the sphere (d > Re).")
+
+    # Cone is wide enough to encompass the entire visible hemisphere
+    # from page 5 of reference.
+    if d * np.sin(theta) >= Re:
+        return np.arccos(Re / d)
+    
+    # Use convention from the reference of negative d
+    d = -d
+
+    # Equation (19) from reference
+    z1 = -np.cos(theta)*np.sqrt(Re**2 - (d * np.sin(theta))**2) + d*np.sin(theta)**2 - d
+    # Equation (20) from reference
+    rho1 = z1*np.tan(theta)
+
+    # See Figure (4) in reference
+    return np.arcsin(rho1/Re)
+
+def polar_cap_area(radius_rad: float) -> float:
+    """
+    Area of a spherical cap on a unit sphere given its angular radius.
+
+    Args:
+        radius_rad (float): Angular radius of the spherical cap in radians.
+
+    Returns:
+        float: Area of the spherical cap in steradians.
+    """
+    return 2 * np.pi * (1 - np.cos(radius_rad))
+
+def cone_footprint_area(theta: float, d: float, Re: float = SPHERICAL_EARTH_MEAN_RADIUS) -> float:
+    """
+    Area of the conical footprint on a sphere for a nadir-pointing cone with vertex
+    outside the sphere.
+
+    This uses the cone_footprint_angle function to compute the angular radius of
+    the footprint, then computes the area of the corresponding spherical cap.
+
+    Args:
+        theta (float): Half-angle of the conical field-of-view (degrees)
+        d (float): Distance from the cone vertex to the sphere center (must be > Re)
+        Re (float): Sphere radius (default is the mean radius of a spherical Earth)
+
+    Returns:
+        float: Area of the conical footprint on the sphere (steradians)
+    """
+    radius_rad = cone_footprint_angle(np.deg2rad(theta), d, Re)
+    return polar_cap_area(radius_rad)

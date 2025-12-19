@@ -114,6 +114,7 @@ import numpy as np
 
 from .base import EnumBase, ReferenceFrame, SPHERICAL_EARTH_MEAN_RADIUS
 
+
 class FieldOfViewType(EnumBase):
     """Enumeration of supported FOV types (shapes)."""
 
@@ -177,8 +178,7 @@ class FieldOfViewFactory:
 
 @FieldOfViewFactory.register_type("OMNIDIRECTIONAL")
 class OmnidirectionalFieldOfView:
-    """This class represents an omnidirectional FOV that covers the entire sphere.
-    """
+    """This class represents an omnidirectional FOV that covers the entire sphere."""
 
     def __init__(self, frame: Union[ReferenceFrame, str]):
         """Initializes the OmnidirectionalFieldOfView.
@@ -189,9 +189,7 @@ class OmnidirectionalFieldOfView:
         self.frame = ReferenceFrame.get(frame)
 
     @classmethod
-    def from_dict(
-        cls, specs: Dict[str, Any]
-    ) -> "OmnidirectionalFieldOfView":
+    def from_dict(cls, specs: Dict[str, Any]) -> "OmnidirectionalFieldOfView":
         """Creates an OmnidirectionalFieldOfView object from a dictionary.
 
         Args:
@@ -265,7 +263,7 @@ class CircularFieldOfView:
             "boresight", [0.0, 0.0, 1.0]
         )  # Default to +Z axis
         return cls(diameter, frame, boresight)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Converts the CircularFieldOfView object to a dictionary.
 
@@ -278,7 +276,7 @@ class CircularFieldOfView:
             "frame": self.frame.to_string(),
             "boresight": self.boresight.tolist(),
         }
-    
+
     def Area(self) -> float:
         """Calculates the area of the circular field-of-view on the unit sphere.
 
@@ -390,7 +388,7 @@ class RectangularFieldOfView:
             "ref_angle": self.ref_angle,
             "cross_angle": self.cross_angle,
         }
-    
+
     def Area(self) -> float:
         """Calculates the area of the rectangular field-of-view on the unit sphere.
 
@@ -451,7 +449,9 @@ class PolygonFieldOfView:
                 )
 
     @classmethod
-    def from_rectangular(cls, rect_fov: RectangularFieldOfView) -> "PolygonFieldOfView":
+    def from_rectangular(
+        cls, rect_fov: RectangularFieldOfView
+    ) -> "PolygonFieldOfView":
         """Create a PolygonFieldOfView from a RectangularFieldOfView.
 
         This performs a conversion of the rectangular FOV (defined by boresight, reference
@@ -465,7 +465,7 @@ class PolygonFieldOfView:
         Returns:
             PolygonFieldOfView: A polygonal (4-corner) representation of the rectangular FOV.
         """
-        b = np.array(rect_fov.boresight, dtype=float)      
+        b = np.array(rect_fov.boresight, dtype=float)
         x_hat = np.array(rect_fov.ref_vector, dtype=float)
         y_hat = np.cross(b, x_hat)
 
@@ -474,11 +474,11 @@ class PolygonFieldOfView:
 
         # CCW order when looking down boresight (right-handed basis with y_hat = b × x_hat):
         # (+x,+y),(-x,+y),(-x,-y),(+x,-y)
-        sign_pairs = [( 1,  1), (-1,  1), (-1, -1), ( 1, -1)]
+        sign_pairs = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
 
         boundary_corners = []
         for s_ref, s_cross in sign_pairs:
-            v = b + s_ref*ref_tan*x_hat + s_cross*cross_tan*y_hat
+            v = b + s_ref * ref_tan * x_hat + s_cross * cross_tan * y_hat
             v /= np.linalg.norm(v)
             boundary_corners.append(v)
 
@@ -487,7 +487,7 @@ class PolygonFieldOfView:
             boundary_corners=boundary_corners,
             boresight=rect_fov.boresight,
         )
-    
+
     @classmethod
     def from_dict(cls, specs: Dict[str, Any]) -> "PolygonFieldOfView":
         """Creates a PolygonFieldOfView object from a dictionary.
@@ -528,15 +528,18 @@ class PolygonFieldOfView:
             ],
         }
 
-def cone_footprint_angle(theta: float, d: float, Re: float = SPHERICAL_EARTH_MEAN_RADIUS) -> float:
+
+def cone_footprint_angle(
+    theta: float, d: float, Re: float = SPHERICAL_EARTH_MEAN_RADIUS
+) -> float:
     """
     Angular radius of a conical footprint on a sphere (as seen from the center) for a
     nadir-pointing cone with vertex outside the sphere.
 
     This formula is derived from the on-axis cone–sphere intersection geometry in
-    Mathar (2022), "Volume of Intersection of a Cone with a Sphere", https://arxiv.org/abs/2203.17227,
-    specifically Equations (19) and (20), which handle the case where the cone vertex
-    is outside the sphere.
+    Mathar (2022), "Volume of Intersection of a Cone with a Sphere", 
+    https://arxiv.org/abs/2203.17227, specifically Equations (19) and (20),
+    which handle the case where the cone vertex is outside the sphere.
 
     Args:
         theta (float): Half-angle of the conical field-of-view (radians)
@@ -553,17 +556,22 @@ def cone_footprint_angle(theta: float, d: float, Re: float = SPHERICAL_EARTH_MEA
     # from page 5 of reference.
     if d * np.sin(theta) >= Re:
         return np.arccos(Re / d)
-    
+
     # Use convention from the reference of negative d
     d = -d
 
     # Equation (19) from reference
-    z1 = -np.cos(theta)*np.sqrt(Re**2 - (d * np.sin(theta))**2) + d*np.sin(theta)**2 - d
+    z1 = (
+        -np.cos(theta) * np.sqrt(Re**2 - (d * np.sin(theta)) ** 2)
+        + d * np.sin(theta) ** 2
+        - d
+    )
     # Equation (20) from reference
-    rho1 = z1*np.tan(theta)
+    rho1 = z1 * np.tan(theta)
 
     # See Figure (4) in reference
-    return np.arcsin(rho1/Re)
+    return np.arcsin(rho1 / Re)
+
 
 def polar_cap_area(radius_rad: float) -> float:
     """
@@ -577,7 +585,10 @@ def polar_cap_area(radius_rad: float) -> float:
     """
     return 2 * np.pi * (1 - np.cos(radius_rad))
 
-def cone_footprint_area(theta: float, d: float, Re: float = SPHERICAL_EARTH_MEAN_RADIUS) -> float:
+
+def cone_footprint_area(
+    theta: float, d: float, Re: float = SPHERICAL_EARTH_MEAN_RADIUS
+) -> float:
     """
     Area of the conical footprint on a sphere for a nadir-pointing cone with vertex
     outside the sphere.

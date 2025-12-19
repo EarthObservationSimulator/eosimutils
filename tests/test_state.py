@@ -7,7 +7,7 @@ import numpy as np
 from astropy.coordinates import EarthLocation as Astropy_EarthLocation
 import astropy.units as astropy_u
 
-import spiceypy as spice
+from skyfield.api import wgs84 as skyfield_wgs84
 
 from eosimutils.time import AbsoluteDate
 from eosimutils.base import ReferenceFrame
@@ -245,7 +245,6 @@ class TestGeographicPosition(unittest.TestCase):
             self.latitude_degrees, self.longitude_degrees, self.elevation_m
         )
         cartesian_pos = Cartesian3DPosition.from_geographic_position(geo_pos)
-        from skyfield.api import wgs84 as skyfield_wgs84
 
         skyfield_location = skyfield_wgs84.latlon(
             geo_pos.latitude,
@@ -259,7 +258,6 @@ class TestGeographicPosition(unittest.TestCase):
         )
 
     def test_cartesian_to_geographic_position_skyfield_validation(self):
-        from skyfield.api import wgs84 as skyfield_wgs84
 
         skyfield_location = skyfield_wgs84.latlon(
             self.latitude_degrees,
@@ -273,8 +271,12 @@ class TestGeographicPosition(unittest.TestCase):
             ReferenceFrame.get("ITRF"),
         )
         geo_pos = cartesian_pos.to_geographic_position()
-        self.assertAlmostEqual(geo_pos.latitude, self.latitude_degrees, places=6)
-        self.assertAlmostEqual(geo_pos.longitude, self.longitude_degrees, places=6)
+        self.assertAlmostEqual(
+            geo_pos.latitude, self.latitude_degrees, places=6
+        )
+        self.assertAlmostEqual(
+            geo_pos.longitude, self.longitude_degrees, places=6
+        )
         self.assertAlmostEqual(geo_pos.elevation, self.elevation_m, places=3)
 
     def test_itrs_xyz_astropy_validation(self):
@@ -324,14 +326,15 @@ class TestGeographicPosition(unittest.TestCase):
         cartesian_pos = geo_pos.to_cartesian3d_position()
 
         # Use Skyfield to perform the same conversion
-        from skyfield.api import wgs84 as skyfield_wgs84
 
         skyfield_location = skyfield_wgs84.latlon(
             geo_pos.latitude,
             geo_pos.longitude,
             elevation_m=geo_pos.elevation,
         )
-        skyfield_xyz = skyfield_location.itrs_xyz.km  # Get ITRS (ECEF) XYZ in km
+        skyfield_xyz = (
+            skyfield_location.itrs_xyz.km
+        )  # Get ITRS (ECEF) XYZ in km
 
         # Validate the Cartesian coordinates
         np.testing.assert_array_almost_equal(
@@ -341,15 +344,21 @@ class TestGeographicPosition(unittest.TestCase):
     def test_from_cartesian3d_position(self):
         """Test conversion from Cartesian3DPosition to GeographicPosition."""
         # Create a GeographicPosition and convert to Cartesian3DPosition
-        geo_pos = GeographicPosition(self.latitude_degrees, self.longitude_degrees, self.elevation_m)
+        geo_pos = GeographicPosition(
+            self.latitude_degrees, self.longitude_degrees, self.elevation_m
+        )
         cart_pos = geo_pos.to_cartesian3d_position()
 
         # Convert back to GeographicPosition
         geo_pos2 = GeographicPosition.from_cartesian3d_position(cart_pos)
 
         # Check that the values are close to the originals
-        self.assertAlmostEqual(geo_pos2.latitude, self.latitude_degrees, places=4)
-        self.assertAlmostEqual(geo_pos2.longitude, self.longitude_degrees, places=4)
+        self.assertAlmostEqual(
+            geo_pos2.latitude, self.latitude_degrees, places=4
+        )
+        self.assertAlmostEqual(
+            geo_pos2.longitude, self.longitude_degrees, places=4
+        )
         self.assertAlmostEqual(geo_pos2.elevation, self.elevation_m, places=2)
 
 
@@ -551,10 +560,14 @@ class TestCartesian3DPositionArray(unittest.TestCase):
             Cartesian3DPosition(1.0, 2.0, 3.0, self.frame),
             Cartesian3DPosition(4.0, 5.0, 6.0, self.frame),
         ]
-        self.geo_positions_array = GeographicPositionArray.from_geographic_position_list([
-            GeographicPosition(0.0, 0.0, 0.0),
-            GeographicPosition(10.0, 20.0, 100.0),
-        ])
+        self.geo_positions_array = (
+            GeographicPositionArray.from_geographic_position_list(
+                [
+                    GeographicPosition(0.0, 0.0, 0.0),
+                    GeographicPosition(10.0, 20.0, 100.0),
+                ]
+            )
+        )
 
     def test_initialization(self):
         arr = Cartesian3DPositionArray(self.positions_np, self.frame)
@@ -672,6 +685,7 @@ class TestCartesian3DPositionArray(unittest.TestCase):
             )
             self.assertEqual(position.frame, self.frame)
 
+
 class TestGeographicPositionArray(unittest.TestCase):
     """Test the GeographicPositionArray class."""
 
@@ -682,12 +696,14 @@ class TestGeographicPositionArray(unittest.TestCase):
             GeographicPosition(45.0, -60.0, 200.0),
             GeographicPosition(-45.0, -60.0, 500.0),
         ]
-        self.geo_positions_np = np.array([
-            [10.0, 20.0, 100.0],
-            [-45.0, 60.0, 500.0],
-            [45.0, -60.0, 200.0],
-            [-45.0, -60.0, 500.0],
-        ])
+        self.geo_positions_np = np.array(
+            [
+                [10.0, 20.0, 100.0],
+                [-45.0, 60.0, 500.0],
+                [45.0, -60.0, 200.0],
+                [-45.0, -60.0, 500.0],
+            ]
+        )
 
     def test_initialization(self):
         arr = GeographicPositionArray(self.geo_positions_np)
@@ -700,7 +716,9 @@ class TestGeographicPositionArray(unittest.TestCase):
             GeographicPositionArray(np.array([[10.0, 20.0], [30.0, 40.0]]))
 
     def test_from_geographic_position_list(self):
-        arr = GeographicPositionArray.from_geographic_position_list(self.geo_positions)
+        arr = GeographicPositionArray.from_geographic_position_list(
+            self.geo_positions
+        )
         np.testing.assert_array_equal(arr.geo_positions, self.geo_positions_np)
 
     def test_to_numpy_and_to_list(self):
@@ -711,7 +729,9 @@ class TestGeographicPositionArray(unittest.TestCase):
     def test_to_dict_and_from_dict(self):
         arr = GeographicPositionArray(self.geo_positions_np)
         dict_out = arr.to_dict()
-        self.assertEqual(dict_out["geo_positions"], self.geo_positions_np.tolist())
+        self.assertEqual(
+            dict_out["geo_positions"], self.geo_positions_np.tolist()
+        )
         arr2 = GeographicPositionArray.from_dict(dict_out)
         np.testing.assert_array_equal(arr2.geo_positions, self.geo_positions_np)
 
@@ -750,10 +770,16 @@ class TestGeographicPositionArray(unittest.TestCase):
         arr = GeographicPositionArray(self.geo_positions_np)
         for i, geo_pos in enumerate(arr):
             self.assertIsInstance(geo_pos, GeographicPosition)
-            self.assertAlmostEqual(geo_pos.latitude, self.geo_positions_np[i][0])
-            self.assertAlmostEqual(geo_pos.longitude, self.geo_positions_np[i][1])
-            self.assertAlmostEqual(geo_pos.elevation, self.geo_positions_np[i][2])
-    
+            self.assertAlmostEqual(
+                geo_pos.latitude, self.geo_positions_np[i][0]
+            )
+            self.assertAlmostEqual(
+                geo_pos.longitude, self.geo_positions_np[i][1]
+            )
+            self.assertAlmostEqual(
+                geo_pos.elevation, self.geo_positions_np[i][2]
+            )
+
     def test_itrs_xyz_array(self):
         """Test that itrs_xyz returns an (N,3) array matching per-item conversions."""
         arr = GeographicPositionArray(self.geo_positions_np)
@@ -772,25 +798,31 @@ class TestGeographicPositionArray(unittest.TestCase):
         self.assertIsInstance(cart_arr, Cartesian3DPositionArray)
         self.assertEqual(cart_arr.frame, ReferenceFrame.get("ITRF"))
         # positions should match arr.itrs_xyz
-        np.testing.assert_array_almost_equal(cart_arr.positions, arr.itrs_xyz, decimal=9)
-    
+        np.testing.assert_array_almost_equal(
+            cart_arr.positions, arr.itrs_xyz, decimal=9
+        )
+
     def test_from_cartesian3d_position_array(self):
-        """Test conversion from Cartesian3DPositionArray to GeographicPositionArray."""        
+        """Test conversion from Cartesian3DPositionArray to GeographicPositionArray."""
         # Generate a random GeographicPositionArray
-        geo_positions_array = np.array([
+        geo_positions_array = np.array(
             [
-                random.uniform(-90, 90),         # latitude
-                random.uniform(-180, 180),       # longitude
-                random.uniform(0, 10000),        # elevation in meters
+                [
+                    random.uniform(-90, 90),  # latitude
+                    random.uniform(-180, 180),  # longitude
+                    random.uniform(0, 10000),  # elevation in meters
+                ]
+                for _ in range(5)
             ]
-            for _ in range(5)
-        ])
+        )
         arr = GeographicPositionArray(geo_positions_array)
 
         cart_arr = arr.to_cartesian3d_position_array()
 
         # Convert back to GeographicPositionArray
-        geo_arr2 = GeographicPositionArray.from_cartesian3d_position_array(cart_arr)
+        geo_arr2 = GeographicPositionArray.from_cartesian3d_position_array(
+            cart_arr
+        )
 
         # Check that the values are close to the originals
         for orig, conv in zip(geo_positions_array, geo_arr2):
@@ -800,9 +832,15 @@ class TestGeographicPositionArray(unittest.TestCase):
 
     def test_from_cartesian3d_position_array_invalid_frame(self):
         """Test that ValueError is raised when frame is not ITRF."""
-        cart_arr_non_itrs = Cartesian3DPositionArray(positions=np.array([[1e6, 2e6, 3e6], [4e6, 5e6, 6e6]]), frame=ReferenceFrame.get("ICRF_EC"))
+        cart_arr_non_itrs = Cartesian3DPositionArray(
+            positions=np.array([[1e6, 2e6, 3e6], [4e6, 5e6, 6e6]]),
+            frame=ReferenceFrame.get("ICRF_EC"),
+        )
         with self.assertRaises(ValueError):
-            GeographicPositionArray.from_cartesian3d_position_array(cart_arr_non_itrs)
+            GeographicPositionArray.from_cartesian3d_position_array(
+                cart_arr_non_itrs
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

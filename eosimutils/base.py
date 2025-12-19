@@ -57,7 +57,7 @@ class JsonSerializer:
     @staticmethod
     def load_from_json(other_cls, file_path):
         """Load an object from a JSON file.
-        
+
         If other_cls is a dict, returns the loaded JSON as a dict.
         Otherwise, expects other_cls to have a from_dict() method.
         """
@@ -96,7 +96,7 @@ class JsonSerializer:
         raise ValueError(
             f"Object of type {type(o)!r} is not JSON serializable and has no to_dict()"
         )
-        
+
     @staticmethod
     def save_to_json(obj, file_path):
         """Save the object to a JSON file.

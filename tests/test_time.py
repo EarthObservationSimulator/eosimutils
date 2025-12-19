@@ -83,14 +83,18 @@ class TestAbsoluteDate(unittest.TestCase):
             "time_scale": "ET",
         }
         absolute_date = AbsoluteDate.from_dict(dict_in)
-        self.assertEqual(absolute_date.ephemeris_time, dict_in["ephemeris_time"])
+        self.assertEqual(
+            absolute_date.ephemeris_time, dict_in["ephemeris_time"]
+        )
 
     def test_to_dict_spice_et(self):
-        absolute_date = AbsoluteDate.from_dict({
-                            "time_format": "SPICE_ET",
-                            "ephemeris_time": 553333629.183727,
-                            "time_scale": "ET",
-                        })
+        absolute_date = AbsoluteDate.from_dict(
+            {
+                "time_format": "SPICE_ET",
+                "ephemeris_time": 553333629.183727,
+                "time_scale": "ET",
+            }
+        )
         dict_out = absolute_date.to_dict("SPICE_ET", "ET")
         expected_dict = {
             "time_format": "SPICE_ET",

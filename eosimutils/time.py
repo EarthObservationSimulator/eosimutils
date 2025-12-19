@@ -13,7 +13,7 @@ corresponds to Barycentric Dynamical Time (TDB).
 Time formats define how time is represented. The module supports:
 - **Gregorian Date**
 - **Julian Date**
-= **SPICE ET**: Count of ephemeris seconds past the ephemeris reference epoch (J2000) 
+= **SPICE ET**: Count of ephemeris seconds past the ephemeris reference epoch (J2000)
                 J2000 epoch is Greenwich noon on January 1, 2000 Barycentric Dynamical Time (TDB).
 
 **Time Scales:**
@@ -99,7 +99,7 @@ class TimeScale(EnumBase):
     """
 
     UTC = "UTC"
-    ET = "ET" # SPICE Ephemeris Time (TDB)
+    ET = "ET"  # SPICE Ephemeris Time (TDB)
 
 
 class AbsoluteDate:
@@ -151,10 +151,10 @@ class AbsoluteDate:
             # Directly use the provided Ephemeris Time (ET)
             spice_ephemeris_time: float = dict_in["ephemeris_time"]
             return cls(ephemeris_time=spice_ephemeris_time)
-        
+
         # Load SPICE kernel files
         load_spice_kernels()
-        
+
         if time_scale == TimeScale.UTC:
             if time_format == TimeFormat.GREGORIAN_DATE:
                 # Parse the calendar date string and convert to Ephemeris Time (ET)
@@ -187,7 +187,7 @@ class AbsoluteDate:
                                 See :class:`eosimutils.time.TimeFormat` for options.
                                 Default is "GREGORIAN_DATE".
 
-            time_scale (str): The time scale to use 
+            time_scale (str): The time scale to use
                                 e.g. "utc" (case-insensitive)
                                 (see :class:`eosimutils.time.TimeScale`).
                                 Default is "UTC".
@@ -201,11 +201,11 @@ class AbsoluteDate:
 
         if time_scale == TimeScale.ET and time_format == TimeFormat.SPICE_ET:
             return {
-                    "time_format": time_format.to_string(),
-                    "ephemeris_time": self.ephemeris_time,
-                    "time_scale": time_scale.to_string(),
-                }
-        
+                "time_format": time_format.to_string(),
+                "ephemeris_time": self.ephemeris_time,
+                "time_scale": time_scale.to_string(),
+            }
+
         # Load SPICE kernel files
         load_spice_kernels()
 
@@ -455,7 +455,7 @@ class AbsoluteDateArray:
                                 See :class:`eosimutils.time.TimeFormat` for options.
                                 Default is "GREGORIAN_DATE".
 
-            time_scale (str): The time scale to use 
+            time_scale (str): The time scale to use
                                 e.g. "utc" (case-insensitive)
                                 (see :class:`eosimutils.time.TimeScale`).
                                 Default is "UTC".

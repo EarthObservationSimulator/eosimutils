@@ -537,7 +537,7 @@ def cone_footprint_angle(
     nadir-pointing cone with vertex outside the sphere.
 
     This formula is derived from the on-axis cone–sphere intersection geometry in
-    Mathar (2022), "Volume of Intersection of a Cone with a Sphere", 
+    Mathar (2022), "Volume of Intersection of a Cone with a Sphere",
     https://arxiv.org/abs/2203.17227, specifically Equations (19) and (20),
     which handle the case where the cone vertex is outside the sphere.
 

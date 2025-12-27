@@ -168,7 +168,7 @@ class LVLHType1FrameHandler:
 
         Returns:
             tuple: (OrientationSeries, PositionSeries)
-                - OrientationSeries: LVLH OrientationSeries with LVLH as `from_frame` 
+                - OrientationSeries: LVLH OrientationSeries with LVLH as `from_frame`
                                         and self.frame as `to_frame`.
                 - PositionSeries: Position of the LVLH frame origin relative to the planet center,
                 expressed in inertial coordinates.

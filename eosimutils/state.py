@@ -205,7 +205,7 @@ class Cartesian3DPosition:
         """
         if self.frame is not None and self.frame != ReferenceFrame.get("ITRF"):
             raise ValueError(
-                "Cartesian3DPosition must be in the ITRF frame for " \
+                "Cartesian3DPosition must be in the ITRF frame for "
                 "conversion to GeographicPosition."
             )
         longitude, latitude, elevation = spice.recgeo(
@@ -713,8 +713,7 @@ class Cartesian3DPositionArray:
         Returns:
             GeographicPositionArray: The corresponding GeographicPositionArray object.
         """
-        if self.frame is not None and \
-            self.frame != ReferenceFrame.get("ITRF"):
+        if self.frame is not None and self.frame != ReferenceFrame.get("ITRF"):
             raise ValueError(
                 "Cartesian3DPositionArray must be in the ITRF frame "
                 "for conversion to GeographicPositionArray."
@@ -853,7 +852,7 @@ class GeographicPositionArray:
     def __init__(self, geo_positions: np.ndarray):
         """
         Args:
-            geo_positions (np.ndarray): NumPy array of shape (N, 3) with 
+            geo_positions (np.ndarray): NumPy array of shape (N, 3) with
                                 columns [latitude, longitude, elevation].
         Raises:
             ValueError: If geo_positions does not have shape (N, 3).
@@ -923,7 +922,7 @@ class GeographicPositionArray:
         Deserializes a GeographicPositionArray object from a dictionary.
         Args:
             dict_in (dict): The dictionary must contain the key "geo_positions":
-                - "geo_positions": A list or array representing geo_positions (Nx3), 
+                - "geo_positions": A list or array representing geo_positions (Nx3),
                                     columns [latitude, longitude, elevation].
         Returns:
             GeographicPositionArray: The deserialized object.

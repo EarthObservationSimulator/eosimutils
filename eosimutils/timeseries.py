@@ -316,7 +316,9 @@ class Timeseries:
         elif isinstance(time, AbsoluteDateArray):
             target_times = time.ephemeris_time
         else:
-            raise TypeError("time must be an AbsoluteDateArray or AbsoluteDate.")
+            raise TypeError(
+                "time must be an AbsoluteDateArray or AbsoluteDate."
+            )
 
         _, new_data, _ = self._resample_data(
             target_times, method=self.interpolator

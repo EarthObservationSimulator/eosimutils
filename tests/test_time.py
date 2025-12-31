@@ -76,6 +76,33 @@ class TestAbsoluteDate(unittest.TestCase):
         }
         self.assertEqual(dict_out, expected_dict)
 
+    def test_from_dict_spice_et(self):
+        dict_in = {
+            "time_format": "SPICE_ET",
+            "ephemeris_time": 553333629.183727,
+            "time_scale": "ET",
+        }
+        absolute_date = AbsoluteDate.from_dict(dict_in)
+        self.assertEqual(
+            absolute_date.ephemeris_time, dict_in["ephemeris_time"]
+        )
+
+    def test_to_dict_spice_et(self):
+        absolute_date = AbsoluteDate.from_dict(
+            {
+                "time_format": "SPICE_ET",
+                "ephemeris_time": 553333629.183727,
+                "time_scale": "ET",
+            }
+        )
+        dict_out = absolute_date.to_dict("SPICE_ET", "ET")
+        expected_dict = {
+            "time_format": "SPICE_ET",
+            "ephemeris_time": 553333629.183727,
+            "time_scale": "ET",
+        }
+        self.assertEqual(dict_out, expected_dict)
+
     def test_gregorian_to_julian(self):
         # Initialize with Gregorian date
         dict_in = {
@@ -230,7 +257,7 @@ class TestAbsoluteDateArray(unittest.TestCase):
         self.assertEqual(astropy_times[0].isot, "2017-07-14T19:46:00.000")
         self.assertEqual(astropy_times[1].isot, "2017-07-14T19:46:01.000")
 
-    def test_to_dict_gregorian(self):
+    def test_to_dict_from_dict_gregorian(self):
         et_array = np.array([553333629.183727, 553333630.183727])
         abs_dates = AbsoluteDateArray(et_array)
         result = abs_dates.to_dict("GREGORIAN_DATE", "UTC")
@@ -238,8 +265,10 @@ class TestAbsoluteDateArray(unittest.TestCase):
         self.assertEqual(result["time_scale"], "UTC")
         self.assertEqual(result["calendar_date"][0], "2017-07-14T19:46:00.000")
         self.assertEqual(result["calendar_date"][1], "2017-07-14T19:46:01.000")
+        reconstructed = AbsoluteDateArray.from_dict(result)
+        np.testing.assert_allclose(reconstructed.ephemeris_time, et_array)
 
-    def test_to_dict_julian(self):
+    def test_to_dict_from_dict_julian(self):
         et_array = np.array([553333629.183727, 553333630.183727])
         abs_dates = AbsoluteDateArray(et_array)
         result = abs_dates.to_dict("JULIAN_DATE", "UTC")
@@ -247,25 +276,18 @@ class TestAbsoluteDateArray(unittest.TestCase):
         self.assertEqual(result["time_scale"], "UTC")
         self.assertAlmostEqual(result["jd"][0], 2457949.323611, places=6)
         self.assertAlmostEqual(result["jd"][1], 2457949.323623, places=6)
+        reconstructed = AbsoluteDateArray.from_dict(result)
+        np.testing.assert_allclose(reconstructed.ephemeris_time, et_array)
 
-    def test_to_dict_and_from_dict(self):
+    def test_to_dict_from_dict_spice_et(self):
         et_array = np.array([553333629.183727, 553333630.183727])
         abs_dates = AbsoluteDateArray(et_array)
-
-        # Convert to dictionary
-        dict_representation = abs_dates.to_dict("GREGORIAN_DATE", "UTC")
-
-        # Reconstruct from dictionary
-        reconstructed_abs_dates = AbsoluteDateArray.from_dict(
-            dict_representation
-        )
-
-        # Assert that the reconstructed object matches the original
-        np.testing.assert_allclose(
-            abs_dates.ephemeris_time,
-            reconstructed_abs_dates.ephemeris_time,
-            rtol=1e-6,
-        )
+        result = abs_dates.to_dict("SPICE_ET", "ET")
+        self.assertEqual(result["time_format"], "SPICE_ET")
+        self.assertEqual(result["time_scale"], "ET")
+        np.testing.assert_allclose(result["ephemeris_time"], et_array)
+        reconstructed = AbsoluteDateArray.from_dict(result)
+        np.testing.assert_allclose(reconstructed.ephemeris_time, et_array)
 
     def test_length(self):
         """Test the length of the AbsoluteDateArray."""

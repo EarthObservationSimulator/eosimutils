@@ -78,7 +78,7 @@ import spiceypy as spice
 from typing import Union
 
 from .base import ReferenceFrame, EnumBase
-from .time import AbsoluteDate, AbsoluteDateArray
+from .time import AbsoluteDateArray
 from .state import Cartesian3DPositionArray
 from .timeseries import Timeseries
 from .spicekernels import load_spice_kernels
@@ -270,7 +270,7 @@ class StateSeries(Timeseries):
         """
         Resamples the StateSeries to a new time base.
 
-        Takes AbsoluteDataArray as input and calls the private _resample method.
+        Takes AbsoluteDateArray as input and calls the private _resample method.
 
         Args:
             new_time (AbsoluteDateArray): The new time samples.
@@ -433,11 +433,14 @@ class StateSeries(Timeseries):
 
     def to_dict(
         self,
-        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
-        time_scale: Union[str, EnumBase] = "UTC",
+        time_format: Union[str, EnumBase] = "SPICE_ET",
+        time_scale: Union[str, EnumBase] = "ET",
     ) -> dict:
         """
         Serializes the StateSeries object to a dictionary.
+
+        The time arrays are serialized in the `SPICE_ET` format, `ET` time scale
+        by default to allow for faster serialization.
 
         Returns:
             dict: A dictionary representation of the StateSeries object.
@@ -699,7 +702,7 @@ class PositionSeries(Timeseries):
         self.frame = frame
         load_spice_kernels()  # Load SPICE kernels for frame conversion
 
-    def resample(
+    def _resample(
         self, new_time: np.ndarray, method: str = "linear"
     ) -> "PositionSeries":
         """
@@ -714,6 +717,23 @@ class PositionSeries(Timeseries):
         """
         new_time_obj, new_data, _ = self._resample_data(new_time, method)
         return PositionSeries(new_time_obj, new_data[0], self.frame)
+
+    def resample(
+        self, new_time: AbsoluteDateArray, method: str = "linear"
+    ) -> "PositionSeries":
+        """
+        Resamples the PositionSeries to a new time base.
+
+        Takes AbsoluteDataArray as input and calls the private _resample method.
+
+        Args:
+            new_time (AbsoluteDateArray): The new time samples.
+            method (str, optional): Interpolation method. Defaults to "linear".
+
+        Returns:
+            PositionSeries: A new PositionSeries object with resampled data.
+        """
+        return self._resample(new_time.ephemeris_time, method)
 
     def remove_gaps(self) -> "PositionSeries":
         """
@@ -749,8 +769,8 @@ class PositionSeries(Timeseries):
 
     def to_dict(
         self,
-        time_format: Union[str, EnumBase] = "GREGORIAN_DATE",
-        time_scale: Union[str, EnumBase] = "UTC",
+        time_format: Union[str, EnumBase] = "SPICE_ET",
+        time_scale: Union[str, EnumBase] = "ET",
     ) -> dict:
         """
         Serializes the PositionSeries object to a dictionary.
@@ -888,7 +908,7 @@ class PositionSeries(Timeseries):
             return super()._arithmetic_op(other, op)
         elif isinstance(other, PositionSeries):
             # Resample other onto self.time.ephemeris_time (using the underlying ephemeris times).
-            other_resamp = other.resample(
+            other_resamp = other._resample(  # pylint: disable=protected-access
                 self.time.ephemeris_time, method=interp_method
             )
             # If frames do not match, attempt frame conversion.

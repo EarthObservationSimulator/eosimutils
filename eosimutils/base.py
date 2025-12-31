@@ -56,14 +56,46 @@ class JsonSerializer:
 
     @staticmethod
     def load_from_json(other_cls, file_path):
-        """Load an object from a JSON file."""
+        """Load an object from a JSON file.
+
+        If other_cls is a dict, returns the loaded JSON as a dict.
+        Otherwise, expects other_cls to have a from_dict() method.
+        """
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            return other_cls.from_dict(data)
+            if other_cls is dict:
+                return data
+            if isinstance(data, list):
+                return [other_cls.from_dict(d) for d in data]
+            else:
+                return other_cls.from_dict(data)
         except Exception as e:  # pylint: disable=broad-except
             print(f"Error loading JSON from {file_path}: {e}")
             return None
+
+    @staticmethod
+    def to_serializable(o):
+        """Convert an object to a JSON-serializable structure.
+        If the object (or items inside a dict/list) expose a to_dict() method,
+        that method is used recursively to produce a JSON-serializable structure.
+        """
+        # prefer user-defined to_dict for custom objects
+        if hasattr(o, "to_dict") and callable(getattr(o, "to_dict")):
+            return JsonSerializer.to_serializable(o.to_dict())
+        # dict -> transform values
+        if isinstance(o, dict):
+            return {k: JsonSerializer.to_serializable(v) for k, v in o.items()}
+        # list/tuple -> transform elements
+        if isinstance(o, (list, tuple)):
+            return [JsonSerializer.to_serializable(v) for v in o]
+        # basic JSON types
+        if isinstance(o, (str, int, float, bool)) or o is None:
+            return o
+        # fallback: try converting via str (or raise)
+        raise ValueError(
+            f"Object of type {type(o)!r} is not JSON serializable and has no to_dict()"
+        )
 
     @staticmethod
     def save_to_json(obj, file_path):
@@ -72,26 +104,7 @@ class JsonSerializer:
         If the object (or items inside a dict/list) expose a to_dict() method,
         that method is used recursively to produce a JSON-serializable structure.
         """
-
-        def _to_serializable(o):
-            # prefer user-defined to_dict for custom objects
-            if hasattr(o, "to_dict") and callable(getattr(o, "to_dict")):
-                return _to_serializable(o.to_dict())
-            # dict -> transform values
-            if isinstance(o, dict):
-                return {k: _to_serializable(v) for k, v in o.items()}
-            # list/tuple -> transform elements
-            if isinstance(o, (list, tuple)):
-                return [_to_serializable(v) for v in o]
-            # basic JSON types
-            if isinstance(o, (str, int, float, bool)) or o is None:
-                return o
-            # fallback: try converting via str (or raise)
-            raise ValueError(
-                f"Object of type {type(o)!r} is not JSON serializable and has no to_dict()"
-            )
-
-        serializable = _to_serializable(obj)
+        serializable = JsonSerializer.to_serializable(obj)
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(serializable, f, indent=4)
 

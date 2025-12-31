@@ -134,7 +134,6 @@ import numpy as np
 from .base import ReferenceFrame
 from .time import AbsoluteDate, AbsoluteDateArray
 from .orientation import Orientation, SpiceOrientation, ConstantOrientation
-from .state import Cartesian3DPosition
 from .state import Cartesian3DPosition, Cartesian3DVelocity, CartesianState
 from .trajectory import PositionSeries, StateSeries
 
@@ -471,8 +470,8 @@ class FrameGraph:
         transform_origin: bool = False,
     ) -> Union[PositionSeries, StateSeries]:
         """
-        Transform a PositionSeries or StateSeries into ``to_frame``. 
-        
+        Transform a PositionSeries or StateSeries into ``to_frame``.
+
         Note that if a StateSeries is used, it is assumed that the velocity is the derivative of
         the position,taken in the frame of series.frame. Hence the coriolis term is applied during
         the transformation so that this same convention holds in the target frame.
@@ -502,13 +501,17 @@ class FrameGraph:
         if series.frame == to_frame:
             return series
 
-        rot, w = self.get_orientation_transform(series.frame, to_frame, series.time)
+        rot, w = self.get_orientation_transform(
+            series.frame, to_frame, series.time
+        )
 
         if transform_origin and isinstance(series, PositionSeries):
-            positions = series.data[0] - self.get_position_offset(series.frame, to_frame, series.time)
+            positions = series.data[0] - self.get_position_offset(
+                series.frame, to_frame, series.time
+            )
         else:
             positions = series.data[0]
-        
+
         new_positions = rot.apply(positions)
         time_copy = AbsoluteDateArray(series.time.ephemeris_time.copy())
 
@@ -517,7 +520,7 @@ class FrameGraph:
         else:
             velocities = series.data[1]
             new_velocities = rot.apply(velocities) + np.cross(w, new_positions)
-            
+
             return StateSeries(
                 time_copy,
                 [new_positions, new_velocities],
@@ -558,7 +561,8 @@ class FrameGraph:
             item, (Cartesian3DPosition, Cartesian3DVelocity, CartesianState)
         ):
             raise TypeError(
-                "item must be a Cartesian3DPosition, Cartesian3DVelocity, or CartesianState instance."
+                "item must be a Cartesian3DPosition, Cartesian3DVelocity, "
+                "or CartesianState instance."
             )
 
         from_frame = item.frame
@@ -575,19 +579,27 @@ class FrameGraph:
             else:
                 new_pos = rot.apply(item.to_numpy())
 
-            return Cartesian3DPosition(new_pos[0], new_pos[1], new_pos[2], to_frame)
+            return Cartesian3DPosition(
+                new_pos[0], new_pos[1], new_pos[2], to_frame
+            )
 
         if isinstance(item, Cartesian3DVelocity):
             new_vel = rot.apply(item.to_numpy())
-            return Cartesian3DVelocity(new_vel[0], new_vel[1], new_vel[2], to_frame)
+            return Cartesian3DVelocity(
+                new_vel[0], new_vel[1], new_vel[2], to_frame
+            )
 
         # CartesianState handling
         pos_np = item.position.to_numpy()
         vel_np = item.velocity.to_numpy()
         new_pos = rot.apply(pos_np)
         new_vel = rot.apply(vel_np) + np.cross(w, new_pos)
-        pos_obj = Cartesian3DPosition(new_pos[0], new_pos[1], new_pos[2], to_frame)
-        vel_obj = Cartesian3DVelocity(new_vel[0], new_vel[1], new_vel[2], to_frame)
+        pos_obj = Cartesian3DPosition(
+            new_pos[0], new_pos[1], new_pos[2], to_frame
+        )
+        vel_obj = Cartesian3DVelocity(
+            new_vel[0], new_vel[1], new_vel[2], to_frame
+        )
         return CartesianState(t, pos_obj, vel_obj, to_frame)
 
     def to_dict(self) -> Dict[str, Any]:

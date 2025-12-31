@@ -255,7 +255,7 @@ class TestPositionSeries(unittest.TestCase):
         data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
         frame = ReferenceFrame.get("ICRF_EC")
         ps = PositionSeries(time, data, frame)
-        new_time = np.array([JD_OF_J2000 + 0.5])
+        new_time = AbsoluteDateArray(np.array([JD_OF_J2000 + t for t in [0.5]]))
         resampled_ps = ps.resample(new_time)
         assert resampled_ps.data[0].shape == (1, 3)
 

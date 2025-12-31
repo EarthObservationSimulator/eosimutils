@@ -58,11 +58,16 @@ Array of points:
 import numpy as np
 from typing import Dict, List, Tuple, Any, Union, Optional
 
+import spiceypy as spice
+
 from skyfield.positionlib import build_position as skyfield_build_position
 from skyfield.constants import AU_KM as Skyfield_AU_KM
-from skyfield.api import wgs84 as skyfield_wgs84
 
-from .base import ReferenceFrame
+from .base import (
+    ReferenceFrame,
+    WGS84_EARTH_EQUATORIAL_RADIUS,
+    WGS84_EARTH_FLATTENING,
+)
 from .time import AbsoluteDate
 
 
@@ -165,6 +170,54 @@ class Cartesian3DPosition:
             "z": float(self.coords[2]),
             "frame": self.frame.to_string() if self.frame else None,
         }
+
+    @classmethod
+    def from_geographic_position(
+        cls, position: "GeographicPosition"
+    ) -> "Cartesian3DPosition":
+        """Creates a Cartesian3DPosition from a GeographicPosition object.
+
+        Geographic positions are converted into Cartesian coordinates in the ITRF frame
+        using the `itrs_xyz` property.
+
+        Args:
+            position (GeographicPosition): GeographicPosition object.
+
+        Returns:
+            Cartesian3DPosition: A new Cartesian3DPosition object.
+
+        """
+        itrs_xyz = position.itrs_xyz
+        return cls(
+            x=itrs_xyz[0],
+            y=itrs_xyz[1],
+            z=itrs_xyz[2],
+            frame=ReferenceFrame.get("ITRF"),
+        )
+
+    def to_geographic_position(self) -> "GeographicPosition":
+        """Converts the Cartesian3DPosition to a GeographicPosition object.
+
+        The Cartesian3DPosition must be in the ITRF frame.
+
+        Returns:
+            GeographicPosition: The corresponding GeographicPosition object.
+        """
+        if self.frame is not None and self.frame != ReferenceFrame.get("ITRF"):
+            raise ValueError(
+                "Cartesian3DPosition must be in the ITRF frame for "
+                "conversion to GeographicPosition."
+            )
+        longitude, latitude, elevation = spice.recgeo(
+            rectan=self.to_numpy(),
+            re=WGS84_EARTH_EQUATORIAL_RADIUS,
+            f=WGS84_EARTH_FLATTENING,
+        )
+        return GeographicPosition(
+            latitude_degrees=latitude * spice.dpr(),
+            longitude_degrees=longitude * spice.dpr(),
+            elevation_m=elevation * 1e3,
+        )
 
 
 class Cartesian3DVelocity:
@@ -270,9 +323,17 @@ class Cartesian3DVelocity:
 
 class GeographicPosition:
     """Handles geographic position in the geodetic coordinate system.
-    The geodetic position is defined with respect to the
-    World Geodetic System 1984 Geoid as defined in Skyfield.
-    Reference: https://rhodesmill.org/skyfield/api-topos.html
+
+    This class represents a geographic position defined by latitude, longitude,
+    and elevation in the WGS84 geodetic coordinate system (~ITRF).
+
+    SpiceyPy is used to convert geodetic coordinates to ITRS XYZ coordinates.
+    The conversion uses the following World Geodetic System 1984 (WGS84) parameters:
+    - Equatorial radius: 6378.1370 km
+    - Flattening: 1 / 298.257223563
+
+    These parameters are consistent with those used in Skyfield:
+    https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49
     """
 
     def __init__(
@@ -343,16 +404,25 @@ class GeographicPosition:
     @property
     def itrs_xyz(self):
         """Get the ITRS XYZ position in kilometers.
-        Conversion is performed using Skyfield.
+        SpicePy implementation of georec is used for conversion.
+        The conversion uses the following World Geodetic System 1984 (WGS84) parameters:
+        - Equatorial radius: 6378.1370 km
+        - Flattening: 1 / 298.257223563
+
+        These parameters are consistent with those used in Skyfield:
+        https://github.com/skyfielders/python-skyfield/blob/52fd26c6fbe14dd3b39a77d96205599985993a1f/skyfield/toposlib.py#L285C24-L285C49
+
         Returns:
             np.ndarray: ITRS XYZ position in kilometers.
         """
-        skyfield_geo_position = skyfield_wgs84.latlon(
-            latitude_degrees=self.latitude_degrees,
-            longitude_degrees=self.longitude_degrees,
-            elevation_m=self.elevation_m,
+        itrs_xyz = spice.georec(
+            self.longitude_degrees * spice.rpd(),  # Convert to radians
+            self.latitude_degrees * spice.rpd(),  # Convert to radians
+            self.elevation_m / 1000.0,  # Convert elevation to kilometers
+            WGS84_EARTH_EQUATORIAL_RADIUS,
+            WGS84_EARTH_FLATTENING,
         )
-        itrs_xyz = skyfield_geo_position.itrs_xyz.km
+
         return itrs_xyz
 
     def to_cartesian3d_position(self) -> Cartesian3DPosition:
@@ -364,6 +434,33 @@ class GeographicPosition:
         itrs_xyz = self.itrs_xyz
         return Cartesian3DPosition.from_array(
             itrs_xyz, frame=ReferenceFrame.get("ITRF")
+        )
+
+    @classmethod
+    def from_cartesian3d_position(
+        cls, cartesian_position: Cartesian3DPosition
+    ) -> "GeographicPosition":
+        """
+        Convert a Cartesian3DPosition to a GeographicPosition.
+        The Cartesian3DPosition must be in the ITRF frame.
+        """
+        if (
+            cartesian_position.frame is not None
+            and cartesian_position.frame != ReferenceFrame.get("ITRF")
+        ):
+            raise ValueError(
+                "Cartesian3DPosition must be in the ITRF frame "
+                "for conversion to GeographicPosition."
+            )
+        longitude, latitude, elevation = spice.recgeo(
+            rectan=cartesian_position.to_numpy(),
+            re=WGS84_EARTH_EQUATORIAL_RADIUS,
+            f=WGS84_EARTH_FLATTENING,
+        )
+        return cls(
+            latitude_degrees=latitude * spice.dpr(),
+            longitude_degrees=longitude * spice.dpr(),
+            elevation_m=elevation * 1e3,
         )
 
 
@@ -563,7 +660,7 @@ class Cartesian3DPositionArray:
         self.frame = frame
 
     @classmethod
-    def from_cartesian_positions(
+    def from_cartesian_position_list(
         cls, positions: List[Cartesian3DPosition]
     ) -> "Cartesian3DPositionArray":
         """Creates a Cartesian3DPositionArray from a list of Cartesian3DPosition objects.
@@ -590,30 +687,55 @@ class Cartesian3DPositionArray:
         return cls(coords, frame)
 
     @classmethod
-    def from_geographic_positions(
-        cls, positions: List[GeographicPosition]
+    def from_geographic_position_array(
+        cls, positions: "GeographicPositionArray"
     ) -> "Cartesian3DPositionArray":
-        """Creates a Cartesian3DPositionArray from a list of GeographicPosition objects.
+        """Creates a Cartesian3DPositionArray from a GeographicPositionArray object.
 
         Geographic positions are converted into Cartesian coordinates in the ITRF frame
         using the `itrs_xyz` property.
 
         Args:
-            positions (List[GeographicPosition]): List of GeographicPosition objects.
+            positions (GeographicPositionArray): GeographicPositionArray object.
 
         Returns:
             Cartesian3DPositionArray: A new Cartesian3DPositionArray object.
 
-        Raises:
-            ValueError: If the list is empty.
         """
-        if not positions:
+        itrs_xyz = positions.itrs_xyz
+        return cls(positions=itrs_xyz, frame=ReferenceFrame.get("ITRF"))
+
+    def to_geographic_position_array(self) -> "GeographicPositionArray":
+        """Converts the Cartesian3DPositionArray to a GeographicPositionArray object.
+
+        The Cartesian3DPositionArray must be in the ITRF frame.
+
+        Returns:
+            GeographicPositionArray: The corresponding GeographicPositionArray object.
+        """
+        if self.frame is not None and self.frame != ReferenceFrame.get("ITRF"):
             raise ValueError(
-                "The list of GeographicPosition objects cannot be empty."
+                "Cartesian3DPositionArray must be in the ITRF frame "
+                "for conversion to GeographicPositionArray."
             )
-        frame = ReferenceFrame.get("ITRF")
-        coords = np.array([pos.itrs_xyz for pos in positions])
-        return cls(coords, frame)
+
+        rec_coords = self.to_numpy()
+        geo_positions = []
+        for rectan in rec_coords:
+            longitude, latitude, elevation = spice.recgeo(
+                rectan=rectan,
+                re=WGS84_EARTH_EQUATORIAL_RADIUS,
+                f=WGS84_EARTH_FLATTENING,
+            )
+            geo_positions.append(
+                [
+                    latitude * spice.dpr(),
+                    longitude * spice.dpr(),
+                    elevation * 1e3,
+                ]
+            )
+        geo_positions_array = np.array(geo_positions)
+        return GeographicPositionArray(geo_positions_array)
 
     def to_numpy(self) -> np.ndarray:
         """Returns the internal NumPy array of positions.
@@ -697,3 +819,178 @@ class Cartesian3DPositionArray:
         """
         for position in self.positions:
             yield Cartesian3DPosition.from_array(position, self.frame)
+
+
+class GeographicPositionArray:
+    """
+    Stores an array of geographic positions (latitude, longitude, elevation).
+    Each geographic position is defined in the geodetic coordinate system.
+    and is consistent with the definition in the :class:`eosimutils.state.GeographicPosition`.
+
+    All units are consistent with GeographicPosition: degrees for lat/lon, meters for elevation.
+
+    The instance can be initialized from a list of GeographicPosition objects.
+
+    Internally, the positions are stored as a NumPy array.
+
+    +---------------------------------------------+
+    |         GeographicPositionArray             |
+    +---------------------------------------------+
+    |                                             |
+    | geo_positions:                              |
+    | +-----------------------------------------+ |
+    | | [[lat1, lon1, elev1],                   | |
+    | |  [lat2, lon2, elev2],                   | |
+    | |   ...                                   | |  --> NumPy array of shape (N, 3)
+    | |  [latN, lonN, elevN]]                   | |      lat/lon in degrees, elev in meters
+    | +-----------------------------------------+ |
+    |                                             |
+    +---------------------------------------------+
+
+    """
+
+    def __init__(self, geo_positions: np.ndarray):
+        """
+        Args:
+            geo_positions (np.ndarray): NumPy array of shape (N, 3) with
+                                columns [latitude, longitude, elevation].
+        Raises:
+            ValueError: If geo_positions does not have shape (N, 3).
+        """
+        if geo_positions.ndim != 2 or geo_positions.shape[1] != 3:
+            raise ValueError("geo_positions array must have shape (N, 3)")
+        self.geo_positions = geo_positions
+
+    @classmethod
+    def from_geographic_position_list(
+        cls, geo_positions: List[GeographicPosition]
+    ) -> "GeographicPositionArray":
+        """
+        Creates a GeographicPositionArray from a list of GeographicPosition objects.
+        Args:
+            geo_positions (List[GeographicPosition]): List of GeographicPosition objects.
+        Returns:
+            GeographicPositionArray: A new GeographicPositionArray object.
+        Raises:
+            ValueError: If the list is empty.
+        """
+        if not geo_positions:
+            raise ValueError(
+                "The list of GeographicPosition objects cannot be empty."
+            )
+        arr = np.array(
+            [[p.latitude, p.longitude, p.elevation] for p in geo_positions]
+        )
+        return cls(arr)
+
+    @property
+    def itrs_xyz(self) -> np.ndarray:
+        """Get the ITRS XYZ positions in kilometers for all entries in the array.
+
+        See :class:`eosimutils.state.GeographicPosition.itrs_xyz` for details
+        on the conversion method and parameters used.
+
+        Returns:
+            np.ndarray: Array of shape (N, 3) with ITRS XYZ positions in kilometers.
+        """
+        itrs_list = []
+        for lat_deg, lon_deg, elev_m in self.geo_positions:
+            itrs_xyz = spice.georec(
+                float(lon_deg) * spice.rpd(),  # Convert to radians
+                float(lat_deg) * spice.rpd(),  # Convert to radians
+                float(elev_m) / 1000.0,  # Convert elevation to kilometers
+                WGS84_EARTH_EQUATORIAL_RADIUS,
+                WGS84_EARTH_FLATTENING,
+            )
+            itrs_list.append(itrs_xyz)
+        return np.array(itrs_list)
+
+    def to_cartesian3d_position_array(self) -> Cartesian3DPositionArray:
+        """Convert the geographic position array to a Cartesian3DPositionArray.
+
+        Returns:
+            Cartesian3DPositionArray: The corresponding Cartesian3DPositionArray object.
+        """
+        itrs_xyz = self.itrs_xyz
+        return Cartesian3DPositionArray(
+            positions=itrs_xyz, frame=ReferenceFrame.get("ITRF")
+        )
+
+    @classmethod
+    def from_dict(cls, dict_in: dict) -> "GeographicPositionArray":
+        """
+        Deserializes a GeographicPositionArray object from a dictionary.
+        Args:
+            dict_in (dict): The dictionary must contain the key "geo_positions":
+                - "geo_positions": A list or array representing geo_positions (Nx3),
+                                    columns [latitude, longitude, elevation].
+        Returns:
+            GeographicPositionArray: The deserialized object.
+        """
+        geo_positions = np.array(dict_in["geo_positions"])
+        return cls(geo_positions)
+
+    def to_dict(self) -> dict:
+        """
+        Serializes the GeographicPositionArray to a dictionary.
+        Returns:
+            dict: A dictionary representation of the GeographicPositionArray object.
+        """
+        return {"geo_positions": self.geo_positions.tolist()}
+
+    @classmethod
+    def from_cartesian3d_position_array(
+        cls, cartesian_position_array: Cartesian3DPositionArray
+    ) -> "GeographicPositionArray":
+        """
+        Convert a Cartesian3DPositionArray to a GeographicPositionArray.
+        The Cartesian3DPositionArray must be in the ITRF frame.
+        """
+        if (
+            cartesian_position_array.frame is not None
+            and cartesian_position_array.frame != ReferenceFrame.get("ITRF")
+        ):
+            raise ValueError(
+                "Cartesian3DPosition must be in the ITRF frame "
+                "for conversion to GeographicPosition."
+            )
+        geo_positions_list = []
+        for rectan in cartesian_position_array.to_numpy():
+            longitude, latitude, elevation = spice.recgeo(
+                rectan=rectan,
+                re=WGS84_EARTH_EQUATORIAL_RADIUS,
+                f=WGS84_EARTH_FLATTENING,
+            )
+            geo_positions_list.append(
+                [
+                    latitude * spice.dpr(),
+                    longitude * spice.dpr(),
+                    elevation * 1e3,
+                ]
+            )
+        return cls(geo_positions=np.array(geo_positions_list))
+
+    def to_numpy(self) -> np.ndarray:
+        """Returns the internal NumPy array of geo_positions."""
+        return self.geo_positions
+
+    def to_list(self) -> list:
+        """Returns a list of geo_positions."""
+        return self.geo_positions.tolist()
+
+    def __len__(self):
+        return len(self.geo_positions)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return GeographicPositionArray(self.geo_positions[index])
+        else:
+            lat, lon, elev = self.geo_positions[index]
+            return GeographicPosition(lat, lon, elev)
+
+    def __iter__(self):
+        for lat, lon, elev in self.geo_positions:
+            yield GeographicPosition(lat, lon, elev)
+
+    def __repr__(self):
+        return f"GeographicPositionArray(geo_positions={self.geo_positions!r})"

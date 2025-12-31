@@ -13,7 +13,7 @@ corresponds to Barycentric Dynamical Time (TDB).
 Time formats define how time is represented. The module supports:
 - **Gregorian Date**
 - **Julian Date**
-= **SPICE ET**: Count of ephemeris seconds past the ephemeris reference epoch (J2000)
+- **SPICE ET**: Count of ephemeris seconds past the ephemeris reference epoch (J2000)
                 J2000 epoch is Greenwich noon on January 1, 2000 Barycentric Dynamical Time (TDB).
 
 **Time Scales:**

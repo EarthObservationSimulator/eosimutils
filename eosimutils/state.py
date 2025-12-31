@@ -181,7 +181,7 @@ class Cartesian3DPosition:
         using the `itrs_xyz` property.
 
         Args:
-            positions (GeographicPosition): GeographicPosition object.
+            position (GeographicPosition): GeographicPosition object.
 
         Returns:
             Cartesian3DPosition: A new Cartesian3DPosition object.
@@ -404,7 +404,7 @@ class GeographicPosition:
     @property
     def itrs_xyz(self):
         """Get the ITRS XYZ position in kilometers.
-        Spicey implementation of georec is used for conversion.
+        SpicePy implementation of georec is used for conversion.
         The conversion uses the following World Geodetic System 1984 (WGS84) parameters:
         - Equatorial radius: 6378.1370 km
         - Flattening: 1 / 298.257223563

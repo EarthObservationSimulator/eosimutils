@@ -270,7 +270,7 @@ class StateSeries(Timeseries):
         """
         Resamples the StateSeries to a new time base.
 
-        Takes AbsoluteDataArray as input and calls the private _resample method.
+        Takes AbsoluteDateArray as input and calls the private _resample method.
 
         Args:
             new_time (AbsoluteDateArray): The new time samples.

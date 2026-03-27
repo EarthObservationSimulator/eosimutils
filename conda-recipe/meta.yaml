@@ -1,0 +1,53 @@
+{% set name = "eosimutils" %}
+{% set version = "0.1.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  path: ..
+
+build:
+  noarch: python
+  number: 0
+  script: {{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv
+
+requirements:
+  host:
+    - python >=3.13
+    - pip
+    - setuptools >=61
+    - wheel
+  run:
+    - python >=3.13
+    - numpy
+    - scipy
+    - astropy
+    - skyfield
+    - spiceypy
+
+test:
+  source_files:
+    - tests
+  requires:
+    - pytest
+  imports:
+    - eosimutils
+    - eosimutils.base
+    - eosimutils.fieldofview
+    - eosimutils.framegraph
+    - eosimutils.orientation
+    - eosimutils.state
+    - eosimutils.time
+    - eosimutils.timeseries
+    - eosimutils.trajectory
+  commands:
+    - pytest -q tests
+
+about:
+  summary: Common utilities for packages and scripts within the EarthObservationSimulator organization.
+  license: MIT
+  license_file: LICENSE
+  home: https://github.com/EarthObservationSimulator/eosimutils
+  dev_url: https://github.com/EarthObservationSimulator/eosimutils

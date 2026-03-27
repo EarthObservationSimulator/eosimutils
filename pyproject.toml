@@ -1,27 +1,35 @@
 [build-system]
-requires = ["setuptools>=57", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
-
 [project]
 name = "eosimutils"
 version = "0.1.0"
 description = "Common utilities for packages and scripts within the EarthObservationSimulator organization."
+readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
     { name = "Vinay Ravindra", email = "vravindra@baeri.org" },
     { name = "Ryan Ketzner", email = "ketzner@ucf.edu" }
 ]
+requires-python = ">=3.13"
 dependencies = [
-    "sphinx",
-    "sphinx-rtd-theme",
-
+    "numpy",
+    "scipy",
+    "astropy",
+    "skyfield",
+    "spiceypy",
+    "matplotlib"
 ]
-
 [project.optional-dependencies]
 dev = [
+    "pytest",
     "pylint",
     "black",
     "coverage"
 ]
-
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme"
+]
 [tool.black]
-line-length = 80 # Match with pylintrc
+line-length = 80

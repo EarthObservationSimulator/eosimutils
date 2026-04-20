@@ -25,9 +25,7 @@ dev = [
     "pytest",
     "pylint",
     "black",
-    "coverage"
-]
-docs = [
+    "coverage",
     "sphinx",
     "sphinx-rtd-theme"
 ]

@@ -39,9 +39,9 @@ print("Skyfield Time:", skyfield_time.utc_strftime("%Y-%m-%d %H:%M:%S UTC"))
 # Example 2: Using the AbsoluteDateArray class for vectorized time handling
 t_values = abs_date.ephemeris_time + np.linspace(-100, 100, 5)
 abs_dates_obj = AbsoluteDateArray.from_dict({
-    "time_format": "Julian_Date",
-    "jd": t_values.tolist(),
-    "time_scale": "UTC"
+    "time_format": "SPICE_ET",
+    "ephemeris_time": t_values.tolist(),
+    "time_scale": "ET"
 })
 
 # Convert AbsoluteDateArray object to an Astropy Time object

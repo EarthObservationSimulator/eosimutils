@@ -25,7 +25,7 @@ def download_latest_kernels() -> None:
        FileNotFoundError: If the SPICE kernel files are not found.
     """
     # Define the directory to save kernels
-    kernel_dir = os.path.join(os.path.dirname(__file__), "spice_kernels")
+    kernel_dir = os.path.join(os.path.expanduser("~"), ".eosimutils_spice")
     os.makedirs(
         kernel_dir, exist_ok=True
     )  # do not create the directory if it already exists
@@ -69,7 +69,8 @@ def load_spice_kernels() -> None:
     download_latest_kernels()
 
     # Load the kernels
-    kernel_dir = os.path.join(os.path.dirname(__file__), "spice_kernels")
+    # kernel_dir = os.path.join(os.path.dirname(__file__), "spice_kernels")
+    kernel_dir = os.path.join(os.path.expanduser("~"), ".eosimutils_spice")
     leap_seconds_kernel = os.path.join(kernel_dir, lsk_kernel_file_name)
     eop_kernel = os.path.join(kernel_dir, eop_kernel_file_name)
     de430_kernel = os.path.join(

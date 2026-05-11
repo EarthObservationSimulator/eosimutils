@@ -11,20 +11,23 @@ Common utilities for packages and scripts within the EarthObservationSimulator o
 
 Requires: Unix-like operating system, `python 3.13`, `pip`
 
-(If using conda), create a conda environment:
-```
-conda create -n eosim-revised python=3.13
-conda activate eosim-revised
-conda install sphinx
-pip install sphinx-rtd-theme
-pip install pylint
-pip install black
-pip install coverage
-pip install skyfield
-pip install astropy
-pip install scipy
+The package is installed with the pip install command, which
+automatically installs all dependencies.
 
-make install
+```
+pip install .
+```
+
+To install the development version, which includes the docs, tests, and code formatting tools, run:
+
+```
+pip install "[.dev]"
+```
+
+Unit tests for the project are run using:
+
+```
+make test
 ```
 
 ### Main Features

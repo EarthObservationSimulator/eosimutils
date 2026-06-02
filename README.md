@@ -15,13 +15,13 @@ The package is installed with the pip install command, which
 automatically installs all dependencies.
 
 ```
-pip install .
+pip install -e .
 ```
 
 To install the development version, which includes the docs, tests, and code formatting tools, run:
 
 ```
-pip install "[.dev]"
+pip install -e ".[dev]"
 ```
 
 Unit tests for the project are run using:
